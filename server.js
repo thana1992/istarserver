@@ -216,14 +216,14 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get('/getTodayReservations', (req, res) => {
-    const today = new Date();
+  app.post('/getReservationDetail', (req, res) => {
+    const { reservationdate } = req.body;
     const query = 'SELECT * FROM treservation WHERE classdate = ?';
-    db.query(query, [today], (err, results) => {
+    db.query(query, [reservationdate], (err, results) => {
       if(results.length > 0){
-        res.json({ success: true, message: 'Get Today Reservations successful', results });
+        res.json({ success: true, message: 'Get Reservation Detail successful', results });
       } else {
-        res.json({ success: false, message: 'No Reservations Today' });
+        res.json({ success: false, message: 'No Reservation on $reservationdate' });
       }
 
       if(err){
