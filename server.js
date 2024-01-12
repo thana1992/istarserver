@@ -97,9 +97,29 @@ app.post('/register', (req, res) => {
     });
   });
 
+  app.post("/getFamilyMember", (req, res) => {
+    const { familyid } = req.body;
+    const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, b.coursename, b.course_shortname' +
+                    ' from tfamilymember a ' +
+                    ' left join tcourse b ' +
+                    ' on a.courseid = b.courseid  ';
+    db.query(query, [familyid], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Family Member successful', results });
+      } else {
+        res.json({ success: false, message: 'No Family Member' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
   app.post('/addFamilyMember', (req, res) => {
     const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid } = req.body;
-    const query = 'INSERT INTO tfamily (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, photo) ' +
+                  ' VALUES (?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
     db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid], (err) => {
       if (err) {
         res.status(500).send(err);
@@ -111,12 +131,28 @@ app.post('/register', (req, res) => {
 
   app.post('/deleteFamilyMember', (req, res) => {
     const { familyid, childid } = req.body;
-    const query = 'DELETE FROM tfamily WHERE familyid = ? AND childid = ?';
+    const query = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
     db.query(query, [familyid, childid], (err) => {
       if (err) {
         res.status(500).send(err);
       } else {
         res.json({ success: true, message: 'Family member deleted successfully' });
+      }
+    });
+  });
+
+  app.post('/getMemberInfo', (req, res) => {
+    const { childid } = req.body;
+    const query = 'SELECT * FROM tfamilymember WHERE childid = ?';
+    db.query(query, [childid], (err, infomation) => {
+      if(infomation.length > 0){
+        res.json({ success: true, message: 'Get Member Info successful', infomation });
+      } else {
+        res.json({ success: false, message: 'No Member Info' });
+      }
+
+      if(err){
+        res.status(500).send(err);
       }
     });
   });
@@ -216,14 +252,14 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/getReservationDetail', (req, res) => {
-    const { reservationdate } = req.body;
-    const query = 'SELECT * FROM treservation WHERE classdate = ?';
-    db.query(query, [reservationdate], (err, results) => {
+  app.post('/getMemberReservationDetail', (req, res) => {
+    const { childid } = req.body;
+    const query = 'SELECT * FROM treservation WHERE childid = ?';
+    db.query(query, [childid], (err, results) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get Reservation Detail successful', results });
       } else {
-        res.json({ success: false, message: 'No Reservation on $reservationdate' });
+        res.json({ success: false, message: 'No Reservation Detail' });
       }
 
       if(err){
