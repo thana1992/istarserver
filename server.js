@@ -99,7 +99,7 @@ app.post('/register', (req, res) => {
 
   app.post("/getFamilyMember", (req, res) => {
     const { familyid } = req.body;
-    const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, b.coursename, b.course_shortname' +
+    const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, a.courseid, b.coursename, b.course_shortname' +
                     ' from tfamilymember a ' +
                     ' left join tcourse b ' +
                     ' on a.courseid = b.courseid  ';
@@ -118,8 +118,8 @@ app.post('/register', (req, res) => {
 
   app.post('/addFamilyMember', (req, res) => {
     const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid } = req.body;
-    const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, photo) ' +
-                  ' VALUES (?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+    const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+                  ' VALUES (?, ?, ?, ?, ?, ?, 1, 0, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
     db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid], (err) => {
       if (err) {
         res.status(500).send(err);
@@ -131,11 +131,13 @@ app.post('/register', (req, res) => {
 
   app.post('/deleteFamilyMember', (req, res) => {
     const { familyid, childid } = req.body;
-    const query = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
-    db.query(query, [familyid, childid], (err) => {
+    const queryDeleteTfamilymember = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
+    db.query(queryDeleteTfamilymember, [familyid, childid], (err) => {
       if (err) {
         res.status(500).send(err);
       } else {
+        const queryDeleteTfamilymember = 'DELETE FROM treservation WHERE childid = ?';
+        db.query(queryDeleteTfamilymember, [childid]);
         res.json({ success: true, message: 'Family member deleted successfully' });
       }
     });
@@ -165,23 +167,27 @@ app.post('/register', (req, res) => {
         const maxperson = results[0].maxperson;
         checkClassFullQuery = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
         db.query(checkClassFullQuery, [classid, classdate, classtime], (err, results) => {
-          if (results.length > 0) {
+          if (err) {
+            return res.status(500).send(err);
+          }else if (results.length > 0) {
             const count = results[0].count;
             if (count >= maxperson) {
               return res.json({ success: false, message: 'Class is already full' });
+            }else{
+              const query = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
+              db.query(query, [courseid, classid, classdate, classtime, childid], (err) => {
+                if (err) {
+                  return res.status(500).send(err);
+                } else {
+                  return res.json({ success: true, message: 'Reservation added successfully' });
+                }
+              });
             }
           }
         });
       }
       
-      const query = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
-      db.query(query, [username, fullname, classdate, classtime, classid], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.json({ success: true, message: 'Reservation added successfully' });
-        }
-      });
+      
     });
   });
 
@@ -193,6 +199,22 @@ app.post('/register', (req, res) => {
         res.status(500).send(err);
       } else {
         res.json({ success: true, message: 'Reservation deleted successfully' });
+      }
+    });
+  });
+
+  app.post('/checkDuplicateReservation', (req, res) => {
+    const { childid, classdate } = req.body;
+    const query = 'SELECT * FROM treservation WHERE childid = ? and classdate = ?';
+    db.query(query, [childid, classdate], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: false, message: 'You have already reservation on this day' });
+      } else {
+        res.json({ success: true, message: 'No Reservation on this day' });
+      }
+
+      if(err){
+        res.status(500).send(err);
       }
     });
   });
@@ -252,9 +274,25 @@ app.post('/register', (req, res) => {
     });
   });
 
+  app.post('/getClassTime', (req, res) => {
+    const { courseid, classday } = req.body;
+    const query = 'SELECT * FROM tclass WHERE courseid = ? and classday = ?';
+    db.query(query, [courseid, classday], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Class Time successful', results });
+      } else {
+        res.json({ success: false, message: 'No Class Time' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
   app.post('/getMemberReservationDetail', (req, res) => {
     const { childid } = req.body;
-    const query = 'SELECT * FROM treservation WHERE childid = ?';
+    const query = 'SELECT * FROM treservation WHERE childid = ? order by classdate asc';
     db.query(query, [childid], (err, results) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get Reservation Detail successful', results });
@@ -268,6 +306,21 @@ app.post('/register', (req, res) => {
     });
   });
   
+  app.post('/getAllClasses', (req, res) => {
+    const { courseid } = req.body;
+    const query = 'SELECT b.coursename, a.* FROM tclass a inner join tcourse b on a.courseid = b.courseid order by b.coursename , a.classday ';
+    db.query(query, [courseid], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get All Class successful', results });
+      } else {
+        res.json({ success: false, message: 'No Class' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
