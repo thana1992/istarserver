@@ -8,7 +8,7 @@ const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
 const db = mysql.createConnection({
-  host: 'localhost',
+  host: '0.0.0.0',
   user: 'root',
   password: 'password',
   database: 'istar',
@@ -77,18 +77,16 @@ app.post('/register', (req, res) => {
           res.status(500).send(err);
         } else {
           const query = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    
           db.query(query, [username, hashedPassword, fullname, address, email, mobileno, lineid], (err) => {
             if (err) {
               res.status(500).send(err);
             } else {
               const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-              db.query(createFamilyQuery, [username], (err) => {
-                if(err){
-                  res.status(500).send(err);
-                } else {
+              db.query(createFamilyQuery, [username], (err2) => {
                   res.json({ success: true, message: 'User registered successfully' });
-                }
+                  if(err2){
+                    res.status(500).send(err2);
+                  }
               });
             }
           });
@@ -102,12 +100,16 @@ app.post('/register', (req, res) => {
     const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, a.courseid, b.coursename, b.course_shortname' +
                     ' from tfamilymember a ' +
                     ' left join tcourse b ' +
-                    ' on a.courseid = b.courseid  ';
+                    ' on a.courseid = b.courseid ' +
+                    ' where a.familyid = ?';
     db.query(query, [familyid], (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Family Member successful', results });
-      } else {
-        res.json({ success: false, message: 'No Family Member' });
+      console.log("API getFamilyMember result :" + JSON.stringify(results));
+      if(results){
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Family Member successful', results });
+        } else {
+          res.json({ success: false, message: 'No Family Member' });
+        }
       }
 
       if(err){
@@ -160,31 +162,61 @@ app.post('/register', (req, res) => {
   });
 
   app.post('/addReservation', (req, res) => {
+    console.log("addReservation : " + JSON.stringify(req.body));
     const { courseid, classid, classday, classdate, classtime, childid } = req.body;
     let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
     db.query(checkClassFullQuery, [classid, classday, classtime], (err, results) => {
+      console.log("checkClassFullQuery results 1 : " + JSON.stringify(results));
       if (results.length > 0) {
         const maxperson = results[0].maxperson;
         checkClassFullQuery = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
         db.query(checkClassFullQuery, [classid, classdate, classtime], (err, results) => {
+          console.log("checkClassFullQuery results 2 : " + JSON.stringify(results));
           if (err) {
             return res.status(500).send(err);
           }else if (results.length > 0) {
             const count = results[0].count;
             if (count >= maxperson) {
-              return res.json({ success: false, message: 'Class is already full' });
+              return res.json({ success: false, message: 'ขอโทษค่ะ คลาสที่ท่านเลือกเต็มแล้ว' });
             }else{
-              const query = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
-              db.query(query, [courseid, classid, classdate, classtime, childid], (err) => {
+              const checkRemainingQuery = 'select remaining from tfamilymember where childid = ?';
+              db.query(checkRemainingQuery, [childid], (err, results) => {
+                console.log("checkRemainingQuery results : " + JSON.stringify(results));
                 if (err) {
                   return res.status(500).send(err);
-                } else {
-                  return res.json({ success: true, message: 'Reservation added successfully' });
+                }else if (results.length > 0) {
+                  const remaining = results[0].remaining;
+                  if (remaining <= 0) {
+                    return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
+                  }else{
+                    console.log("======= addReservation =======")
+                    const query = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
+                    db.query(query, [courseid, classid, classdate, classtime, childid], (err) => {
+                      console.log("addReservation err : " + JSON.stringify(err));
+                      if (err) {
+                        return res.status(500).send(err);
+                      } else {
+                        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining - 1 WHERE childid = ?';
+                        db.query(updateRemainingQuery, [childid], err => {
+                          if (err) {
+                            return res.status(500).send(err);
+                          }
+                        });
+                        return res.json({ success: true, message: 'Reservation added successfully' });
+                      }
+                    });
+                  }
+                }else{
+                  return res.json({ success: false, message: 'ไม่พบข้อมูลของท่าน' });
                 }
               });
             }
+          }else{
+            return res.json({ success: false, message: 'ไม่สามารถจองคลาสได้ กรุณาลองใหม่อีกครั้ง' });
           }
         });
+      }else{
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
       }
       
       
@@ -271,17 +303,33 @@ app.post('/register', (req, res) => {
       } else {
         res.json({ success: true, message: 'Class deleted successfully' });
       }
+
+      if(err){
+        res.status(500).send(err);
+      }
     });
   });
 
   app.post('/getClassTime', (req, res) => {
-    const { courseid, classday } = req.body;
-    const query = 'SELECT * FROM tclass WHERE courseid = ? and classday = ?';
-    db.query(query, [courseid, classday], (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Class Time successful', results });
-      } else {
-        res.json({ success: false, message: 'No Class Time' });
+    const { classdate, classday, courseid } = req.body;
+    const query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available '+
+    'FROM tclass a ' +
+    'left join treservation b ' +
+    'on a.classid = b.classid ' +
+    'and b.classdate = ? ' +
+    'WHERE a.classday = ? ' +
+    'and a.courseid = ? ' +
+    'group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
+    db.query(query, [classdate, classday, courseid], (err, results) => {
+      if(results) {
+        if(results.length > 0){
+          results.forEach((element, index) => {  
+            results[index].text = element.classtime + ' ว่าง ' + element.available + ' คน';  
+        }); 
+          res.json({ success: true, message: 'Get Class Time successful', results });
+        } else {
+          res.json({ success: false, message: 'No Class Time' });
+        }
       }
 
       if(err){
@@ -321,6 +369,7 @@ app.post('/register', (req, res) => {
       }
     });
   });
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
 });
+
