@@ -47,6 +47,8 @@ app.post('/login', (req, res) => {
         bcrypt.hash(password, 10, (err, hashedPassword) => {
           bcrypt.compare(password, hashedPassword, (err, match) => {
             if (match) {
+              const logquery = 'INSERT INTO llogin (username) VALUES (?)';
+              db.query(logquery, [username]);
               const token = jwt.sign({ userId: user.id, username: user.username }, 'your-secret-key', { expiresIn: '1h' });
               res.json({ success: true, message: 'Login successful', token, userdata });
             } else {
@@ -161,6 +163,22 @@ app.post('/register', (req, res) => {
     });
   });
 
+  app.post('/getMemberReservationDetail', (req, res) => {
+    const { childid } = req.body;
+    const query = 'SELECT * FROM treservation WHERE childid = ? order by classdate asc';
+    db.query(query, [childid], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Reservation Detail successful', results });
+      } else {
+        res.json({ success: false, message: 'No Reservation Detail' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
   app.post('/addReservation', (req, res) => {
     console.log("addReservation : " + JSON.stringify(req.body));
     const { courseid, classid, classday, classdate, classtime, childid } = req.body;
@@ -251,14 +269,41 @@ app.post('/register', (req, res) => {
     });
   });
 
+  app.get('/getAllCourses', (req, res) => {
+    const query = 'SELECT * FROM tcourse';
+    db.query(query, (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get All Course successful', results });
+      } else {
+        res.json({ success: false, message: 'No Course' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
   app.post('/addCourse', (req, res) => {
-    const { coursename } = req.body;
-    const query = 'INSERT INTO tcourse (coursename) VALUES (?, ?, ?, ?)';
-    db.query(query, [coursename, coursedesc, courseprice, coursestatus], (err) => {
+    const { coursename, course_shortname } = req.body;
+    const query = 'INSERT INTO tcourse (coursename, course_shortname) VALUES (?, ?)';
+    db.query(query, [coursename, course_shortname], (err) => {
       if (err) {
         res.status(500).send(err);
       } else {
         res.json({ success: true, message: 'Course added successfully' });
+      }
+    });
+  });
+
+  app.post('/updateCourse', (req, res) => {
+    const { coursename, course_shortname, courseid } = req.body;
+    const query = 'UPDATE tcourse SET coursename = ?, course_shortname = ? WHERE courseid = ?';
+    db.query(query, [ coursename, course_shortname, courseid ], (err) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.json({ success: true, message: 'Course updated successfully' });
       }
     });
   });
@@ -282,6 +327,22 @@ app.post('/register', (req, res) => {
     });
   });
 
+  app.get('/getAllClasses', (req, res) => {
+    const { courseid } = req.body;
+    const query = 'SELECT b.courseid, b.coursename, a.* FROM tclass a inner join tcourse b on a.courseid = b.courseid order by b.coursename , a.classday ';
+    db.query(query, [courseid], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get All Class successful', results });
+      } else {
+        res.json({ success: false, message: 'No Class' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
   app.post('/addClass', (req, res) => {
     const { courseid, classday, classtime, maxperson } = req.body;
     const query = 'INSERT INTO tclass (courseid, classday, classtime, maxperson) VALUES (?, ?, ?, ?)';
@@ -290,6 +351,18 @@ app.post('/register', (req, res) => {
         res.status(500).send(err);
       } else {
         res.json({ success: true, message: 'Class added successfully' });
+      }
+    });
+  });
+
+  app.post('/updateClass', (req, res) => {
+    const { classid, courseid, classday, classtime, maxperson } = req.body;
+    const query = 'UPDATE tclass SET courseid = ?, classday = ?, classtime = ?, maxperson = ? WHERE classid = ?';
+    db.query(query, [courseid, classday, classtime, maxperson, classid], (err) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.json({ success: true, message: 'Class updated successfully' });
       }
     });
   });
@@ -338,14 +411,13 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/getMemberReservationDetail', (req, res) => {
-    const { childid } = req.body;
-    const query = 'SELECT * FROM treservation WHERE childid = ? order by classdate asc';
-    db.query(query, [childid], (err, results) => {
+  app.get("/courseLookup", (req, res) => {
+    const query = 'SELECT * FROM tcourse';
+    db.query(query, (err, results) => {
       if(results.length > 0){
-        res.json({ success: true, message: 'Get Reservation Detail successful', results });
+        res.json({ success: true, message: 'Get Course Lookup successful', results });
       } else {
-        res.json({ success: false, message: 'No Reservation Detail' });
+        res.json({ success: false, message: 'No Course Lookup' });
       }
 
       if(err){
@@ -353,15 +425,15 @@ app.post('/register', (req, res) => {
       }
     });
   });
-  
-  app.post('/getAllClasses', (req, res) => {
-    const { courseid } = req.body;
-    const query = 'SELECT b.coursename, a.* FROM tclass a inner join tcourse b on a.courseid = b.courseid order by b.coursename , a.classday ';
-    db.query(query, [courseid], (err, results) => {
+
+  app.get("/getTotalStudents", (req, res) => {
+    const query = 'select count(*) as total from tfamilymember';
+    db.query(query, (err, results) => {
       if(results.length > 0){
-        res.json({ success: true, message: 'Get All Class successful', results });
+        res.json({ success: true, message: 'Get Total Students successful', results });
       } else {
-        res.json({ success: false, message: 'No Class' });
+        let results = [{ total: 0 }];
+        res.json({ success: true, message: 'No Total Students', results });
       }
 
       if(err){
@@ -369,7 +441,44 @@ app.post('/register', (req, res) => {
       }
     });
   });
+
+  app.get("/getTotalReservationToday", (req, res) => {
+    const query = 'select count(*) as total from treservation where classdate = curdate()';
+    db.query(query, (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Total Reservation Today successful', results });
+      } else {
+        let results = [{ total: 0 }];
+        res.json({ success: true, message: 'No Total Reservation Today', results });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
+  app.post("/getReservationList", (req, res) => {
+    const { classdate } = req.body;
+    const query = 'SELECT a.*, b.coursename, CONCAT(c.firstname, \' \', c.lastname, \' (\', c.nickname,\')\') fullname ' +
+                  'FROM treservation a left join tcourse b on a.courseid = b.courseid ' +
+                  'left join tfamilymember c on a.childid = c.childid ' +
+                  'WHERE a.classdate = ? ' +
+                  'order by a.classtime asc';
+    db.query(query, [classdate], (err, results) => {
+      console.log("API getReservationList result :" + JSON.stringify(results));
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Reservation list successful', results });
+      } else {
+        res.json({ success: false, message: 'No Reservation list'});
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Server is running on port ${port}`);
-});
-
+    console.log(`Server is running on port ${port}`);
+  });
