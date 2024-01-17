@@ -44,8 +44,11 @@ app.post('/login', (req, res) => {
             usertype: results[0].usertype,
             familyid: results[0].familyid,
         }
-        bcrypt.hash(password, 10, (err, hashedPassword) => {
-          bcrypt.compare(password, hashedPassword, (err, match) => {
+        const realpassword = results[0].userpassword;
+          console.log("Password : " + password);
+          console.log("realpassword : " + realpassword);
+          bcrypt.compare(password, realpassword, (err, match) => {
+            console.log("match : " + match);
             if (match) {
               const logquery = 'INSERT INTO llogin (username) VALUES (?)';
               db.query(logquery, [username]);
@@ -55,7 +58,6 @@ app.post('/login', (req, res) => {
               res.json({ success: false, message: 'Username or Password is invalid' });
             }
           });
-        });
       } else {
         res.json({ success: false, message: 'Invalid credentials' });
       }
@@ -75,6 +77,7 @@ app.post('/register', (req, res) => {
         return res.json({ success: false, message: 'Username is already taken' });
       }
       bcrypt.hash(password, 10, (err, hashedPassword) => {
+        console.log("hashedPassword : " + hashedPassword);
         if (err) {
           res.status(500).send(err);
         } else {
@@ -121,16 +124,59 @@ app.post('/register', (req, res) => {
   });
 
   app.post('/addFamilyMember', (req, res) => {
-    const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid } = req.body;
-    const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
-                  ' VALUES (?, ?, ?, ?, ?, ?, 1, 0, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-    db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid], (err) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        res.json({ success: true, message: 'Family member added successfully' });
-      }
-    });
+    try {
+      const { familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
+      const query = 'INSERT INTO jfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, photo) ' +
+                    ' VALUES (?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.json({ success: true, message: 'Family member was successfully added.<br>Please wait for approval from the admin.' });
+        }
+      });
+    } catch (error) {
+      console.log("addFamilyMember error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
+
+  app.post('/approveFamilyMember', (req, res) => {
+    try {
+      const { childid, familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
+      const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+                    ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+          db.query(deleteQuery, [childid], (err))
+          res.json({ success: true, message: 'Family member approve successfully' });
+        }
+      });
+    } catch (error) {
+      console.log("addFamilyMember error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
+
+  app.post('/addStudentByAdmin', (req, res) => {
+    try {
+      const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
+      const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+                    ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.json({ success: true, message: 'Family member added successfully' });
+        }
+      });
+    } catch (error) {
+      console.log("addStudentByAdmin error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
   });
 
   app.post('/deleteFamilyMember', (req, res) => {
@@ -179,7 +225,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/addReservation', (req, res) => {
+  app.post('/createReservation', (req, res) => {
     console.log("addReservation : " + JSON.stringify(req.body));
     const { courseid, classid, classday, classdate, classtime, childid } = req.body;
     let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
@@ -411,13 +457,44 @@ app.post('/register', (req, res) => {
     });
   });
 
+  app.get("/getNewStudentList", (req, res) => {
+    const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
+    db.query(query, (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get New Students successful', results });
+      } else {
+        let results = [{ total: 0 }];
+        res.json({ success: true, message: 'No New Students', results });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
   app.get("/courseLookup", (req, res) => {
     const query = 'SELECT * FROM tcourse';
     db.query(query, (err, results) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get Course Lookup successful', results });
       } else {
-        res.json({ success: false, message: 'No Course Lookup' });
+        res.json({ success: true, message: 'No Course Lookup' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
+  app.get("/familyLookup", (req, res) => {
+    const query = 'SELECT * FROM tfamily';
+    db.query(query, (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Family Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Family Lookup' });
       }
 
       if(err){
@@ -442,7 +519,28 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/getTotalReservationToday", (req, res) => {
+  app.get("/getStudentList", (req, res) => {
+    const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
+    db.query(query, (err, results) => {
+      console.log("API getStudentlist result :" + JSON.stringify(results));
+      try {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Student list successful', results });
+        } else {
+          res.json({ success: false, message: 'No Student list'});
+        }
+
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API getStudentlist error :" + JSON.stringify(err));
+        res.status(500).send(err);
+      }
+    });
+  });
+
+  app.get("/getTotalBookingToday", (req, res) => {
     const query = 'select count(*) as total from treservation where classdate = curdate()';
     db.query(query, (err, results) => {
       if(results.length > 0){
@@ -450,6 +548,38 @@ app.post('/register', (req, res) => {
       } else {
         let results = [{ total: 0 }];
         res.json({ success: true, message: 'No Total Reservation Today', results });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
+  app.get("/getTotalBookingTomorrow", (req, res) => {
+    const query = 'select count(*) as total from treservation where classdate = curdate()+1';
+    db.query(query, (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Total Reservation Tomorrow successful', results });
+      } else {
+        let results = [{ total: 0 }];
+        res.json({ success: true, message: 'No Total Reservation Tomorrow', results });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  });
+
+  app.get("/getTotalWaitingApprove", (req, res) => {
+    const query = 'select count(*) as total from jfamilymember';
+    db.query(query, (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
+      } else {
+        let results = [{ total: 0 }];
+        res.json({ success: true, message: 'No Total Waiting Approve', results });
       }
 
       if(err){
@@ -467,13 +597,18 @@ app.post('/register', (req, res) => {
                   'order by a.classtime asc';
     db.query(query, [classdate], (err, results) => {
       console.log("API getReservationList result :" + JSON.stringify(results));
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Reservation list successful', results });
-      } else {
-        res.json({ success: false, message: 'No Reservation list'});
-      }
+      try {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Reservation list successful', results });
+        } else {
+          res.json({ success: false, message: 'No Reservation list'});
+        }
 
-      if(err){
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API getReservationList error :" + JSON.stringify(err));
         res.status(500).send(err);
       }
     });
