@@ -518,15 +518,19 @@ app.post('/register', (req, res) => {
   app.get("/getTotalStudents", (req, res) => {
     const query = 'select count(*) as total from tfamilymember';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Students successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Students', results });
-      }
+      try{
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Students successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Students', results });
+        }
 
-      if(err){
-        res.status(500).send(err);
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("error on getTotalStudents : " + JSON.stringify(error));
       }
     });
   });
