@@ -579,15 +579,19 @@ app.post('/register', (req, res) => {
   app.get("/getTotalBookingTomorrow", (req, res) => {
     const query = 'select count(*) as total from treservation where classdate = curdate()+1';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Reservation Tomorrow successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Reservation Tomorrow', results });
-      }
+      try {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Reservation Tomorrow successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Reservation Tomorrow', results });
+        }
 
-      if(err){
-        res.status(500).send(err);
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API getTotalBookingTomorrow error :" + JSON.stringify(err));
       }
     });
   });
@@ -595,15 +599,19 @@ app.post('/register', (req, res) => {
   app.get("/getTotalWaitingApprove", (req, res) => {
     const query = 'select count(*) as total from jfamilymember';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Waiting Approve', results });
-      }
+      try {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Waiting Approve', results });
+        }
 
-      if(err){
-        res.status(500).send(err);
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API getTotalWaitingApprove error :" + JSON.stringify(err));
       }
     });
   });
