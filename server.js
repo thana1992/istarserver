@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
@@ -7,12 +8,14 @@ const bcrypt = require('bcrypt');
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
-const db = mysql.createConnection({
-  host: '0.0.0.0',
-  user: 'root',
-  password: 'password',
-  database: 'istar',
-});
+// const db = mysql.createConnection({
+//   host: '0.0.0.0',
+//   user: 'root',
+//   password: 'password',
+//   database: 'istar',
+// });
+
+const db = mysql.createConnection(process.env.DATABASE_URL)
 
 db.connect(err => {
   if (err) {
@@ -25,6 +28,11 @@ db.connect(err => {
 app.use(cors());
 app.use(bodyParser.json());
 
+app.get(/.*/, function(req, res, next) {
+  console.log("API called : " + req.path);
+  res.send('Hello World from Istar API  ' + req.path);
+  next();
+});
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
