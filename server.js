@@ -601,16 +601,15 @@ app.post('/register', (req, res) => {
     const query = 'select count(*) as total from jfamilymember';
     db.query(query, (err, results) => {
       try {
-        if(results.length > 0){
+        if(err){
+          res.status(500).send(err);
+        } else if(results.length > 0){
           res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
         } else {
           let results = [{ total: 0 }];
           res.json({ success: true, message: 'No Total Waiting Approve', results });
         }
-
-        if(err){
-          res.status(500).send(err);
-        }
+        
       } catch (error) {
         console.log("API getTotalWaitingApprove error :" + JSON.stringify(err));
       }
