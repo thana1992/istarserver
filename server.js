@@ -27,7 +27,11 @@ db.connect(err => {
 
 app.use(cors());
 app.use(bodyParser.json());
-
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  // other headers...
+  next();
+});
 app.get(/.*/, function(req, res, next) {
   console.log("API called : " + req.path);
   res.send('Hello World from Istar API  ' + req.path);
