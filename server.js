@@ -32,11 +32,11 @@ app.use((req, res, next) => {
   // other headers...
   next();
 });
-app.get(/.*/, function(req, res, next) {
-  console.log("API called : " + req.path);
-  res.send('Hello World from Istar API  ' + req.path);
-  next();
-});
+// app.get(/.*/, function(req, res, next) {
+//   console.log("API called : " + req.path);
+//   res.send('Hello World from Istar API  ' + req.path);
+//   next();
+// });
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
