@@ -557,9 +557,10 @@ app.post('/register', (req, res) => {
   });
 
   app.get("/getTotalBookingToday", (req, res) => {
-    
       const query = 'select count(*) as total from treservation where classdate = curdate()';
       db.query(query, (err, results) => {
+        console.log("API getTotalBookingToday result :" + JSON.stringify(results));
+        console.log("API getTotalBookingToday error :" + JSON.stringify(err));
         try{
           if(err){
             res.status(500).send(err);
