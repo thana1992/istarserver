@@ -553,19 +553,23 @@ app.post('/register', (req, res) => {
   });
 
   app.get("/getTotalBookingToday", (req, res) => {
-    const query = 'select count(*) as total from treservation where classdate = curdate()';
-    db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Reservation Today successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Reservation Today', results });
-      }
+    try{
+      const query = 'select count(*) as total from treservation where classdate = curdate()';
+      db.query(query, (err, results) => {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Reservation Today successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Reservation Today', results });
+        }
 
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+        if(err){
+          res.status(500).send(err);
+        }
+      });
+    } catch (error) {
+      console.log("API getTotalBookingToday error :" + JSON.stringify(err));
+    }
   });
 
   app.get("/getTotalBookingTomorrow", (req, res) => {
