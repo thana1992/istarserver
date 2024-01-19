@@ -65,13 +65,12 @@ app.post('/login', (req, res) => {
           const logquery = 'INSERT INTO llogin (username) VALUES (?)';
           db.query(logquery, [username]);
           const token = jwt.sign({ userId: user.id, username: user.username }, 'your-secret-key', { expiresIn: '1h' });
-          //res.json({ success: true, message: 'Login successful', token, userdata });
-          res.status(200).json({ success: true, message: 'Login successful', token, userdata });
+          res.json({ success: true, message: 'Login successful', token, userdata });
         } else {
-          res.status(401).json({ message: "Invalid credentials" });
+          res.json({ success: false, message: 'password is invalid' });
         }
       }else{
-        res.status(401).json({ message: "Invalid credentials" });
+        res.json({ success: false, message: 'username invalid' });
       }
     }
   });
@@ -96,10 +95,11 @@ app.post('/register', (req, res) => {
           } else {
             const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
             db.query(createFamilyQuery, [username], (err2) => {
+              if(err2){
+                res.status(500).send(err2);
+              } else {
                 res.json({ success: true, message: 'User registered successfully' });
-                if(err2){
-                  res.status(500).send(err2);
-                }
+              }
             });
           }
         });
