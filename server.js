@@ -557,6 +557,7 @@ app.post('/register', (req, res) => {
         }
       } catch (error) {
         console.log("error on getTotalStudents : " + JSON.stringify(error));
+        res.status(500).send(error);
       }
     });
   });
@@ -598,6 +599,7 @@ app.post('/register', (req, res) => {
           }
         } catch (error) {
           console.log("API getTotalBookingToday error :" + JSON.stringify(err));
+          res.status(500).send(error);
         }
       });
     
@@ -619,6 +621,7 @@ app.post('/register', (req, res) => {
         }
       } catch (error) {
         console.log("API getTotalBookingTomorrow error :" + JSON.stringify(err));
+        res.status(500).send(error);
       }
     });
   });
@@ -638,6 +641,7 @@ app.post('/register', (req, res) => {
         
       } catch (error) {
         console.log("API getTotalWaitingApprove error :" + JSON.stringify(err));
+        res.status(500).send(error);
       }
     });
   });
@@ -668,6 +672,105 @@ app.post('/register', (req, res) => {
     });
   });
 
-app.listen(port, aws.connect.psdb.cloud, () => {
+  app.get("/refreshCardDashboard", (req, res) => {
+    const query = 'select count(*) as total from tfamilymember';
+    var datacard = {
+      totalstudent: null,
+      totalbookingtoday: null, 
+      totalbookingtomorrow: null,
+      totalwaitingapprove: null,
+    };
+    
+    db.query(query, (err, results) => {
+      try {
+        if(results.length > 0){
+          datacard.totalstudent = results[0].total;
+          
+        } else {
+          datacard.totalstudent = 0;
+        }
+
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API refreshCardDashboard tfamilymember error :" + JSON.stringify(err));
+        res.status(500).send(error);
+      }
+    });
+
+    const query2 = 'select count(*) as total from treservation where classdate = curdate()';
+    db.query(query2, (err, results) => {
+      try {
+        if(results.length > 0){
+          datacard.totalbookingtoday = results[0].total;
+        } else {
+          datacard.totalbookingtoday = 0;
+        }
+
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API refreshCardDashboard treservation error :" + JSON.stringify(err));
+        res.status(500).send(error);
+      }
+    });
+
+    const query3 = 'select count(*) as total from treservation where classdate = curdate()+1';
+    db.query(query3, (err, results) => {
+      try {
+        if(results.length > 0){
+          datacard.totalbookingtomorrow = results[0].total;
+        } else {
+          datacard.totalbookingtomorrow = 0;
+        }
+
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API refreshCardDashboard treservation error :" + JSON.stringify(err));
+        res.status(500).send(error);
+      }
+    });
+
+    const query4 = 'select count(*) as total from jfamilymember';
+    db.query(query4, (err, results) => {
+      try {
+        if(results.length > 0){
+          datacard.totalwaitingapprove = results[0].total;
+        } else {
+          datacard.totalwaitingapprove = 0;
+        }
+        console.log("API datacard 0 :" + JSON.stringify(datacard));
+        res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API refreshCardDashboard jfamilymember error :" + JSON.stringify(err));
+        res.status(500).send(error);
+      }
+    });
+
+    // const query5 = 'select count(*) as total from tcancelreservation';
+    // db.query(query5, (err, results) => {
+    //   try {
+    //     if(results.length > 0){
+    //       datacard.totalwaitingcancel = results[0].total;
+    //     } else {
+    //       datacard.totalwaitingcancel = 0;
+    //     }
+
+    //     if(err){
+    //       res.status(500).send(err);
+    //     }
+    //   } catch (error) {
+    //     console.log("API refreshCardDashboard tcancelreservation error :" + JSON.stringify(err));
+    //   }
+    // });
+  });
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
   });
