@@ -165,7 +165,7 @@ app.post('/register', (req, res) => {
           } else {
             const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
                           ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-              db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining], (err) => {
+              db.query(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining], (err) => {
                 if (err) {
                   res.status(500).send(err);
                 } else {
