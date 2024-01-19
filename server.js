@@ -668,6 +668,6 @@ app.post('/register', (req, res) => {
     });
   });
 
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, aws.connect.psdb.cloud, () => {
     console.log(`Server is running on port ${port}`);
   });
