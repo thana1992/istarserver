@@ -209,7 +209,7 @@ app.post('/register', (req, res) => {
     try {
       const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
       const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?, courseid = ?, remaining = ? ' +
-                    ' WHERE familyid = ?');
+                    ' WHERE familyid = ?';
       db.query(query, [ firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid ], (err) => {
         if (err) {
           res.status(500).send(err);
