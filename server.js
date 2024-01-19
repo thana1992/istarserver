@@ -163,6 +163,7 @@ app.post('/register', (req, res) => {
         const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
         db.query(getQuery, [item.childid], (err, results) => {
           if (err) {
+            console.log("approveNewStudent error 1 : " + JSON.stringify(err));
             res.status(500).send(err);
           } else {
             const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
@@ -180,7 +181,7 @@ app.post('/register', (req, res) => {
         });
       }
     } catch (error) {
-      console.log("approveNewStudent error : " + JSON.stringify(error));
+      console.log("approveNewStudent error 2 : " + JSON.stringify(error));
       res.status(500).send(error);
     }
   });
