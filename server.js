@@ -163,7 +163,7 @@ app.post('/register', (req, res) => {
         const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
         db.query(getQuery, [item.childid], (err, results) => {
           if (err) {
-            res.status(500).send(error);
+            res.status(500).send(err);
           } else {
             const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
                           ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
