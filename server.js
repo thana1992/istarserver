@@ -489,7 +489,7 @@ app.post('/register', (req, res) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get New Students successful', results });
       } else {
-        let results = [{ total: 0 }];
+        let results = [];
         res.json({ success: true, message: 'No New Students', results });
       }
 
