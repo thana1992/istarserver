@@ -25,37 +25,19 @@ db.connect(err => {
   }
 });
 
-var allowedOrigins = ['https://wild-rose-pigeon-tutu.cyclic.app',
-                      'http://192.168.1.81:8080'];
-app.use(cors({
-  origin: function(origin, callback){
-    // allow requests with no origin 
-    // (like mobile apps or curl requests)
-    console.logs("request form :" + origin)
-    if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) === -1){
-      var msg = 'The CORS policy for this site does not ' +
-                'allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  }
-}));
+
 app.use(bodyParser.json());
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header(`Access-Control-Allow-Origin`, `192.168.1.81:8080`);
   // other headers...
   next();
 });
-
+app.use(cors());
 app.get('/', function(req, res, next) {
   console.log("API called : " + req.path);
   res.send('Hello World from Istar API :) ');
   next();
 });
-
-
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -174,7 +156,6 @@ app.post('/register', (req, res) => {
   });
 
   app.post('/approveFamilyMember', (req, res) => {
-    
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
