@@ -175,7 +175,7 @@ app.post('/register', (req, res) => {
                 }
               });
           }
-        
+        });
       }
     } catch (error) {
       console.log("addFamilyMember error : " + JSON.stringify(error));
