@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 });
 app.get('/', function(req, res, next) {
   console.log("API called : " + req.path);
-  res.send('Hello World from Istar API  ' + req.path);
+  res.send('Hello World from Istar API :) ');
   next();
 });
 app.post('/login', (req, res) => {
@@ -156,18 +156,27 @@ app.post('/register', (req, res) => {
   app.post('/approveFamilyMember', (req, res) => {
     try {
       const { apprObj } = req.body;
-        console.log("apprObj : " + JSON.stringify(apprObj));
-      // const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
-      //               ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-      // db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
-      //   if (err) {
-      //     res.status(500).send(err);
-      //   } else {
-      //     const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
-      //     db.query(deleteQuery, [childid], (err))
-      //     res.json({ success: true, message: 'Family member approve successfully' });
-      //   }
-      // });
+      console.log("apprObj : " + JSON.stringify(apprObj));
+      for (const item of apprObj) {
+        const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
+        db.query(getQuery, [item.childid], (err, results) => {
+          if (err) {
+            res.status(500).send(error);
+          } else {
+            const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+                          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+              db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining], (err) => {
+                if (err) {
+                  res.status(500).send(err);
+                } else {
+                  const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+                  db.query(deleteQuery, [childid], (err))
+                  res.json({ success: true, message: 'Family member approve successfully' });
+                }
+              });
+          }
+        
+      }
     } catch (error) {
       console.log("addFamilyMember error : " + JSON.stringify(error));
       res.status(500).send(error);
