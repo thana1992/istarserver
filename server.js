@@ -541,27 +541,6 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/getTotalStudents", (req, res) => {
-    const query = 'select count(*) as total from tfamilymember';
-    db.query(query, (err, results) => {
-      try{
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Total Students successful', results });
-        } else {
-          let results = [{ total: 0 }];
-          res.json({ success: true, message: 'No Total Students', results });
-        }
-
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("error on getTotalStudents : " + JSON.stringify(error));
-        res.status(500).send(error);
-      }
-    });
-  });
-
   app.get("/getStudentList", (req, res) => {
     const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
     db.query(query, (err, results) => {
@@ -579,69 +558,6 @@ app.post('/register', (req, res) => {
       } catch (error) {
         console.log("API getStudentlist error :" + JSON.stringify(err));
         res.status(500).send(err);
-      }
-    });
-  });
-
-  app.get("/getTotalBookingToday", (req, res) => {
-      const query = 'select count(*) as total from treservation where classdate = curdate()';
-      db.query(query, (err, results) => {
-        console.log("API getTotalBookingToday result :" + JSON.stringify(results));
-        console.log("API getTotalBookingToday error :" + JSON.stringify(err));
-        try{
-          if(err){
-            res.status(500).send(err);
-          } else if(results.length > 0){
-            res.json({ success: true, message: 'Get Total Reservation Today successful', results });
-          } else {
-            let results = [{ total: 0 }];
-            res.json({ success: true, message: 'No Total Reservation Today', results });
-          }
-        } catch (error) {
-          console.log("API getTotalBookingToday error :" + JSON.stringify(err));
-          res.status(500).send(error);
-        }
-      });
-    
-  });
-
-  app.get("/getTotalBookingTomorrow", (req, res) => {
-    const query = 'select count(*) as total from treservation where classdate = curdate()+1';
-    db.query(query, (err, results) => {
-      try {
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Total Reservation Tomorrow successful', results });
-        } else {
-          let results = [{ total: 0 }];
-          res.json({ success: true, message: 'No Total Reservation Tomorrow', results });
-        }
-
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API getTotalBookingTomorrow error :" + JSON.stringify(err));
-        res.status(500).send(error);
-      }
-    });
-  });
-
-  app.get("/getTotalWaitingApprove", (req, res) => {
-    const query = 'select count(*) as total from jfamilymember';
-    db.query(query, (err, results) => {
-      try {
-        if(err){
-          res.status(500).send(err);
-        } else if(results.length > 0){
-          res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
-        } else {
-          let results = [{ total: 0 }];
-          res.json({ success: true, message: 'No Total Waiting Approve', results });
-        }
-        
-      } catch (error) {
-        console.log("API getTotalWaitingApprove error :" + JSON.stringify(err));
-        res.status(500).send(error);
       }
     });
   });
@@ -675,21 +591,18 @@ app.post('/register', (req, res) => {
   app.get("/refreshCardDashboard", (req, res) => {
     const query = 'select count(*) as total from tfamilymember';
     var datacard = {
-      totalstudent: null,
-      totalbookingtoday: null, 
-      totalbookingtomorrow: null,
-      totalwaitingapprove: null,
+      totalStudents: 0,
+      totalBookingToday: 0, 
+      totalBookingTomorrow: 0,
+      totalWaitingNewStudents: 0,
+      totalWaitCancelBooking: 0
     };
     
     db.query(query, (err, results) => {
       try {
         if(results.length > 0){
-          datacard.totalstudent = results[0].total;
-          
-        } else {
-          datacard.totalstudent = 0;
+          datacard.totalStudents = results[0].total;
         }
-
         if(err){
           res.status(500).send(err);
         }
@@ -703,11 +616,8 @@ app.post('/register', (req, res) => {
     db.query(query2, (err, results) => {
       try {
         if(results.length > 0){
-          datacard.totalbookingtoday = results[0].total;
-        } else {
-          datacard.totalbookingtoday = 0;
+          datacard.totalBookingToday = results[0].total;
         }
-
         if(err){
           res.status(500).send(err);
         }
@@ -721,11 +631,8 @@ app.post('/register', (req, res) => {
     db.query(query3, (err, results) => {
       try {
         if(results.length > 0){
-          datacard.totalbookingtomorrow = results[0].total;
-        } else {
-          datacard.totalbookingtomorrow = 0;
+          datacard.totalBookingTomorrow = results[0].total;
         }
-
         if(err){
           res.status(500).send(err);
         }
@@ -739,9 +646,7 @@ app.post('/register', (req, res) => {
     db.query(query4, (err, results) => {
       try {
         if(results.length > 0){
-          datacard.totalwaitingapprove = results[0].total;
-        } else {
-          datacard.totalwaitingapprove = 0;
+          datacard.totalWaitingNewStudents = results[0].total;
         }
         console.log("API datacard 0 :" + JSON.stringify(datacard));
         res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
