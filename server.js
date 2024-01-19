@@ -143,18 +143,19 @@ app.post('/register', (req, res) => {
 
   app.post('/approveFamilyMember', (req, res) => {
     try {
-      const { childid, familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
-      const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
-                    ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
-          db.query(deleteQuery, [childid], (err))
-          res.json({ success: true, message: 'Family member approve successfully' });
-        }
-      });
+      const { apprObj } = req.body;
+        console.log("apprObj : " + JSON.stringify(apprObj));
+      // const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+      //               ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+      // db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
+      //   if (err) {
+      //     res.status(500).send(err);
+      //   } else {
+      //     const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+      //     db.query(deleteQuery, [childid], (err))
+      //     res.json({ success: true, message: 'Family member approve successfully' });
+      //   }
+      // });
     } catch (error) {
       console.log("addFamilyMember error : " + JSON.stringify(error));
       res.status(500).send(error);
