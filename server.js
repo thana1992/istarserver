@@ -173,6 +173,7 @@ app.post('/register', (req, res) => {
                   res.status(500).send(err);
                 } else {
                   const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+                  console.log("delete jfamilymember childid : " + apprObj.childid)
                   db.query(deleteQuery, [apprObj.childid], (err))
                   res.json({ success: true, message: 'Family member approve successfully' });
                 }
