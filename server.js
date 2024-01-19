@@ -25,7 +25,9 @@ db.connect(err => {
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://192.168.1.81:8080/'
+}));
 app.use(bodyParser.json());
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -158,9 +160,7 @@ app.post('/register', (req, res) => {
   });
 
   app.post('/approveFamilyMember', (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://192.168.1.81:8080');
-    res.header('Access-Control-Allow-Methods', 'POST');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
