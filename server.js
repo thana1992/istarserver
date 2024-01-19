@@ -32,11 +32,15 @@ app.use((req, res, next) => {
   // other headers...
   next();
 });
+
 app.get('/', function(req, res, next) {
   console.log("API called : " + req.path);
   res.send('Hello World from Istar API :) ');
   next();
 });
+
+
+
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
@@ -154,6 +158,9 @@ app.post('/register', (req, res) => {
   });
 
   app.post('/approveFamilyMember', (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'https://192.168.1.81:8080');
+    res.header('Access-Control-Allow-Methods', 'POST');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
