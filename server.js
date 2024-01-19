@@ -146,7 +146,7 @@ app.post('/register', (req, res) => {
         if (err) {
           res.status(500).send(err);
         } else {
-          res.json({ success: true, message: 'Family member was successfully added.<br>Please wait for approval from the admin.' });
+          res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
         }
       });
     } catch (error) {
@@ -201,6 +201,24 @@ app.post('/register', (req, res) => {
       });
     } catch (error) {
       console.log("addStudentByAdmin error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
+
+  app.post('/updateStudentByAdmin', (req, res) => {
+    try {
+      const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
+      const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?, courseid = ?, remaining = ? ' +
+                    ' WHERE familyid = ?');
+      db.query(query, [ firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid ], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.json({ success: true, message: 'Family member added successfully' });
+        }
+      });
+    } catch (error) {
+      console.log("updateStudentByAdmin error : " + JSON.stringify(error));
       res.status(500).send(error);
     }
   });
