@@ -3,7 +3,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const bcrypt = require('bcrypt');
+const crypto = require("crypto");
 
 const app = express();
 const port = 3000;
@@ -48,32 +48,30 @@ app.post('/login', (req, res) => {
       res.status(500).send(err);
     } else {
       if (results.length > 0) {
-        const user = results[0];
-        const userdata = {
-            username: results[0].username,
-            fullname: results[0].fullname,
-            address: results[0].address,
-            email: results[0].email,
-            mobileno: results[0].mobileno,
-            usertype: results[0].usertype,
-            familyid: results[0].familyid,
+        const storedPassword = results[0].password;
+
+        // Validate the client-side encrypted password
+        const clientEncryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
+
+        if (storedPassword === clientEncryptedPassword) {
+          res.status(200).json({ message: "Login successful" });
+          const user = results[0];
+          const userdata = {
+              username: results[0].username,
+              fullname: results[0].fullname,
+              address: results[0].address,
+              email: results[0].email,
+              mobileno: results[0].mobileno,
+              usertype: results[0].usertype,
+              familyid: results[0].familyid,
+          }
+          const logquery = 'INSERT INTO llogin (username) VALUES (?)';
+          db.query(logquery, [username]);
+          const token = jwt.sign({ userId: user.id, username: user.username }, 'your-secret-key', { expiresIn: '1h' });
+          res.json({ success: true, message: 'Login successful', token, userdata });
+        } else {
+          res.status(401).json({ message: "Invalid credentials" });
         }
-        const realpassword = results[0].userpassword;
-          console.log("Password : " + password);
-          console.log("realpassword : " + realpassword);
-          bcrypt.compare(password, realpassword, (err, match) => {
-            console.log("match : " + match);
-            if (match) {
-              const logquery = 'INSERT INTO llogin (username) VALUES (?)';
-              db.query(logquery, [username]);
-              const token = jwt.sign({ userId: user.id, username: user.username }, 'your-secret-key', { expiresIn: '1h' });
-              res.json({ success: true, message: 'Login successful', token, userdata });
-            } else {
-              res.json({ success: false, message: 'Username or Password is invalid' });
-            }
-          });
-      } else {
-        res.json({ success: false, message: 'Invalid credentials' });
       }
     }
   });
@@ -89,28 +87,23 @@ app.post('/register', (req, res) => {
 
       if (results.length > 0) {
         return res.json({ success: false, message: 'Username is already taken' });
+      } else {
+        const encryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
+        const query = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        db.query(query, [username, encryptedPassword, fullname, address, email, mobileno, lineid], (err) => {
+          if (err) {
+            res.status(500).send(err);
+          } else {
+            const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
+            db.query(createFamilyQuery, [username], (err2) => {
+                res.json({ success: true, message: 'User registered successfully' });
+                if(err2){
+                  res.status(500).send(err2);
+                }
+            });
+          }
+        });
       }
-      bcrypt.hash(password, 10, (err, hashedPassword) => {
-        console.log("hashedPassword : " + hashedPassword);
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          const query = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
-          db.query(query, [username, hashedPassword, fullname, address, email, mobileno, lineid], (err) => {
-            if (err) {
-              res.status(500).send(err);
-            } else {
-              const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-              db.query(createFamilyQuery, [username], (err2) => {
-                  res.json({ success: true, message: 'User registered successfully' });
-                  if(err2){
-                    res.status(500).send(err2);
-                  }
-              });
-            }
-          });
-        }
-      });
     });
   });
 
