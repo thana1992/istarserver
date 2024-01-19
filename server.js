@@ -3,8 +3,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const crypto = require("crypto");
-
+const crypto = require('crypto');
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
@@ -40,6 +39,7 @@ app.get('/', function(req, res, next) {
 });
 
 app.post('/login', (req, res) => {
+  console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
 
@@ -48,13 +48,10 @@ app.post('/login', (req, res) => {
       res.status(500).send(err);
     } else {
       if (results.length > 0) {
-        const storedPassword = results[0].password;
-
-        // Validate the client-side encrypted password
-        const clientEncryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
-
-        if (storedPassword === clientEncryptedPassword) {
-          res.status(200).json({ message: "Login successful" });
+        const storedPassword = results[0].userpassword;
+        //console.log("storedPassword : " + storedPassword);
+        if (storedPassword === password) {
+          //res.status(200).json({ message: "Login successful" });
           const user = results[0];
           const userdata = {
               username: results[0].username,
@@ -68,10 +65,13 @@ app.post('/login', (req, res) => {
           const logquery = 'INSERT INTO llogin (username) VALUES (?)';
           db.query(logquery, [username]);
           const token = jwt.sign({ userId: user.id, username: user.username }, 'your-secret-key', { expiresIn: '1h' });
-          res.json({ success: true, message: 'Login successful', token, userdata });
+          //res.json({ success: true, message: 'Login successful', token, userdata });
+          res.status(200).json({ success: true, message: 'Login successful', token, userdata });
         } else {
           res.status(401).json({ message: "Invalid credentials" });
         }
+      }else{
+        res.status(401).json({ message: "Invalid credentials" });
       }
     }
   });
@@ -88,9 +88,9 @@ app.post('/register', (req, res) => {
       if (results.length > 0) {
         return res.json({ success: false, message: 'Username is already taken' });
       } else {
-        const encryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
+        //const encryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
         const query = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
-        db.query(query, [username, encryptedPassword, fullname, address, email, mobileno, lineid], (err) => {
+        db.query(query, [username, password, fullname, address, email, mobileno, lineid], (err) => {
           if (err) {
             res.status(500).send(err);
           } else {
