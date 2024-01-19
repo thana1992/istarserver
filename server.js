@@ -25,15 +25,13 @@ db.connect(err => {
   }
 });
 
-app.use(cors({
-  origin: 'http://192.168.1.81:8080/'
-}));
 var allowedOrigins = ['https://wild-rose-pigeon-tutu.cyclic.app',
                       'http://192.168.1.81:8080'];
 app.use(cors({
   origin: function(origin, callback){
     // allow requests with no origin 
     // (like mobile apps or curl requests)
+    console.logs("request form :" + origin)
     if(!origin) return callback(null, true);
     if(allowedOrigins.indexOf(origin) === -1){
       var msg = 'The CORS policy for this site does not ' +
