@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
@@ -7,12 +8,14 @@ const bcrypt = require('bcrypt');
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
-const db = mysql.createConnection({
-  host: '0.0.0.0',
-  user: 'root',
-  password: 'password',
-  database: 'istar',
-});
+// const db = mysql.createConnection({
+//   host: '0.0.0.0',
+//   user: 'root',
+//   password: 'password',
+//   database: 'istar',
+// });
+
+const db = mysql.createConnection(process.env.DATABASE_URL)
 
 db.connect(err => {
   if (err) {
@@ -24,7 +27,16 @@ db.connect(err => {
 
 app.use(cors());
 app.use(bodyParser.json());
-
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  // other headers...
+  next();
+});
+// app.get(/.*/, function(req, res, next) {
+//   console.log("API called : " + req.path);
+//   res.send('Hello World from Istar API  ' + req.path);
+//   next();
+// });
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
@@ -507,15 +519,19 @@ app.post('/register', (req, res) => {
   app.get("/getTotalStudents", (req, res) => {
     const query = 'select count(*) as total from tfamilymember';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Students successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Students', results });
-      }
+      try{
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Students successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Students', results });
+        }
 
-      if(err){
-        res.status(500).send(err);
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("error on getTotalStudents : " + JSON.stringify(error));
       }
     });
   });
@@ -542,33 +558,42 @@ app.post('/register', (req, res) => {
   });
 
   app.get("/getTotalBookingToday", (req, res) => {
-    const query = 'select count(*) as total from treservation where classdate = curdate()';
-    db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Reservation Today successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Reservation Today', results });
-      }
-
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+      const query = 'select count(*) as total from treservation where classdate = curdate()';
+      db.query(query, (err, results) => {
+        console.log("API getTotalBookingToday result :" + JSON.stringify(results));
+        console.log("API getTotalBookingToday error :" + JSON.stringify(err));
+        try{
+          if(err){
+            res.status(500).send(err);
+          } else if(results.length > 0){
+            res.json({ success: true, message: 'Get Total Reservation Today successful', results });
+          } else {
+            let results = [{ total: 0 }];
+            res.json({ success: true, message: 'No Total Reservation Today', results });
+          }
+        } catch (error) {
+          console.log("API getTotalBookingToday error :" + JSON.stringify(err));
+        }
+      });
+    
   });
 
   app.get("/getTotalBookingTomorrow", (req, res) => {
     const query = 'select count(*) as total from treservation where classdate = curdate()+1';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Reservation Tomorrow successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Reservation Tomorrow', results });
-      }
+      try {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Reservation Tomorrow successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Reservation Tomorrow', results });
+        }
 
-      if(err){
-        res.status(500).send(err);
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API getTotalBookingTomorrow error :" + JSON.stringify(err));
       }
     });
   });
@@ -576,15 +601,18 @@ app.post('/register', (req, res) => {
   app.get("/getTotalWaitingApprove", (req, res) => {
     const query = 'select count(*) as total from jfamilymember';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
-      } else {
-        let results = [{ total: 0 }];
-        res.json({ success: true, message: 'No Total Waiting Approve', results });
-      }
-
-      if(err){
-        res.status(500).send(err);
+      try {
+        if(err){
+          res.status(500).send(err);
+        } else if(results.length > 0){
+          res.json({ success: true, message: 'Get Total Waiting Approve successful', results });
+        } else {
+          let results = [{ total: 0 }];
+          res.json({ success: true, message: 'No Total Waiting Approve', results });
+        }
+        
+      } catch (error) {
+        console.log("API getTotalWaitingApprove error :" + JSON.stringify(err));
       }
     });
   });
