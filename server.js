@@ -155,7 +155,7 @@ app.post('/register', (req, res) => {
     }
   });
 
-  app.post('/approveFamilyMember', (req, res) => {
+  app.post('/approveNewStudent', (req, res) => {
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
@@ -180,7 +180,7 @@ app.post('/register', (req, res) => {
         });
       }
     } catch (error) {
-      console.log("addFamilyMember error : " + JSON.stringify(error));
+      console.log("approveNewStudent error : " + JSON.stringify(error));
       res.status(500).send(error);
     }
   });
