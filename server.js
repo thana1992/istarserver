@@ -657,7 +657,8 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.get("/refreshCardDashboard", verifyToken, (req, res) => {
+  app.post("/refreshCardDashboard", verifyToken, (req, res) => {
+    const { today, tomorrow } = req.body;
     const query = 'select count(*) as total from tfamilymember';
     var datacard = {
       totalStudents: 0,
@@ -681,8 +682,8 @@ app.post('/register', async (req, res) => {
       }
     });
 
-    const query2 = 'select count(*) as total from treservation where classdate = curdate()';
-    db.query(query2, (err, results) => {
+    const query2 = 'select count(*) as total from treservation where classdate = ?';
+    db.query(query2, [today], (err, results) => {
       try {
         if(results.length > 0){
           datacard.totalBookingToday = results[0].total;
@@ -696,8 +697,8 @@ app.post('/register', async (req, res) => {
       }
     });
 
-    const query3 = 'select count(*) as total from treservation where classdate = curdate()+1';
-    db.query(query3, (err, results) => {
+    const query3 = 'select count(*) as total from treservation where classdate = ?';
+    db.query(query3, [tomorrow], (err, results) => {
       try {
         if(results.length > 0){
           datacard.totalBookingTomorrow = results[0].total;
