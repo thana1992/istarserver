@@ -336,7 +336,7 @@ app.post('/register', async (req, res) => {
           }else if (results.length > 0) {
             const count = results[0].count;
             if (count >= maxperson) {
-              return res.json({ success: false, message: 'ขอโทษค่ะ คลาสที่ท่านเลือกเต็มแล้ว' });
+              return res.json({ success: false, message: 'Sorry, This class is full' });
             }else{
               const checkRemainingQuery = 'select remaining from tfamilymember where childid = ?';
               db.query(checkRemainingQuery, [childid], (err, results) => {
@@ -641,6 +641,18 @@ app.post('/register', async (req, res) => {
       } catch (error) {
         console.log("API getReservationList error :" + JSON.stringify(err));
         res.status(500).send(err);
+      }
+    });
+  });
+
+  app.post("/deleteReservationByAdmin", verifyToken, (req, res) => {
+    const { reservationid } = req.body;
+    const query = 'DELETE FROM treservation WHERE reservationid = ?';
+    db.query(query, [reservationid], (err) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.json({ success: true, message: 'Reservation canceled successfully' });
       }
     });
   });
