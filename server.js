@@ -7,14 +7,34 @@ const crypto = require('crypto');
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
-// const db = mysql.createConnection({
-//   host: '0.0.0.0',
-//   user: 'root',
-//   password: 'password',
-//   database: 'istar',
-// });
-
+const SECRET_KEY = "your-secret-key";
 const db = mysql.createConnection(process.env.DATABASE_URL)
+const activeSessions = [];
+// Middleware for verifying the token
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization; // Assuming the token is included in the Authorization header
+  console.log('Received token:', token);
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  jwt.verify(token.replace('Bearer ', ''), SECRET_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: 'Session expried please login again' });
+    }
+
+    // Check if the user is already in activeSessions
+    const existingUser = activeSessions.find((user) => user.username === decoded.username);
+
+    if (!existingUser) {
+      // Add the decoded user information to the activeSessions array
+      activeSessions.push(decoded);
+    }
+    // Attach the decoded user information to the request for use in route handlers
+    req.user = decoded;
+    next();
+  });
+};
 
 db.connect(err => {
   if (err) {
@@ -38,7 +58,24 @@ app.get('/', function(req, res, next) {
   next();
 });
 
-app.post('/login', (req, res) => {
+app.post('/verifyToken', verifyToken, (req, res) => {
+  // The token has been successfully verified, and you can access the user information in req.user
+  // Perform actions related to creating the component
+
+  res.json({ success: true, message: 'verifyToken successfully' });
+});
+
+app.get('/checkToken', (req, res) => {
+  // Token is valid, return information about the token
+  activeSessions.forEach(item => {
+    let iat = new Date(item.iat * 1000)
+    let exp = new Date(item.exp * 1000)
+    console.log(item.username + " : " + iat.toLocaleString() + " : " + exp.toLocaleString())
+  });
+  res.json({ activeSessions });
+});
+
+app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
@@ -62,10 +99,18 @@ app.post('/login', (req, res) => {
               usertype: results[0].usertype,
               familyid: results[0].familyid,
           }
+          if (userdata.usertype == '1') {
+            const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+            res.json({ success: true, message: 'Login successful', token, userdata });
+          }else{ 
+            const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
+            res.json({ success: true, message: 'Login successful', token, userdata });
+          }
+
           const logquery = 'INSERT INTO llogin (username) VALUES (?)';
           db.query(logquery, [username]);
-          const token = jwt.sign({ userId: user.id, username: user.username }, 'your-secret-key', { expiresIn: '1h' });
-          res.json({ success: true, message: 'Login successful', token, userdata });
+          
+          
         } else {
           res.json({ success: false, message: 'password is invalid' });
         }
@@ -76,7 +121,19 @@ app.post('/login', (req, res) => {
   });
 });
 
-app.post('/register', (req, res) => {
+app.post('/logout', verifyToken, (req, res) => {
+  // Remove the user from activeSessions
+  const userIndex = activeSessions.findIndex((user) => user.username === req.user.username);
+  if (userIndex !== -1) {
+    activeSessions.splice(userIndex, 1);
+  }
+
+  // Optionally, you can add more cleanup logic here
+
+  res.json({ success: true, message: 'Logout successful' });
+});
+
+app.post('/register', async (req, res) => {
     const { username, password, fullname, address, email, mobileno, lineid } = req.body;
     const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
     db.query(checkUsernameQuery, [username], (err, results) => {
@@ -107,7 +164,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post("/getFamilyMember", (req, res) => {
+  app.post("/getFamilyMember", verifyToken, (req, res) => {
     const { familyid } = req.body;
     const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, a.courseid, b.coursename, b.course_shortname' +
                     ' from tfamilymember a ' +
@@ -130,7 +187,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/addFamilyMember', (req, res) => {
+  app.post('/addFamilyMember', verifyToken, (req, res) => {
     try {
       const { familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
       const query = 'INSERT INTO jfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, photo) ' +
@@ -148,7 +205,7 @@ app.post('/register', (req, res) => {
     }
   });
 
-  app.post('/approveNewStudent', (req, res) => {
+  app.post('/approveNewStudent', verifyToken, (req, res) => {
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
@@ -180,7 +237,7 @@ app.post('/register', (req, res) => {
     }
   });
 
-  app.post('/addStudentByAdmin', (req, res) => {
+  app.post('/addStudentByAdmin', verifyToken, (req, res) => {
     try {
       const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
       const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
@@ -198,11 +255,11 @@ app.post('/register', (req, res) => {
     }
   });
 
-  app.post('/updateStudentByAdmin', (req, res) => {
+  app.post('/updateStudentByAdmin', verifyToken, (req, res) => {
     try {
       const { familyid, childid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
-      const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?, courseid = ?, remaining = ? ' +
-                    ' WHERE familyid = ?' +
+      const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
+                    ' courseid = ?, remaining = ?, familyid = ?' +
                     ' AND childid = ?';
       db.query(query, [ firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid, childid ], (err) => {
         if (err) {
@@ -217,7 +274,7 @@ app.post('/register', (req, res) => {
     }
   });
 
-  app.post('/deleteFamilyMember', (req, res) => {
+  app.post('/deleteFamilyMember', verifyToken, (req, res) => {
     const { familyid, childid } = req.body;
     const queryDeleteTfamilymember = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
     db.query(queryDeleteTfamilymember, [familyid, childid], (err) => {
@@ -231,7 +288,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/getMemberInfo', (req, res) => {
+  app.post('/getMemberInfo', verifyToken, (req, res) => {
     const { childid } = req.body;
     const query = 'SELECT * FROM tfamilymember WHERE childid = ?';
     db.query(query, [childid], (err, infomation) => {
@@ -247,7 +304,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/getMemberReservationDetail', (req, res) => {
+  app.post('/getMemberReservationDetail', verifyToken, (req, res) => {
     const { childid } = req.body;
     const query = 'SELECT * FROM treservation WHERE childid = ? order by classdate asc';
     db.query(query, [childid], (err, results) => {
@@ -263,7 +320,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/createReservation', (req, res) => {
+  app.post('/createReservation', verifyToken, (req, res) => {
     console.log("addReservation : " + JSON.stringify(req.body));
     const { courseid, classid, classday, classdate, classtime, childid } = req.body;
     let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
@@ -325,7 +382,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/deleteReservation', (req, res) => {
+  app.post('/deleteReservation', verifyToken, (req, res) => {
     const { reservationid } = req.body;
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
     db.query(query, [reservationid], (err) => {
@@ -337,7 +394,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/checkDuplicateReservation', (req, res) => {
+  app.post('/checkDuplicateReservation', verifyToken, (req, res) => {
     const { childid, classdate } = req.body;
     const query = 'SELECT * FROM treservation WHERE childid = ? and classdate = ?';
     db.query(query, [childid, classdate], (err, results) => {
@@ -353,7 +410,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get('/getAllCourses', (req, res) => {
+  app.get('/getAllCourses', verifyToken, (req, res) => {
     const query = 'SELECT * FROM tcourse';
     db.query(query, (err, results) => {
       if(results.length > 0){
@@ -368,7 +425,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/addCourse', (req, res) => {
+  app.post('/addCourse', verifyToken, (req, res) => {
     const { coursename, course_shortname } = req.body;
     const query = 'INSERT INTO tcourse (coursename, course_shortname) VALUES (?, ?)';
     db.query(query, [coursename, course_shortname], (err) => {
@@ -380,7 +437,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/updateCourse', (req, res) => {
+  app.post('/updateCourse', verifyToken, (req, res) => {
     const { coursename, course_shortname, courseid } = req.body;
     const query = 'UPDATE tcourse SET coursename = ?, course_shortname = ? WHERE courseid = ?';
     db.query(query, [ coursename, course_shortname, courseid ], (err) => {
@@ -392,7 +449,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/deleteCourse', (req, res) => {
+  app.post('/deleteCourse', verifyToken, (req, res) => {
     const { courseid } = req.body;
     const deleteTcouseQuery = 'DELETE FROM tcourse WHERE courseid = ?';
     db.query(deleteTcouseQuery, [courseid], (err) => {
@@ -411,7 +468,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get('/getAllClasses', (req, res) => {
+  app.get('/getAllClasses', verifyToken, (req, res) => {
     const { courseid } = req.body;
     const query = 'SELECT b.courseid, b.coursename, a.* FROM tclass a inner join tcourse b on a.courseid = b.courseid order by b.coursename , a.classday ';
     db.query(query, [courseid], (err, results) => {
@@ -427,7 +484,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/addClass', (req, res) => {
+  app.post('/addClass', verifyToken, (req, res) => {
     const { courseid, classday, classtime, maxperson } = req.body;
     const query = 'INSERT INTO tclass (courseid, classday, classtime, maxperson) VALUES (?, ?, ?, ?)';
     db.query(query, [courseid, classday, classtime, maxperson], (err) => {
@@ -439,7 +496,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/updateClass', (req, res) => {
+  app.post('/updateClass', verifyToken, (req, res) => {
     const { classid, courseid, classday, classtime, maxperson } = req.body;
     const query = 'UPDATE tclass SET courseid = ?, classday = ?, classtime = ?, maxperson = ? WHERE classid = ?';
     db.query(query, [courseid, classday, classtime, maxperson, classid], (err) => {
@@ -451,7 +508,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/deleteClass', (req, res) => {
+  app.post('/deleteClass', verifyToken, (req, res) => {
     const { classid } = req.body;
     const query = 'DELETE FROM tclass WHERE classid = ?';
     db.query(query, [classid], (err) => {
@@ -467,7 +524,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post('/getClassTime', (req, res) => {
+  app.post('/getClassTime', verifyToken, (req, res) => {
     const { classdate, classday, courseid } = req.body;
     const query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available '+
     'FROM tclass a ' +
@@ -495,7 +552,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/getNewStudentList", (req, res) => {
+  app.get("/getNewStudentList", verifyToken, (req, res) => {
     const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
     db.query(query, (err, results) => {
       if(results.length > 0){
@@ -511,7 +568,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/courseLookup", (req, res) => {
+  app.get("/courseLookup", verifyToken, (req, res) => {
     const query = 'SELECT * FROM tcourse';
     db.query(query, (err, results) => {
       if(results.length > 0){
@@ -526,7 +583,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/familyLookup", (req, res) => {
+  app.get("/familyLookup", verifyToken, (req, res) => {
     const query = 'SELECT * FROM tfamily';
     db.query(query, (err, results) => {
       if(results.length > 0){
@@ -541,7 +598,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/getStudentList", (req, res) => {
+  app.get("/getStudentList", verifyToken, (req, res) => {
     const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
     db.query(query, (err, results) => {
       console.log("API getStudentlist result :" + JSON.stringify(results));
@@ -562,7 +619,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.post("/getReservationList", (req, res) => {
+  app.post("/getReservationList", verifyToken, (req, res) => {
     const { classdate } = req.body;
     const query = 'SELECT a.*, b.coursename, CONCAT(c.firstname, \' \', c.lastname, \' (\', c.nickname,\')\') fullname ' +
                   'FROM treservation a left join tcourse b on a.courseid = b.courseid ' +
@@ -588,7 +645,7 @@ app.post('/register', (req, res) => {
     });
   });
 
-  app.get("/refreshCardDashboard", (req, res) => {
+  app.get("/refreshCardDashboard", verifyToken, (req, res) => {
     const query = 'select count(*) as total from tfamilymember';
     var datacard = {
       totalStudents: 0,
