@@ -260,7 +260,7 @@ app.post('/register', async (req, res) => {
       const { familyid, childid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
       const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
                     ' courseid = ?, remaining = ?, familyid = ?' +
-                    ' AND childid = ?';
+                    ' WHERE childid = ?';
       db.query(query, [ firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid, childid ], (err) => {
         if (err) {
           res.status(500).send(err);
