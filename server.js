@@ -3,7 +3,6 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const crypto = require('crypto');
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
@@ -77,6 +76,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
+    console.log("register : " + JSON.stringify(req.body));
     const { username, password, fullname, address, email, mobileno, lineid } = req.body;
     const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
     db.query(checkUsernameQuery, [username], (err, results) => {
@@ -87,7 +87,6 @@ app.post('/register', (req, res) => {
       if (results.length > 0) {
         return res.json({ success: false, message: 'Username is already taken' });
       } else {
-        //const encryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
         const query = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
         db.query(query, [username, password, fullname, address, email, mobileno, lineid], (err) => {
           if (err) {
