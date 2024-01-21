@@ -535,6 +535,8 @@ app.post('/register', async (req, res) => {
       if (err) {
         res.status(500).send(err);
       } else {
+        const query2 = 'DELETE FROM treservation WHERE classid = ?';
+        db.query(query2, [classid]);
         res.json({ success: true, message: 'Class deleted successfully' });
       }
 
