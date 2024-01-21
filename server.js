@@ -237,6 +237,26 @@ app.post('/register', async (req, res) => {
     }
   });
 
+  app.post('/deleteNewStudent', verifyToken, (req, res) => {
+    try {
+      const { childid } = req.body;
+      console.log("deleteNewStudent : " + childid);
+      const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+      console.log("delete jfamilymember childid : " + childid)
+      db.query(deleteQuery, [childid], (err) => {
+        if(err) {
+            res.status(500).send(err);
+        } else {
+            res.json({ success: true, message: 'New student delete successfully' });
+        }
+      })
+      
+    } catch (error) {
+      console.log("deleteNewStudent error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
+
   app.post('/addStudentByAdmin', verifyToken, (req, res) => {
     try {
       const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
