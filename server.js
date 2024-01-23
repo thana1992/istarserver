@@ -769,7 +769,7 @@ app.post('/register', async (req, res) => {
     // });
   });
 
-  app.get('/getBookingList', async (req, res) => {
+  app.get('/getBookingList', verifyToken, async (req, res) => {
     try {
         const { classday, classdate } = req.body;
         const query = 'SELECT DISTINCT classtime, courseid FROM tclass where classday = ? order by classtime'
