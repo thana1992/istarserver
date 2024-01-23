@@ -821,7 +821,6 @@ app.post('/register', async (req, res) => {
                 } else {
                     bookinglist[element.classtime] = [];
                 }
-                console.log("bookinglist end : " + JSON.stringify(bookinglist));
             }
             console.log("bookinglist end 2 : " + JSON.stringify(bookinglist));
             res.json({ success: true, message: 'Get Booking list successful', bookinglist });
