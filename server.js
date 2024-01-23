@@ -820,7 +820,7 @@ app.post('/register', async (req, res) => {
                     bookinglist[element.class_label] = studentlist;
                     console.log("bookinglist : " + JSON.stringify(bookinglist))
                 } else {
-                    bookinglist[element.classtime] = [];
+                    bookinglist[element.class_label] = [];
                 }
             }
             console.log("bookinglist end 2 : " + JSON.stringify(bookinglist));
