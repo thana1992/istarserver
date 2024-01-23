@@ -773,7 +773,7 @@ app.post('/register', async (req, res) => {
     console.log("getBookingList : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT classtime, courseid FROM tclass where classday = ? order by classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
         const results = await new Promise((resolve, reject) => {
             db.query(query, [ classday ], (err, results) => {
                 if (err) {
@@ -793,7 +793,7 @@ app.post('/register', async (req, res) => {
                 const element = results[index];
                 const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname  ' +
                     'FROM treservation a ' +
-                    'left join tcourse b on  a.courseid = b.courseid ' +
+                    'join tcourse b on  a.courseid = b.courseid ' +
                     'left join tfamilymember c on a.childid = c.childid ' +
                     'WHERE a.classdate = ? ' +
                     'AND a.classtime = ? ' +
@@ -817,10 +817,10 @@ app.post('/register', async (req, res) => {
                         const element2 = results2[index2];
                         studentlist.push(element2.nickname);
                     }
-                    bookinglist[element.classtime+'('+element.course_shortname+')'] = studentlist;
+                    bookinglist[element.class_label] = studentlist;
                     console.log("bookinglist : " + JSON.stringify(bookinglist))
                 } else {
-                    bookinglist[element.classtime+'('+element.course_shortname+')'] = [];
+                    bookinglist[element.class_label] = [];
                 }
             }
             console.log("bookinglist end 2 : " + JSON.stringify(bookinglist));
