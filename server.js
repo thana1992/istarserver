@@ -773,7 +773,7 @@ app.post('/register', async (req, res) => {
     console.log("getBookingList : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT a.classtime, a.courseid, b.course_shortname FROM tclass a left join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, b.course_shortname FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
         const results = await new Promise((resolve, reject) => {
             db.query(query, [ classday ], (err, results) => {
                 if (err) {
@@ -793,7 +793,7 @@ app.post('/register', async (req, res) => {
                 const element = results[index];
                 const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname  ' +
                     'FROM treservation a ' +
-                    'left join tcourse b on  a.courseid = b.courseid ' +
+                    'join tcourse b on  a.courseid = b.courseid ' +
                     'left join tfamilymember c on a.childid = c.childid ' +
                     'WHERE a.classdate = ? ' +
                     'AND a.classtime = ? ' +
