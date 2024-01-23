@@ -608,12 +608,15 @@ app.post('/register', async (req, res) => {
   app.get("/familyLookup", verifyToken, (req, res) => {
     const query = 'SELECT * FROM tfamily';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Family Lookup successful', results });
+      if(results) {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Family Lookup successful', results });
+        } else {
+          res.json({ success: true, message: 'No Family Lookup' });
+        }
       } else {
         res.json({ success: true, message: 'No Family Lookup' });
       }
-
       if(err){
         res.status(500).send(err);
       }
