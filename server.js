@@ -773,7 +773,7 @@ app.post('/register', async (req, res) => {
     console.log("getBookingList : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT a.classtime, a.courseid, b.course_shortname FROM tclass left join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, b.course_shortname FROM tclass a left join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
         const results = await new Promise((resolve, reject) => {
             db.query(query, [ classday ], (err, results) => {
                 if (err) {
