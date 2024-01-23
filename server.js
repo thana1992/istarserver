@@ -792,6 +792,7 @@ app.post('/register', async (req, res) => {
                 const element = results[index];
                 const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname  ' +
                     'FROM treservation a ' +
+                    'left join tcourse b on  a.courseid = b.courseid ' +
                     'left join tfamilymember c on a.childid = c.childid ' +
                     'WHERE a.classdate = ? ' +
                     'AND a.classtime = ? ' +
