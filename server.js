@@ -769,46 +769,70 @@ app.post('/register', async (req, res) => {
     // });
   });
 
-  app.get('/getBookingList', (req, res) => {
-    const { classday, classdate } = req.body;
-    const query = 'SELECT DISTINCT classtime, courseid FROM tclass where classday = \'Tuesday\' order by classtime'
-    db.query(query, (err, results) => {
-      let bookinglist = {};
-      console.log("bookinglist : " + JSON.stringify(results));
-      if(results.length > 0){
-        for (let index = 0; index < results.length; index++) {
-          let this_class = [];
-          const element = results[index];
-          const query2 = 'SELECT a.classtime, c.nickname ' +
-            'FROM treservation a '+
-            'left join tfamilymember c on a.childid = c.childid '+
-            'WHERE a.classdate = \'2024-01-23\' '+
-            'AND a.classtime = ? ' +
-            'order by a.classtime asc';
-          db.query(query2, [  element.classtime], (err, results2) => {
-            console.log("bookinglist 2 : " + JSON.stringify(results2));
-            if(results2.length > 0) {
-              let studentlist = [];
-              for (let index2 = 0; index2 < results2.length; index2++) {
-                console.log(element.classtime + " : " + results2[index2].nickname)
-                const element2 = results2[index2];
-                studentlist.push(element2.nickname);
-              }
-              console.log("bookinglist : " + JSON.stringify(bookinglist))
-            }
-          });
-          //console.log("bookinglist : " + JSON.stringify(bookinglist));
-        }
-        res.json({ success: true, message: 'Get Booking list successful', bookinglist });
-      } else {
-        res.json({ success: false, message: 'No Booking list'});
-      }
+  app.get('/getBookingList', async (req, res) => {
+    try {
+        const { classday, classdate } = req.body;
+        const query = 'SELECT DISTINCT classtime, courseid FROM tclass where classday = ? order by classtime'
+        const results = await new Promise((resolve, reject) => {
+            db.query(query, [ classday ], (err, results) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
 
-      if(err){
+        let bookinglist = {};
+        console.log("results : " + JSON.stringify(results));
+
+        if (results.length > 0) {
+            for (let index = 0; index < results.length; index++) {
+                let this_class = [];
+                const element = results[index];
+                const query2 = 'SELECT a.classtime, c.nickname ' +
+                    'FROM treservation a ' +
+                    'left join tfamilymember c on a.childid = c.childid ' +
+                    'WHERE a.classdate = ? ' +
+                    'AND a.classtime = ? ' +
+                    'order by a.classtime asc';
+
+                const results2 = await new Promise((resolve, reject) => {
+                    db.query(query2, [ classdate, element.classtime ], (err, results2) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(results2);
+                        }
+                    });
+                });
+
+                console.log("results2 : " + JSON.stringify(results2));
+
+                if (results2.length > 0) {
+                    let studentlist = [];
+                    for (let index2 = 0; index2 < results2.length; index2++) {
+                        console.log(element.classtime + " : " + results2[index2].nickname)
+                        const element2 = results2[index2];
+                        studentlist.push(element2.nickname);
+                    }
+                    bookinglist[element.classtime] = studentlist;
+                    console.log("bookinglist : " + JSON.stringify(bookinglist))
+                } else {
+                    bookinglist[element.classtime] = [];
+                }
+                console.log("bookinglist end : " + JSON.stringify(bookinglist));
+            }
+            console.log("bookinglist end 2 : " + JSON.stringify(bookinglist));
+            res.json({ success: true, message: 'Get Booking list successful', bookinglist });
+        } else {
+            res.json({ success: true, message: 'No Booking list' });
+        }
+    } catch (err) {
         res.status(500).send(err);
-      }
-    });
-  });
+    }
+});
+
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
