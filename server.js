@@ -225,12 +225,12 @@ app.post('/register', async (req, res) => {
                   const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
                   console.log("delete jfamilymember childid : " + item.childid)
                   db.query(deleteQuery, [item.childid], (err))
-                  res.json({ success: true, message: 'Family member approve successfully' });
                 }
               });
           }
         });
       }
+      res.json({ success: true, message: 'Family member approve successfully' });
     } catch (error) {
       console.log("approveNewStudent error 2 : " + JSON.stringify(error));
       res.status(500).send(error);
