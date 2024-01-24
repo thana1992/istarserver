@@ -205,37 +205,79 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post('/approveNewStudent', verifyToken, (req, res) => {
+  // app.post('/approveNewStudent', verifyToken, (req, res) => {
+  //   try {
+  //     const { apprObj } = req.body;
+  //     console.log("apprObj : " + JSON.stringify(apprObj));
+  //     for (const item of apprObj) {
+  //       const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
+  //       db.query(getQuery, [item.childid], (err, results) => {
+  //         if (err) {
+  //           console.log("approveNewStudent error 1 : " + JSON.stringify(err));
+  //           res.status(500).send(err);
+  //         } else {
+  //           const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+  //                         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+  //             db.query(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining], (err) => {
+  //               if (err) {
+  //                 res.status(500).send(err);
+  //               } else {
+  //                 const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+  //                 console.log("delete jfamilymember childid : " + item.childid)
+  //                 db.query(deleteQuery, [item.childid], (err))
+  //               }
+  //             });
+  //         }
+  //       });
+  //     }
+  //     res.json({ success: true, message: 'Family member approve successfully' });
+  //   } catch (error) {
+  //     console.log("approveNewStudent error 2 : " + JSON.stringify(error));
+  //     res.status(500).send(error);
+  //   }
+  // });
+
+  app.post('/approveNewStudent', verifyToken, async (req, res) => {
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
+  
       for (const item of apprObj) {
         const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
-        db.query(getQuery, [item.childid], (err, results) => {
-          if (err) {
-            console.log("approveNewStudent error 1 : " + JSON.stringify(err));
-            res.status(500).send(err);
-          } else {
-            const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
-                          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-              db.query(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining], (err) => {
-                if (err) {
-                  res.status(500).send(err);
-                } else {
-                  const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
-                  console.log("delete jfamilymember childid : " + item.childid)
-                  db.query(deleteQuery, [item.childid], (err))
-                }
-              });
-          }
-        });
+        const results = await queryPromise(getQuery, [item.childid]);
+  
+        if (results.length > 0) {
+          const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+  
+          await queryPromise(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
+  
+          const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+          console.log("delete jfamilymember childid : " + item.childid);
+          await queryPromise(deleteQuery, [item.childid]);
+        }
       }
+  
       res.json({ success: true, message: 'Family member approve successfully' });
     } catch (error) {
-      console.log("approveNewStudent error 2 : " + JSON.stringify(error));
+      console.log("approveNewStudent error: " + JSON.stringify(error));
       res.status(500).send(error);
     }
   });
+  
+  // Utility function to promisify the database queries
+  function queryPromise(query, params) {
+    return new Promise((resolve, reject) => {
+      db.query(query, params, (err, results) => {
+        if (err) {
+          console.log("Query error: " + JSON.stringify(err));
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  }  
 
   app.post('/deleteNewStudent', verifyToken, (req, res) => {
     try {
