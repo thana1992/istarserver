@@ -795,23 +795,6 @@ app.post('/register', async (req, res) => {
         res.status(500).send(error);
       }
     });
-
-    // const query5 = 'select count(*) as total from tcancelreservation';
-    // db.query(query5, (err, results) => {
-    //   try {
-    //     if(results.length > 0){
-    //       datacard.totalwaitingcancel = results[0].total;
-    //     } else {
-    //       datacard.totalwaitingcancel = 0;
-    //     }
-
-    //     if(err){
-    //       res.status(500).send(err);
-    //     }
-    //   } catch (error) {
-    //     console.log("API refreshCardDashboard tcancelreservation error :" + JSON.stringify(err));
-    //   }
-    // });
   });
 
   app.post('/getBookingList', verifyToken, async (req, res) => {
