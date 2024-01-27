@@ -667,7 +667,7 @@ app.post('/register', async (req, res) => {
 
   app.post("/studentLookup", verifyToken, (req, res) => {
     const { familyid } = req.body;
-    const query = 'SELECT * FROM tfamilymember'
+    const query = 'SELECT *, CONCAT(nickname, \' \', firstname, \' \', lastname) as name FROM tfamilymember'
     if(familyid !== null && familyid !== undefined && familyid !== '') {
       query = query + ' WHERE familyid = ?';
     }
