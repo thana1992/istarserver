@@ -665,7 +665,7 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.post("/getStudentLookup", verifyToken, (req, res) => {
+  app.post("/studentLookup", verifyToken, (req, res) => {
     const { familyid } = req.body;
     const query = 'SELECT * FROM tfamilymember'
     if(familyid !== null && familyid !== undefined && familyid !== '') {
