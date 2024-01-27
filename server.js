@@ -205,37 +205,79 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post('/approveNewStudent', verifyToken, (req, res) => {
+  // app.post('/approveNewStudent', verifyToken, (req, res) => {
+  //   try {
+  //     const { apprObj } = req.body;
+  //     console.log("apprObj : " + JSON.stringify(apprObj));
+  //     for (const item of apprObj) {
+  //       const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
+  //       db.query(getQuery, [item.childid], (err, results) => {
+  //         if (err) {
+  //           console.log("approveNewStudent error 1 : " + JSON.stringify(err));
+  //           res.status(500).send(err);
+  //         } else {
+  //           const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+  //                         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+  //             db.query(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining], (err) => {
+  //               if (err) {
+  //                 res.status(500).send(err);
+  //               } else {
+  //                 const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+  //                 console.log("delete jfamilymember childid : " + item.childid)
+  //                 db.query(deleteQuery, [item.childid], (err))
+  //               }
+  //             });
+  //         }
+  //       });
+  //     }
+  //     res.json({ success: true, message: 'Family member approve successfully' });
+  //   } catch (error) {
+  //     console.log("approveNewStudent error 2 : " + JSON.stringify(error));
+  //     res.status(500).send(error);
+  //   }
+  // });
+
+  app.post('/approveNewStudent', verifyToken, async (req, res) => {
     try {
       const { apprObj } = req.body;
       console.log("apprObj : " + JSON.stringify(apprObj));
+  
       for (const item of apprObj) {
         const getQuery = 'SELECT * FROM jfamilymember WHERE childid = ?';
-        db.query(getQuery, [item.childid], (err, results) => {
-          if (err) {
-            console.log("approveNewStudent error 1 : " + JSON.stringify(err));
-            res.status(500).send(err);
-          } else {
-            const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
-                          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-              db.query(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining], (err) => {
-                if (err) {
-                  res.status(500).send(err);
-                } else {
-                  const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
-                  console.log("delete jfamilymember childid : " + item.childid)
-                  db.query(deleteQuery, [item.childid], (err))
-                  res.json({ success: true, message: 'Family member approve successfully' });
-                }
-              });
-          }
-        });
+        const results = await queryPromise(getQuery, [item.childid]);
+  
+        if (results.length > 0) {
+          const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
+                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+  
+          await queryPromise(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
+  
+          const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+          console.log("delete jfamilymember childid : " + item.childid);
+          await queryPromise(deleteQuery, [item.childid]);
+        }
       }
+  
+      res.json({ success: true, message: 'Family member approve successfully' });
     } catch (error) {
-      console.log("approveNewStudent error 2 : " + JSON.stringify(error));
+      console.log("approveNewStudent error: " + JSON.stringify(error));
       res.status(500).send(error);
     }
   });
+  
+  // Utility function to promisify the database queries
+  function queryPromise(query, params) {
+    return new Promise((resolve, reject) => {
+      db.query(query, params, (err, results) => {
+        if (err) {
+          console.log("Query error: " + JSON.stringify(err));
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  }  
 
   app.post('/deleteNewStudent', verifyToken, (req, res) => {
     try {
@@ -608,12 +650,15 @@ app.post('/register', async (req, res) => {
   app.get("/familyLookup", verifyToken, (req, res) => {
     const query = 'SELECT * FROM tfamily';
     db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Family Lookup successful', results });
+      if(results) {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Family Lookup successful', results });
+        } else {
+          res.json({ success: true, message: 'No Family Lookup' });
+        }
       } else {
         res.json({ success: true, message: 'No Family Lookup' });
       }
-
       if(err){
         res.status(500).send(err);
       }
@@ -769,29 +814,13 @@ app.post('/register', async (req, res) => {
         res.status(500).send(error);
       }
     });
-
-    // const query5 = 'select count(*) as total from tcancelreservation';
-    // db.query(query5, (err, results) => {
-    //   try {
-    //     if(results.length > 0){
-    //       datacard.totalwaitingcancel = results[0].total;
-    //     } else {
-    //       datacard.totalwaitingcancel = 0;
-    //     }
-
-    //     if(err){
-    //       res.status(500).send(err);
-    //     }
-    //   } catch (error) {
-    //     console.log("API refreshCardDashboard tcancelreservation error :" + JSON.stringify(err));
-    //   }
-    // });
   });
 
   app.post('/getBookingList', verifyToken, async (req, res) => {
+    console.log("getBookingList : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT classtime, courseid FROM tclass where classday = ? order by classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
         const results = await new Promise((resolve, reject) => {
             db.query(query, [ classday ], (err, results) => {
                 if (err) {
@@ -809,15 +838,16 @@ app.post('/register', async (req, res) => {
             for (let index = 0; index < results.length; index++) {
                 let this_class = [];
                 const element = results[index];
-                const query2 = 'SELECT a.classtime, c.nickname ' +
+                const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname  ' +
                     'FROM treservation a ' +
+                    'join tcourse b on  a.courseid = b.courseid ' +
                     'left join tfamilymember c on a.childid = c.childid ' +
                     'WHERE a.classdate = ? ' +
-                    'AND a.classtime = ? ' +
+                    'AND a.classid = ? ' +
                     'order by a.classtime asc';
 
                 const results2 = await new Promise((resolve, reject) => {
-                    db.query(query2, [ classdate, element.classtime ], (err, results2) => {
+                    db.query(query2, [ classdate, element.classid ], (err, results2) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -831,14 +861,13 @@ app.post('/register', async (req, res) => {
                 if (results2.length > 0) {
                     let studentlist = [];
                     for (let index2 = 0; index2 < results2.length; index2++) {
-                        console.log(element.classtime + " : " + results2[index2].nickname)
                         const element2 = results2[index2];
                         studentlist.push(element2.nickname);
                     }
-                    bookinglist[element.classtime] = studentlist;
+                    bookinglist[element.class_label] = studentlist;
                     console.log("bookinglist : " + JSON.stringify(bookinglist))
                 } else {
-                    bookinglist[element.classtime] = [];
+                    bookinglist[element.class_label] = [];
                 }
             }
             console.log("bookinglist end 2 : " + JSON.stringify(bookinglist));
