@@ -860,7 +860,22 @@ function queryPromise(query, params) {
       }
     });
   });
-}  
+}
+
+function queryPromise(query) {
+  return new Promise((resolve, reject) => {
+    db.query(query, (err, results) => {
+      console.log("Query : " + query);
+      if (err) {
+        console.log("Query error: " + JSON.stringify(err));
+        reject(err);
+      } else {
+        console.log("Query results: " + JSON.stringify(results));
+        resolve(results);
+      }
+    });
+  });
+}
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
