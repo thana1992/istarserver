@@ -599,7 +599,7 @@ app.post('/register', async (req, res) => {
 
   app.get("/getNewStudentList", verifyToken, async (req, res) => {
     const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
-    const results = queryPromise(query, null);
+    const results = await queryPromise(query, null);
     if(results.length > 0){
       res.json({ success: true, message: 'Get New Students successful', results });
     } else {
