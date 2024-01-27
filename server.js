@@ -850,10 +850,12 @@ app.post('/register', async (req, res) => {
 function queryPromise(query, params) {
   return new Promise((resolve, reject) => {
     db.query(query, params, (err, results) => {
+      console.log("Query : " + query);
       if (err) {
         console.log("Query error: " + JSON.stringify(err));
         reject(err);
       } else {
+        console.log("Query results: " + JSON.stringify(results));
         resolve(results);
       }
     });
