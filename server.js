@@ -599,7 +599,7 @@ app.post('/register', async (req, res) => {
 
   app.get("/getNewStudentList", verifyToken, async (req, res) => {
     const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
-    const results = queryPromise(query);
+    const results = queryPromise(query, null);
     if(results.length > 0){
       res.json({ success: true, message: 'Get New Students successful', results });
     } else {
@@ -610,7 +610,7 @@ app.post('/register', async (req, res) => {
 
   app.get("/courseLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tcourse';
-    const results = await queryPromise(query);
+    const results = await queryPromise(query, null);
 
     if(results.length > 0){
       res.json({ success: true, message: 'Get Course Lookup successful', results });
@@ -621,7 +621,7 @@ app.post('/register', async (req, res) => {
 
   app.get("/familyLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tfamily';
-    const results = await queryPromise(query);
+    const results = await queryPromise(query, null);
 
     if(results) {
       if(results.length > 0){
@@ -850,21 +850,6 @@ app.post('/register', async (req, res) => {
 function queryPromise(query, params) {
   return new Promise((resolve, reject) => {
     db.query(query, params, (err, results) => {
-      console.log("Query : " + query);
-      if (err) {
-        console.log("Query error: " + JSON.stringify(err));
-        reject(err);
-      } else {
-        console.log("Query results: " + JSON.stringify(results));
-        resolve(results);
-      }
-    });
-  });
-}
-
-function queryPromise(query) {
-  return new Promise((resolve, reject) => {
-    db.query(query, (err, results) => {
       console.log("Query : " + query);
       if (err) {
         console.log("Query error: " + JSON.stringify(err));
