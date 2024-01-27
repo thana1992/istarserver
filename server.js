@@ -58,6 +58,20 @@ app.get('/', function(req, res, next) {
   next();
 });
 
+// Utility function to promisify the database queries
+function queryPromise(query, params) {
+  return new Promise((resolve, reject) => {
+    db.query(query, params, (err, results) => {
+      if (err) {
+        console.log("Query error: " + JSON.stringify(err));
+        reject(err);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}  
+
 app.post('/verifyToken', verifyToken, (req, res) => {
   // The token has been successfully verified, and you can access the user information in req.user
   // Perform actions related to creating the component
@@ -264,20 +278,6 @@ app.post('/register', async (req, res) => {
       res.status(500).send(error);
     }
   });
-  
-  // Utility function to promisify the database queries
-  function queryPromise(query, params) {
-    return new Promise((resolve, reject) => {
-      db.query(query, params, (err, results) => {
-        if (err) {
-          console.log("Query error: " + JSON.stringify(err));
-          reject(err);
-        } else {
-          resolve(results);
-        }
-      });
-    });
-  }  
 
   app.post('/deleteNewStudent', verifyToken, (req, res) => {
     try {
@@ -632,56 +632,46 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.get("/courseLookup", verifyToken, (req, res) => {
+  app.get("/courseLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tcourse';
-    db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Course Lookup successful', results });
-      } else {
-        res.json({ success: true, message: 'No Course Lookup' });
-      }
+    const results = await queryPromise(query, []);
 
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    if(results.length > 0){
+      res.json({ success: true, message: 'Get Course Lookup successful', results });
+    } else {
+      res.json({ success: true, message: 'No Course Lookup' });
+    }
   });
 
-  app.get("/familyLookup", verifyToken, (req, res) => {
+  app.get("/familyLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tfamily';
-    db.query(query, (err, results) => {
-      if(results) {
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Family Lookup successful', results });
-        } else {
-          res.json({ success: true, message: 'No Family Lookup' });
-        }
+    const results = await queryPromise(query, []);
+
+    if(results) {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Family Lookup successful', results });
       } else {
         res.json({ success: true, message: 'No Family Lookup' });
       }
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    } else {
+      res.json({ success: true, message: 'No Family Lookup' });
+    }
   });
 
-  app.post("/studentLookup", verifyToken, (req, res) => {
+  app.post("/studentLookup", verifyToken, async (req, res) => {
     const { familyid } = req.body;
     const query = 'SELECT *, CONCAT(nickname, \' \', firstname, \' \', lastname) as name FROM tfamilymember'
     if(familyid !== null && familyid !== undefined && familyid !== '') {
       query = query + ' WHERE familyid = ?';
     }
-    db.query(query, [familyid], (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Student Lookup successful', results });
-      } else {
-        res.json({ success: true, message: 'No Student Lookup' });
-      }
 
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    const results = await queryPromise(query, [familyid]);
+
+    if(results.length > 0){
+      res.json({ success: true, message: 'Get Student Lookup successful', results });
+    } else {
+      res.json({ success: true, message: 'No Student Lookup' });
+    }
   });
 
   app.get("/getStudentList", verifyToken, (req, res) => {
