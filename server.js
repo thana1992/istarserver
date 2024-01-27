@@ -58,20 +58,6 @@ app.get('/', function(req, res, next) {
   next();
 });
 
-// Utility function to promisify the database queries
-function queryPromise(query, params) {
-  return new Promise((resolve, reject) => {
-    db.query(query, params, (err, results) => {
-      if (err) {
-        console.log("Query error: " + JSON.stringify(err));
-        reject(err);
-      } else {
-        resolve(results);
-      }
-    });
-  });
-}  
-
 app.post('/verifyToken', verifyToken, (req, res) => {
   // The token has been successfully verified, and you can access the user information in req.user
   // Perform actions related to creating the component
@@ -616,20 +602,15 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.get("/getNewStudentList", verifyToken, (req, res) => {
+  app.get("/getNewStudentList", verifyToken, async (req, res) => {
     const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
-    db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get New Students successful', results });
-      } else {
-        let results = [];
-        res.json({ success: true, message: 'No New Students', results });
-      }
-
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    const results = queryPromise(query, []);
+    if(results.length > 0){
+      res.json({ success: true, message: 'Get New Students successful', results });
+    } else {
+      let results = [];
+      res.json({ success: true, message: 'No New Students', results });
+    }
   });
 
   app.get("/courseLookup", verifyToken, async (req, res) => {
@@ -870,6 +851,19 @@ app.post('/register', async (req, res) => {
     }
 });
 
+// Utility function to promisify the database queries
+function queryPromise(query, params) {
+  return new Promise((resolve, reject) => {
+    db.query(query, params, (err, results) => {
+      if (err) {
+        console.log("Query error: " + JSON.stringify(err));
+        reject(err);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}  
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
