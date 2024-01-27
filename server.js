@@ -620,6 +620,25 @@ app.post('/register', async (req, res) => {
     });
   });
 
+  app.post("/getStudentLookup", verifyToken, (req, res) => {
+    const { familyid } = req.body;
+    const query = 'SELECT * FROM tfamilymember'
+    if(familyid !== null && familyid !== undefined && familyid !== '') {
+      query = query + ' WHERE familyid = ?';
+    }
+    db.query(query, [familyid], (err, results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Student Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Student Lookup' });
+      }
+
+      if(err){
+        res.status(500).send(err);
+      }
+    });
+  }
+
   app.get("/getStudentList", verifyToken, (req, res) => {
     const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
     db.query(query, (err, results) => {
