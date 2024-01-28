@@ -336,6 +336,42 @@ app.post('/register', async (req, res) => {
     }
   });
 
+  app.post('/addBookingByAdmin', verifyToken, (req, res) => {
+    try {
+      const { childid, classid, classdate, classtime, courseid } = req.body;
+      const query = 'INSERT INTO treservetion (childid, classid, classdate, classtime, courseid) ' +
+                    ' VALUES (?, ?, ?, ?, ?)';
+      db.query(query, [childid, classdate, classid, classtime, courseid], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.json({ success: true, message: 'Booking added successfully' });
+        }
+      });
+    } catch (error) {
+      console.log("addBookingByAdmin error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
+
+  app.post('/updateBookingByAdmin', verifyToken, (req, res) => {
+    try {
+      const { childid, classid, classdate, classtime, courseid } = req.body;
+      const query = 'UPDATE treservetion set classid = ?, classdate = ?, classtime = ?, gender = ?, courseid = ?,  ' +
+                    ' WHERE childid = ?';
+      db.query(query, [ classid, classdate, classtime, courseid, childid ], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.json({ success: true, message: 'Update Booking successfully' });
+        }
+      });
+    } catch (error) {
+      console.log("updateBookingByAdmin error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
+
   app.post('/deleteFamilyMember', verifyToken, (req, res) => {
     const { familyid, childid } = req.body;
     const queryDeleteTfamilymember = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
