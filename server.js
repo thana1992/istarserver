@@ -79,46 +79,41 @@ app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
-
-  db.query(query, [username], (err, results) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
-      if (results.length > 0) {
-        const storedPassword = results[0].userpassword;
-        //console.log("storedPassword : " + storedPassword);
-        if (storedPassword === password) {
-          //res.status(200).json({ message: "Login successful" });
-          const user = results[0];
-          const userdata = {
-              username: results[0].username,
-              fullname: results[0].fullname,
-              address: results[0].address,
-              email: results[0].email,
-              mobileno: results[0].mobileno,
-              usertype: results[0].usertype,
-              familyid: results[0].familyid,
-          }
-          if (userdata.usertype == '1') {
-            const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
-            res.json({ success: true, message: 'Login successful', token, userdata });
-          }else{ 
-            const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
-            res.json({ success: true, message: 'Login successful', token, userdata });
-          }
-
-          const logquery = 'INSERT INTO llogin (username) VALUES (?)';
-          db.query(logquery, [username]);
-          
-          
-        } else {
-          res.json({ success: false, message: 'password is invalid' });
-        }
-      }else{
-        res.json({ success: false, message: 'username invalid' });
+  const results = await queryPromise(query, [username]);
+  if (results.length > 0) {
+    const storedPassword = results[0].userpassword;
+    //console.log("storedPassword : " + storedPassword);
+    if (storedPassword === password) {
+      //res.status(200).json({ message: "Login successful" });
+      const user = results[0];
+      const userdata = {
+          username: results[0].username,
+          fullname: results[0].fullname,
+          address: results[0].address,
+          email: results[0].email,
+          mobileno: results[0].mobileno,
+          usertype: results[0].usertype,
+          familyid: results[0].familyid,
       }
+      if (userdata.usertype == '1') {
+        const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ success: true, message: 'Login successful', token, userdata });
+      }else{ 
+        const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
+        res.json({ success: true, message: 'Login successful', token, userdata });
+      }
+
+      const logquery = 'INSERT INTO llogin (username) VALUES (?)';
+      db.query(logquery, [username]);
+      
+      
+    } else {
+      res.json({ success: false, message: 'password is invalid' });
     }
-  });
+  }else{
+    res.json({ success: false, message: 'username invalid' });
+  }
+    
 });
 
 app.post('/logout', verifyToken, (req, res) => {
@@ -264,20 +259,6 @@ app.post('/register', async (req, res) => {
       res.status(500).send(error);
     }
   });
-  
-  // Utility function to promisify the database queries
-  function queryPromise(query, params) {
-    return new Promise((resolve, reject) => {
-      db.query(query, params, (err, results) => {
-        if (err) {
-          console.log("Query error: " + JSON.stringify(err));
-          reject(err);
-        } else {
-          resolve(results);
-        }
-      });
-    });
-  }  
 
   app.post('/deleteNewStudent', verifyToken, (req, res) => {
     try {
@@ -652,53 +633,57 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.get("/getNewStudentList", verifyToken, (req, res) => {
+  app.get("/getNewStudentList", verifyToken, async (req, res) => {
     const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
-    db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get New Students successful', results });
-      } else {
-        let results = [];
-        res.json({ success: true, message: 'No New Students', results });
-      }
-
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    const results = await queryPromise(query, null);
+    if(results.length > 0){
+      res.json({ success: true, message: 'Get New Students successful', results });
+    } else {
+      let results = [];
+      res.json({ success: true, message: 'No New Students', results });
+    }
   });
 
-  app.get("/courseLookup", verifyToken, (req, res) => {
+  app.get("/courseLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tcourse';
-    db.query(query, (err, results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Course Lookup successful', results });
-      } else {
-        res.json({ success: true, message: 'No Course Lookup' });
-      }
+    const results = await queryPromise(query, null);
 
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    if(results.length > 0){
+      res.json({ success: true, message: 'Get Course Lookup successful', results });
+    } else {
+      res.json({ success: true, message: 'No Course Lookup' });
+    }
   });
 
-  app.get("/familyLookup", verifyToken, (req, res) => {
+  app.get("/familyLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tfamily';
-    db.query(query, (err, results) => {
-      if(results) {
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Family Lookup successful', results });
-        } else {
-          res.json({ success: true, message: 'No Family Lookup' });
-        }
+    const results = await queryPromise(query, null);
+
+    if(results) {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Family Lookup successful', results });
       } else {
         res.json({ success: true, message: 'No Family Lookup' });
       }
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    } else {
+      res.json({ success: true, message: 'No Family Lookup' });
+    }
+  });
+
+  app.post("/studentLookup", verifyToken, async (req, res) => {
+    const { familyid } = req.body;
+    const query = 'SELECT *, CONCAT(nickname, \' \', firstname, \' \', lastname) as name FROM tfamilymember'
+    if(familyid !== null && familyid !== undefined && familyid !== '') {
+      query = query + ' WHERE familyid = ?';
+    }
+
+    const results = await queryPromise(query, [familyid]);
+
+    if(results.length > 0){
+      res.json({ success: true, message: 'Get Student Lookup successful', results });
+    } else {
+      res.json({ success: true, message: 'No Student Lookup' });
+    }
   });
 
   app.get("/getStudentList", verifyToken, (req, res) => {
@@ -831,23 +816,6 @@ app.post('/register', async (req, res) => {
         res.status(500).send(error);
       }
     });
-
-    // const query5 = 'select count(*) as total from tcancelreservation';
-    // db.query(query5, (err, results) => {
-    //   try {
-    //     if(results.length > 0){
-    //       datacard.totalwaitingcancel = results[0].total;
-    //     } else {
-    //       datacard.totalwaitingcancel = 0;
-    //     }
-
-    //     if(err){
-    //       res.status(500).send(err);
-    //     }
-    //   } catch (error) {
-    //     console.log("API refreshCardDashboard tcancelreservation error :" + JSON.stringify(err));
-    //   }
-    // });
   });
 
   app.post('/getBookingList', verifyToken, async (req, res) => {
@@ -914,6 +882,21 @@ app.post('/register', async (req, res) => {
     }
 });
 
+// Utility function to promisify the database queries
+function queryPromise(query, params) {
+  return new Promise((resolve, reject) => {
+    db.query(query, params, (err, results) => {
+      console.log("Query : " + query);
+      if (err) {
+        console.log("Query error: " + JSON.stringify(err));
+        reject(err);
+      } else {
+        console.log("Query results: " + JSON.stringify(results));
+        resolve(results);
+      }
+    });
+  });
+}
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
