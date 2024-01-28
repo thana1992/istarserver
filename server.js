@@ -304,13 +304,9 @@ app.post('/register', async (req, res) => {
       const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
                     ' courseid = ?, remaining = ?, familyid = ?' +
                     ' WHERE childid = ?';
-      db.query(query, [ firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid, childid ], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.json({ success: true, message: 'Family member added successfully' });
-        }
-      });
+      const results = await queryPromise(query, [ firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid, childid])
+      res.json({ success: true, message: 'Update Student successfully' });
+
     } catch (error) {
       console.log("updateStudentByAdmin error : " + JSON.stringify(error));
       res.status(500).send(error);
@@ -322,13 +318,9 @@ app.post('/register', async (req, res) => {
       const { childid, classid, classdate, classtime, courseid } = req.body;
       const query = 'INSERT INTO treservetion (childid, classid, classdate, classtime, courseid) ' +
                     ' VALUES (?, ?, ?, ?, ?)';
-      db.query(query, [childid, classdate, classid, classtime, courseid], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.json({ success: true, message: 'Booking added successfully' });
-        }
-      });
+      const results = await queryPromise(query, [childid, classdate, classid, classtime, courseid])
+      res.json({ success: true, message: 'Add Booking successfully' });
+      
     } catch (error) {
       console.log("addBookingByAdmin error : " + JSON.stringify(error));
       res.status(500).send(error);
@@ -338,7 +330,7 @@ app.post('/register', async (req, res) => {
   app.post('/updateBookingByAdmin', verifyToken, (req, res) => {
     try {
       const { childid, classid, classdate, classtime, courseid } = req.body;
-      const query = 'UPDATE treservetion set classid = ?, classdate = ?, classtime = ?, gender = ?, courseid = ?,  ' +
+      const query = 'UPDATE treservetion set classid = ?, classdate = ?, classtime = ?, courseid = ?,  ' +
                     ' WHERE childid = ?';
       db.query(query, [ classid, classdate, classtime, courseid, childid ], (err) => {
         if (err) {
