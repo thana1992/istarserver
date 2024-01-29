@@ -298,7 +298,7 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post('/updateStudentByAdmin', verifyToken, (req, res) => {
+  app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
     try {
       const { familyid, childid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
       const query = 'UPDATE tfamilymember set firstname = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
@@ -313,7 +313,7 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post('/addBookingByAdmin', verifyToken, (req, res) => {
+  app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
     try {
       const { childid, classid, classdate, classtime, courseid } = req.body;
       const query = 'INSERT INTO treservetion (childid, classid, classdate, classtime, courseid) ' +
