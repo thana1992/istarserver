@@ -1052,6 +1052,7 @@ function queryPromise(query, params) {
   return new Promise((resolve, reject) => {
     db.query(query, params, (err, results) => {
       console.log("Query : " + query);
+      console.log("Params : " + params);
       if (err) {
         console.log("Query error: " + JSON.stringify(err));
         reject(err);
