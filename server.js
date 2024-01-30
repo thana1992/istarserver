@@ -378,7 +378,7 @@ app.post('/register', async (req, res) => {
             return res.json({ success: false, message: 'Sorry, This class is full' });
           }else{
             const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?  ' +
-                          ' WHERE reservationid = ?' +
+                          ' WHERE reservationid = ?';
             const results = await queryPromise(query, [ classid, classdate, classtime, courseid, reservationid ])
             return res.json({ success: true, message: 'Update Booking successfully' });
           }
