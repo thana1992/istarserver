@@ -324,6 +324,10 @@ app.post('/register', async (req, res) => {
       const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) ' +
                     ' VALUES (?, ?, ?, ?, ?)';
       const results = await queryPromise(query, [childid, classid, classdate, classtime, courseid])
+      if(results.affectedRows > 0) {
+        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining - 1 WHERE childid = ?';
+        await queryPromise(updateRemainingQuery, [childid])
+      }
       res.json({ success: true, message: 'Add Booking successfully' });
       
     } catch (error) {
