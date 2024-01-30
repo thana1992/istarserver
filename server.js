@@ -33,12 +33,6 @@ const verifyToken = (req, res, next) => {
     // Attach the decoded user information to the request for use in route handlers
     req.user = decoded;
     next();
-    db.end((err) => {
-      if (err) {
-        console.error('Error closing the database connection:', err);
-      }
-      console.log('Database connection closed');
-    });
   });
 };
 
