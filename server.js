@@ -377,7 +377,7 @@ app.post('/register', async (req, res) => {
           if (count >= maxperson) {
             return res.json({ success: false, message: 'Sorry, This class is full' });
           }else{
-            const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?,  ' +
+            const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?  ' +
                           ' WHERE childid = ?';
             const results = await queryPromise(query, [ classid, classdate, classtime, courseid, childid ])
             return res.json({ success: true, message: 'Update Booking successfully' });
