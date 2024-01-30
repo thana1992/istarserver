@@ -364,27 +364,35 @@ app.post('/register', async (req, res) => {
   });
 
   app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
+    // todo : check duplicate booking on same day
     try {
       const { childid, classid, classdate, classtime, courseid, classday, reservationid } = req.body;
-      const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
-      const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
-      if (resCheck.length > 0) {
-        const maxperson = resCheck[0].maxperson;
-        const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
-        const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime])
-        if(resCheck2.length > 0) {
-          const count = resCheck2[0].count;
-          if (count >= maxperson) {
-            return res.json({ success: false, message: 'Sorry, This class is full' });
-          }else{
-            const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?  ' +
-                          ' WHERE reservationid = ?';
-            const results = await queryPromise(query, [ classid, classdate, classtime, courseid, reservationid ])
-            return res.json({ success: true, message: 'Update Booking successfully' });
+      const checkDuplicateReservationQuery = 'select * from treservation where childid = ? and classdate = ? and reservationid <> ?';
+      const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [childid, classdate, reservationid])
+      if (resCheckDuplicateReservation.length > 0) {
+        const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+        const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
+        if (resCheck.length > 0) {
+          const maxperson = resCheck[0].maxperson;
+          const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
+          const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime])
+          if(resCheck2.length > 0) {
+            const count = resCheck2[0].count;
+            if (count >= maxperson) {
+              return res.json({ success: false, message: 'Sorry, This class is full' });
+            }else{
+              const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?  ' +
+                            ' WHERE reservationid = ?' +
+                            ' and childid = ?';
+              const results = await queryPromise(query, [ classid, classdate, classtime, courseid, reservationid, childid])
+              return res.json({ success: true, message: 'Update Booking successfully' });
+            }
           }
+        }else{
+          return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
         }
       }else{
-        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
+        return res.json({ success: false, message: 'You have already booking on this day' });
       }
     } catch (error) {
       console.log("updateBookingByAdmin error : " + JSON.stringify(error));
