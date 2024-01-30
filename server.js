@@ -400,7 +400,7 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post("/cancelBookingByAdmin", verifyToken, (req, res) => {
+  app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     try {
       const { reservationid } = req.body;
       const query = 'DELETE FROM treservation WHERE reservationid = ?';
