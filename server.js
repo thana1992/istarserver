@@ -400,6 +400,26 @@ app.post('/register', async (req, res) => {
     }
   });
 
+  app.post("/cancelBookingByAdmin", verifyToken, (req, res) => {
+    try {
+      const { reservationid } = req.body;
+      const query = 'DELETE FROM treservation WHERE reservationid = ?';
+      const results = await queryPromise(query, [reservationid]);
+      if (results.affectedRows > 0) {
+        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining + 1 WHERE childid = ?';
+        const results2 = await queryPromise(updateRemainingQuery, [childid]);
+        if (results2.affectedRows > 0) {
+          res.json({ success: true, message: 'Reservation deleted successfully' });
+        }
+      } else {
+        res.json({ success: false, message: 'No Booking data' });
+      }
+    } catch (error) {
+      console.error("API deleteReservationByAdmin error: " + JSON.stringify(error));
+      res.json({ success: false, message: error.message });
+    }
+  });
+
   app.post('/deleteFamilyMember', verifyToken, async (req, res) => {
     const { familyid, childid } = req.body;
     const queryDeleteTfamilymember = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
@@ -838,26 +858,6 @@ app.post('/register', async (req, res) => {
     } catch (error) {
       console.error("API getReservationList error: " + JSON.stringify(error));
       res.status(500).send(error);
-    }
-  });
-
-  app.post("/deleteReservationByAdmin", verifyToken, (req, res) => {
-    try {
-      const { reservationid } = req.body;
-      const query = 'DELETE FROM treservation WHERE reservationid = ?';
-      const results = await queryPromise(query, [reservationid]);
-      if (results.affectedRows > 0) {
-        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining + 1 WHERE childid = ?';
-        const results2 = await queryPromise(updateRemainingQuery, [childid]);
-        if (results2.affectedRows > 0) {
-          res.json({ success: true, message: 'Reservation deleted successfully' });
-        }
-      } else {
-        res.json({ success: false, message: 'No Booking data' });
-      }
-    } catch (error) {
-      console.error("API deleteReservationByAdmin error: " + JSON.stringify(error));
-      res.json({ success: false, message: error.message });
     }
   });
 
