@@ -363,7 +363,7 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post('/updateBookingByAdmin', verifyToken, (req, res) => {
+  app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
     try {
       const { childid, classid, classdate, classtime, courseid, classday } = req.body;
       const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
@@ -392,7 +392,7 @@ app.post('/register', async (req, res) => {
     }
   });
 
-  app.post('/deleteFamilyMember', verifyToken, (req, res) => {
+  app.post('/deleteFamilyMember', verifyToken, async (req, res) => {
     const { familyid, childid } = req.body;
     const queryDeleteTfamilymember = 'DELETE FROM tfamilymember WHERE familyid = ? AND childid = ?';
     db.query(queryDeleteTfamilymember, [familyid, childid], (err) => {
