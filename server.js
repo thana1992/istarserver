@@ -370,8 +370,8 @@ app.post('/register', async (req, res) => {
       const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
       if (resCheck.length > 0) {
         const maxperson = resCheck[0].maxperson;
-        checkClassFullQuery = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
-        const resCheck2 = await queryPromise(checkClassFullQuery, [classid, classdate, classtime])
+        const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
+        const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime])
         if(resCheck2.length > 0) {
           const count = resCheck2[0].count;
           if (count >= maxperson) {
