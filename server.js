@@ -370,6 +370,8 @@ app.post('/register', async (req, res) => {
       const checkDuplicateReservationQuery = 'select * from treservation where childid = ? and classdate = ? and reservationid <> ?';
       const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [childid, classdate, reservationid])
       if (resCheckDuplicateReservation.length > 0) {
+        return res.json({ success: false, message: 'You have already booking on this day' });
+      }else{
         const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ? and courseid = ?';
         const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime, courseid])
         console.log(resCheck.length+"resCheck : " + JSON.stringify(resCheck));
@@ -393,8 +395,6 @@ app.post('/register', async (req, res) => {
         }else{
           return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
         }
-      }else{
-        return res.json({ success: false, message: 'You have already booking on this day' });
       }
     } catch (error) {
       console.log("updateBookingByAdmin error : " + JSON.stringify(error));
