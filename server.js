@@ -323,7 +323,7 @@ app.post('/register', async (req, res) => {
       const { childid, classid, classdate, classtime, courseid } = req.body;
       const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) ' +
                     ' VALUES (?, ?, ?, ?, ?)';
-      const results = await queryPromise(query, [childid, classdate, classid, classtime, courseid])
+      const results = await queryPromise(query, [childid, classid, classdate, classtime, courseid])
       res.json({ success: true, message: 'Add Booking successfully' });
       
     } catch (error) {
