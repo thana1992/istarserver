@@ -370,12 +370,14 @@ app.post('/register', async (req, res) => {
       const checkDuplicateReservationQuery = 'select * from treservation where childid = ? and classdate = ? and reservationid <> ?';
       const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [childid, classdate, reservationid])
       if (resCheckDuplicateReservation.length > 0) {
-        const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
-        const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
+        const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ? and courseid = ?';
+        const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime, courseid])
+        console.log("resCheck : " + JSON.stringify(resCheck));
         if (resCheck.length < 0) {
           const maxperson = resCheck[0].maxperson;
-          const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
-          const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime])
+          const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ? and courseid = ?';
+          const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime, courseid])
+          console.log("resCheck2 : " + JSON.stringify(resCheck2));
           if(resCheck2.length > 0) {
             const count = resCheck2[0].count;
             if (count >= maxperson) {
