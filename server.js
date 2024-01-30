@@ -254,6 +254,15 @@ app.post('/register', async (req, res) => {
           .catch((error) => {
             res.json({ success: true, message: error.message });
             console.error('Error in queryPromise:', error);
+          })
+          .finally(() => {
+            // Close the database connection when the response is finished
+            db.end((err) => {
+              if (err) {
+                console.error('Error closing the database connection:', err);
+              }
+              console.log('Database connection closed');
+            });
           });
         }
       }
@@ -654,6 +663,15 @@ app.post('/register', async (req, res) => {
     .catch((error) => {
       res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
+    })
+    .finally(() => {
+      // Close the database connection when the response is finished
+      db.end((err) => {
+        if (err) {
+          console.error('Error closing the database connection:', err);
+        }
+        console.log('Database connection closed');
+      });
     });
 
     // if(results.length > 0){
@@ -676,6 +694,15 @@ app.post('/register', async (req, res) => {
     .catch((error) => {
       res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
+    })
+    .finally(() => {
+      // Close the database connection when the response is finished
+      db.end((err) => {
+        if (err) {
+          console.error('Error closing the database connection:', err);
+        }
+        console.log('Database connection closed');
+      });
     });
     // if(results) {
     //   if(results.length > 0){
@@ -706,6 +733,15 @@ app.post('/register', async (req, res) => {
     .catch((error) => {
       res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
+    })
+    .finally(() => {
+      // Close the database connection when the response is finished
+      db.end((err) => {
+        if (err) {
+          console.error('Error closing the database connection:', err);
+        }
+        console.log('Database connection closed');
+      });
     });
 
     // if(results.length > 0){
@@ -774,78 +810,134 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.post("/refreshCardDashboard", verifyToken, (req, res) => {
+  app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
     const { today, tomorrow } = req.body;
-    const query = 'select count(*) as total from tfamilymember';
     var datacard = {
       totalStudents: 0,
-      totalBookingToday: 0, 
+      totalBookingToday: 0,
       totalBookingTomorrow: 0,
       totalWaitingNewStudents: 0,
       totalWaitCancelBooking: 0
     };
-    
-    db.query(query, (err, results) => {
-      try {
-        if(results.length > 0){
-          datacard.totalStudents = results[0].total;
-        }
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API refreshCardDashboard tfamilymember error :" + JSON.stringify(err));
-        res.status(500).send(error);
+  
+    try {
+      // Query 1
+      const query1 = 'select count(*) as total from tfamilymember';
+      const results1 = await queryPromise(query1);
+      if (results1.length > 0) {
+        datacard.totalStudents = results1[0].total;
       }
-    });
-
-    const query2 = 'select count(*) as total from treservation where classdate = ?';
-    db.query(query2, [today], (err, results) => {
-      try {
-        if(results.length > 0){
-          datacard.totalBookingToday = results[0].total;
-        }
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API refreshCardDashboard treservation error :" + JSON.stringify(err));
-        res.status(500).send(error);
+  
+      // Query 2
+      const query2 = 'select count(*) as total from treservation where classdate = ?';
+      const results2 = await queryPromise(query2, [today]);
+      if (results2.length > 0) {
+        datacard.totalBookingToday = results2[0].total;
       }
-    });
-
-    const query3 = 'select count(*) as total from treservation where classdate = ?';
-    db.query(query3, [tomorrow], (err, results) => {
-      try {
-        if(results.length > 0){
-          datacard.totalBookingTomorrow = results[0].total;
-        }
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API refreshCardDashboard treservation error :" + JSON.stringify(err));
-        res.status(500).send(error);
+  
+      // Query 3
+      const query3 = 'select count(*) as total from treservation where classdate = ?';
+      const results3 = await queryPromise(query3, [tomorrow]);
+      if (results3.length > 0) {
+        datacard.totalBookingTomorrow = results3[0].total;
       }
-    });
-
-    const query4 = 'select count(*) as total from jfamilymember';
-    db.query(query4, (err, results) => {
-      try {
-        if(results.length > 0){
-          datacard.totalWaitingNewStudents = results[0].total;
-        }
-        console.log("API datacard 0 :" + JSON.stringify(datacard));
-        res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API refreshCardDashboard jfamilymember error :" + JSON.stringify(err));
-        res.status(500).send(error);
+  
+      // Query 4
+      const query4 = 'select count(*) as total from jfamilymember';
+      const results4 = await queryPromise(query4);
+      if (results4.length > 0) {
+        datacard.totalWaitingNewStudents = results4[0].total;
       }
-    });
+  
+      // Send the response after all queries are completed
+      console.log("API datacard: " + JSON.stringify(datacard));
+      res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
+    } catch (error) {
+      console.error("API refreshCardDashboard error: " + JSON.stringify(error));
+      res.status(500).send(error);
+    } finally {
+      // Close the database connection when the response is finished
+      db.end((err) => {
+        if (err) {
+          console.error('Error closing the database connection:', err);
+        }
+        console.log('Database connection closed');
+      });
+    }
   });
+  
+  // app.post("/refreshCardDashboard", verifyToken, (req, res) => {
+  //   const { today, tomorrow } = req.body;
+  //   const query = 'select count(*) as total from tfamilymember';
+  //   var datacard = {
+  //     totalStudents: 0,
+  //     totalBookingToday: 0, 
+  //     totalBookingTomorrow: 0,
+  //     totalWaitingNewStudents: 0,
+  //     totalWaitCancelBooking: 0
+  //   };
+    
+  //   db.query(query, (err, results) => {
+  //     try {
+  //       if(results.length > 0){
+  //         datacard.totalStudents = results[0].total;
+  //       }
+  //       if(err){
+  //         res.status(500).send(err);
+  //       }
+  //     } catch (error) {
+  //       console.log("API refreshCardDashboard tfamilymember error :" + JSON.stringify(err));
+  //       res.status(500).send(error);
+  //     }
+  //   });
+
+  //   const query2 = 'select count(*) as total from treservation where classdate = ?';
+  //   db.query(query2, [today], (err, results) => {
+  //     try {
+  //       if(results.length > 0){
+  //         datacard.totalBookingToday = results[0].total;
+  //       }
+  //       if(err){
+  //         res.status(500).send(err);
+  //       }
+  //     } catch (error) {
+  //       console.log("API refreshCardDashboard treservation error :" + JSON.stringify(err));
+  //       res.status(500).send(error);
+  //     }
+  //   });
+
+  //   const query3 = 'select count(*) as total from treservation where classdate = ?';
+  //   db.query(query3, [tomorrow], (err, results) => {
+  //     try {
+  //       if(results.length > 0){
+  //         datacard.totalBookingTomorrow = results[0].total;
+  //       }
+  //       if(err){
+  //         res.status(500).send(err);
+  //       }
+  //     } catch (error) {
+  //       console.log("API refreshCardDashboard treservation error :" + JSON.stringify(err));
+  //       res.status(500).send(error);
+  //     }
+  //   });
+
+  //   const query4 = 'select count(*) as total from jfamilymember';
+  //   db.query(query4, (err, results) => {
+  //     try {
+  //       if(results.length > 0){
+  //         datacard.totalWaitingNewStudents = results[0].total;
+  //       }
+  //       console.log("API datacard 0 :" + JSON.stringify(datacard));
+  //       res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
+  //       if(err){
+  //         res.status(500).send(err);
+  //       }
+  //     } catch (error) {
+  //       console.log("API refreshCardDashboard jfamilymember error :" + JSON.stringify(err));
+  //       res.status(500).send(error);
+  //     }
+  //   });
+  // });
 
   app.post('/getBookingList', verifyToken, async (req, res) => {
     console.log("getBookingList : " + JSON.stringify(req.body));
