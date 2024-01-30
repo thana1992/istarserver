@@ -321,7 +321,7 @@ app.post('/register', async (req, res) => {
   app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
     try {
       const { childid, classid, classdate, classtime, courseid } = req.body;
-      const query = 'INSERT INTO treservetion (childid, classid, classdate, classtime, courseid) ' +
+      const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) ' +
                     ' VALUES (?, ?, ?, ?, ?)';
       const results = await queryPromise(query, [childid, classdate, classid, classtime, courseid])
       res.json({ success: true, message: 'Add Booking successfully' });
@@ -335,7 +335,7 @@ app.post('/register', async (req, res) => {
   app.post('/updateBookingByAdmin', verifyToken, (req, res) => {
     try {
       const { childid, classid, classdate, classtime, courseid } = req.body;
-      const query = 'UPDATE treservetion set classid = ?, classdate = ?, classtime = ?, courseid = ?,  ' +
+      const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?,  ' +
                     ' WHERE childid = ?';
       db.query(query, [ classid, classdate, classtime, courseid, childid ], (err) => {
         if (err) {
