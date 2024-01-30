@@ -38,12 +38,11 @@ const verifyToken = (req, res, next) => {
 
 db.connect(err => {
   if (err) {
-    console.log(err);
+    console.error('Error connecting to the database:', err);
   } else {
     console.log('Connected to MySQL');
   }
 });
-
 
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -244,16 +243,22 @@ app.post('/register', async (req, res) => {
         if (results.length > 0) {
           const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
                         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-  
-          await queryPromise(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
+          await queryPromise(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining])
   
           const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
           console.log("delete jfamilymember childid : " + item.childid);
-          await queryPromise(deleteQuery, [item.childid]);
+          await queryPromise(deleteQuery, [item.childid])
+          .then((results) => {
+            res.json({ success: true, message: 'Family member approve successfully' });
+          })
+          .catch((error) => {
+            res.json({ success: true, message: error.message });
+            console.error('Error in queryPromise:', error);
+          });
         }
       }
   
-      res.json({ success: true, message: 'Family member approve successfully' });
+      
     } catch (error) {
       console.log("approveNewStudent error: " + JSON.stringify(error));
       res.status(500).send(error);
@@ -638,28 +643,49 @@ app.post('/register', async (req, res) => {
 
   app.get("/courseLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tcourse';
-    const results = await queryPromise(query, null);
+    await queryPromise(query, null)
+    .then((results) => {
+      if(results.length > 0) {
+        res.json({ success: true, message: 'Get Course Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Course Lookup' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    });
 
-    if(results.length > 0){
-      res.json({ success: true, message: 'Get Course Lookup successful', results });
-    } else {
-      res.json({ success: true, message: 'No Course Lookup' });
-    }
+    // if(results.length > 0){
+    //   res.json({ success: true, message: 'Get Course Lookup successful', results });
+    // } else {
+    //   res.json({ success: true, message: 'No Course Lookup' });
+    // }
   });
 
   app.get("/familyLookup", verifyToken, async (req, res) => {
     const query = 'SELECT * FROM tfamily';
-    const results = await queryPromise(query, null);
-
-    if(results) {
-      if(results.length > 0){
+    await queryPromise(query, null)
+    .then((results) => {
+      if(results.length > 0) {
         res.json({ success: true, message: 'Get Family Lookup successful', results });
       } else {
         res.json({ success: true, message: 'No Family Lookup' });
       }
-    } else {
-      res.json({ success: true, message: 'No Family Lookup' });
-    }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    });
+    // if(results) {
+    //   if(results.length > 0){
+    //     res.json({ success: true, message: 'Get Family Lookup successful', results });
+    //   } else {
+    //     res.json({ success: true, message: 'No Family Lookup' });
+    //   }
+    // } else {
+    //   res.json({ success: true, message: 'No Family Lookup' });
+    // }
   });
 
   app.post("/studentLookup", verifyToken, async (req, res) => {
@@ -669,13 +695,24 @@ app.post('/register', async (req, res) => {
       query = query + ' WHERE familyid = ?';
     }
 
-    const results = await queryPromise(query, [familyid]);
+    await queryPromise(query, [familyid])
+    .then((results) => {
+      if(results.length > 0) {
+        res.json({ success: true, message: 'Get Student Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Student Lookup' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    });
 
-    if(results.length > 0){
-      res.json({ success: true, message: 'Get Student Lookup successful', results });
-    } else {
-      res.json({ success: true, message: 'No Student Lookup' });
-    }
+    // if(results.length > 0){
+    //   res.json({ success: true, message: 'Get Student Lookup successful', results });
+    // } else {
+    //   res.json({ success: true, message: 'No Student Lookup' });
+    // }
   });
 
   app.get("/getStudentList", verifyToken, (req, res) => {
@@ -889,6 +926,13 @@ function queryPromise(query, params) {
     });
   });
 }
+
+db.end((err) => {
+  if (err) {
+    console.error('Error closing the database connection:', err);
+  }
+  console.log('Database connection closed');
+});
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
