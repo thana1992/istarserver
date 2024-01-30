@@ -824,14 +824,6 @@ app.post('/register', async (req, res) => {
     } catch (error) {
       console.error("API getReservationList error: " + JSON.stringify(error));
       res.status(500).send(error);
-    } finally {
-      // Close the database connection when the response is finished
-      db.end((err) => {
-        if (err) {
-          console.error('Error closing the database connection:', err);
-        }
-        console.log('Database connection closed');
-      });
     }
   });
 
@@ -892,14 +884,7 @@ app.post('/register', async (req, res) => {
     } catch (error) {
       console.error("API refreshCardDashboard error: " + JSON.stringify(error));
       res.status(500).send(error);
-    } finally {
-      // Close the database connection when the response is finished
-      db.end((err) => {
-        if (err) {
-          console.error('Error closing the database connection:', err);
-        }
-        console.log('Database connection closed');
-      });
+    
     }
   });
   
