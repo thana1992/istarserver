@@ -365,7 +365,7 @@ app.post('/register', async (req, res) => {
 
   app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
     try {
-      const { childid, classid, classdate, classtime, courseid, classday } = req.body;
+      const { childid, classid, classdate, classtime, courseid, classday, reservationid } = req.body;
       const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
       const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
       if (resCheck.length > 0) {
@@ -378,8 +378,8 @@ app.post('/register', async (req, res) => {
             return res.json({ success: false, message: 'Sorry, This class is full' });
           }else{
             const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?  ' +
-                          ' WHERE childid = ?';
-            const results = await queryPromise(query, [ classid, classdate, classtime, courseid, childid ])
+                          ' WHERE reservationid = ?' +
+            const results = await queryPromise(query, [ classid, classdate, classtime, courseid, reservationid ])
             return res.json({ success: true, message: 'Update Booking successfully' });
           }
         }
