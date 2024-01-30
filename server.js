@@ -372,8 +372,8 @@ app.post('/register', async (req, res) => {
       if (resCheckDuplicateReservation.length > 0) {
         const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ? and courseid = ?';
         const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime, courseid])
-        console.log("resCheck : " + JSON.stringify(resCheck));
-        if (resCheck.length < 0) {
+        console.log(resCheck.length+"resCheck : " + JSON.stringify(resCheck));
+        if (resCheck.length > 0) {
           const maxperson = resCheck[0].maxperson;
           const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ? and courseid = ?';
           const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime, courseid])
