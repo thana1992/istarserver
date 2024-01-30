@@ -772,30 +772,67 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.post("/getReservationList", verifyToken, (req, res) => {
-    const { classdate } = req.body;
-    const query = 'SELECT a.*, b.coursename, CONCAT(c.firstname, \' \', c.lastname, \' (\', c.nickname,\')\') fullname ' +
-                  'FROM treservation a left join tcourse b on a.courseid = b.courseid ' +
-                  'left join tfamilymember c on a.childid = c.childid ' +
-                  'WHERE a.classdate = ? ' +
-                  'order by a.classtime asc';
-    db.query(query, [classdate], (err, results) => {
-      console.log("API getReservationList result :" + JSON.stringify(results));
-      try {
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Reservation list successful', results });
-        } else {
-          res.json({ success: false, message: 'No Reservation list'});
-        }
+  
 
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API getReservationList error :" + JSON.stringify(err));
-        res.status(500).send(err);
+  // app.post("/getReservationList", verifyToken, (req, res) => {
+  //   const { classdate } = req.body;
+  //   const query = 'SELECT a.*, b.coursename, CONCAT(c.firstname, \' \', c.lastname, \' (\', c.nickname,\')\') fullname ' +
+  //                 'FROM treservation a left join tcourse b on a.courseid = b.courseid ' +
+  //                 'left join tfamilymember c on a.childid = c.childid ' +
+  //                 'WHERE a.classdate = ? ' +
+  //                 'order by a.classtime asc';
+  //   db.query(query, [classdate], (err, results) => {
+  //     console.log("API getReservationList result :" + JSON.stringify(results));
+  //     try {
+  //       if(results.length > 0){
+  //         res.json({ success: true, message: 'Get Reservation list successful', results });
+  //       } else {
+  //         res.json({ success: false, message: 'No Reservation list'});
+  //       }
+
+  //       if(err){
+  //         res.status(500).send(err);
+  //       }
+  //     } catch (error) {
+  //       console.log("API getReservationList error :" + JSON.stringify(err));
+  //       res.status(500).send(err);
+  //     }
+  //   });
+  // });
+
+  app.post("/getReservationList", verifyToken, async (req, res) => {
+    try {
+      const { classdate } = req.body;
+      const query = `
+        SELECT a.*, b.coursename, CONCAT(c.firstname, ' ', c.lastname, ' (', c.nickname,')') fullname
+        FROM treservation a
+        LEFT JOIN tcourse b ON a.courseid = b.courseid
+        LEFT JOIN tfamilymember c ON a.childid = c.childid
+        WHERE a.classdate = ?
+        ORDER BY a.classtime ASC
+      `;
+  
+      const results = await queryPromise(query, [classdate]);
+  
+      console.log("API getReservationList result: " + JSON.stringify(results));
+  
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Reservation list successful', results });
+      } else {
+        res.json({ success: false, message: 'No Reservation list' });
       }
-    });
+    } catch (error) {
+      console.error("API getReservationList error: " + JSON.stringify(error));
+      res.status(500).send(error);
+    } finally {
+      // Close the database connection when the response is finished
+      db.end((err) => {
+        if (err) {
+          console.error('Error closing the database connection:', err);
+        }
+        console.log('Database connection closed');
+      });
+    }
   });
 
   app.post("/deleteReservationByAdmin", verifyToken, (req, res) => {
