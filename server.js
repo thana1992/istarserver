@@ -255,15 +255,6 @@ app.post('/register', async (req, res) => {
             res.json({ success: true, message: error.message });
             console.error('Error in queryPromise:', error);
           })
-          .finally(() => {
-            // Close the database connection when the response is finished
-            db.end((err) => {
-              if (err) {
-                console.error('Error closing the database connection:', err);
-              }
-              console.log('Database connection closed');
-            });
-          });
         }
       }
   
@@ -664,15 +655,6 @@ app.post('/register', async (req, res) => {
       res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
     })
-    .finally(() => {
-      // Close the database connection when the response is finished
-      db.end((err) => {
-        if (err) {
-          console.error('Error closing the database connection:', err);
-        }
-        console.log('Database connection closed');
-      });
-    });
 
     // if(results.length > 0){
     //   res.json({ success: true, message: 'Get Course Lookup successful', results });
@@ -695,15 +677,6 @@ app.post('/register', async (req, res) => {
       res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
     })
-    .finally(() => {
-      // Close the database connection when the response is finished
-      db.end((err) => {
-        if (err) {
-          console.error('Error closing the database connection:', err);
-        }
-        console.log('Database connection closed');
-      });
-    });
     // if(results) {
     //   if(results.length > 0){
     //     res.json({ success: true, message: 'Get Family Lookup successful', results });
@@ -734,15 +707,6 @@ app.post('/register', async (req, res) => {
       res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
     })
-    .finally(() => {
-      // Close the database connection when the response is finished
-      db.end((err) => {
-        if (err) {
-          console.error('Error closing the database connection:', err);
-        }
-        console.log('Database connection closed');
-      });
-    });
 
     // if(results.length > 0){
     //   res.json({ success: true, message: 'Get Student Lookup successful', results });
