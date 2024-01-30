@@ -320,15 +320,42 @@ app.post('/register', async (req, res) => {
 
   app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
     try {
-      const { childid, classid, classdate, classtime, courseid } = req.body;
-      const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) ' +
-                    ' VALUES (?, ?, ?, ?, ?)';
-      const results = await queryPromise(query, [childid, classid, classdate, classtime, courseid])
-      if(results.affectedRows > 0) {
-        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining - 1 WHERE childid = ?';
-        await queryPromise(updateRemainingQuery, [childid])
+      const { childid, classid, classdate, classtime, courseid, classday } = req.body;
+      let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+      const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
+      if (resCheck.length > 0) {
+        const maxperson = resCheck[0].maxperson;
+        checkClassFullQuery = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
+        const resCheck2 = await queryPromise(checkClassFullQuery, [classid, classdate, classtime])
+        if (resCheck2.length > 0) {
+          const count = resCheck2[0].count;
+          if (count >= maxperson) {
+            return res.json({ success: false, message: 'Sorry, This class is full' });
+          }else{
+            const checkRemainingQuery = 'select remaining from tfamilymember where childid = ?';
+            const resCheck3 = await queryPromise(checkRemainingQuery, [childid])
+            if (resCheck3.length > 0) {
+              const remaining = resCheck3[0].remaining;
+              if (remaining <= 0) {
+                return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
+              }else{
+                console.log("======= addBookingByAdmin =======")
+                const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
+                const results = await queryPromise(query, [childid, classid, classdate, classtime, courseid])
+                if(results.affectedRows > 0) {
+                  const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining - 1 WHERE childid = ?';
+                  await queryPromise(updateRemainingQuery, [childid])
+                }
+                return res.json({ success: true, message: 'Add Booking successfully' });
+              }
+            }else{
+              return res.json({ success: false, message: 'ไม่พบข้อมูลของท่าน' });
+            }
+          }
+        }
+      }else{  
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
       }
-      res.json({ success: true, message: 'Add Booking successfully' });
       
     } catch (error) {
       console.log("addBookingByAdmin error : " + JSON.stringify(error));
@@ -338,16 +365,27 @@ app.post('/register', async (req, res) => {
 
   app.post('/updateBookingByAdmin', verifyToken, (req, res) => {
     try {
-      const { childid, classid, classdate, classtime, courseid } = req.body;
-      const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?,  ' +
-                    ' WHERE childid = ?';
-      db.query(query, [ classid, classdate, classtime, courseid, childid ], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.json({ success: true, message: 'Update Booking successfully' });
+      const { childid, classid, classdate, classtime, courseid, classday } = req.body;
+      const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+      const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
+      if (resCheck.length > 0) {
+        const maxperson = resCheck[0].maxperson;
+        checkClassFullQuery = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
+        const resCheck2 = await queryPromise(checkClassFullQuery, [classid, classdate, classtime])
+        if(resCheck2.length > 0) {
+          const count = resCheck2[0].count;
+          if (count >= maxperson) {
+            return res.json({ success: false, message: 'Sorry, This class is full' });
+          }else{
+            const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?,  ' +
+                          ' WHERE childid = ?';
+            const results = await queryPromise(query, [ classid, classdate, classtime, courseid, childid ])
+            return res.json({ success: true, message: 'Update Booking successfully' });
+          }
         }
-      });
+      }else{
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
+      }
     } catch (error) {
       console.log("updateBookingByAdmin error : " + JSON.stringify(error));
       res.status(500).send(error);
