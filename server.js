@@ -372,7 +372,7 @@ app.post('/register', async (req, res) => {
       if (resCheckDuplicateReservation.length > 0) {
         const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
         const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
-        if (resCheck.length > 0) {
+        if (resCheck.length < 0) {
           const maxperson = resCheck[0].maxperson;
           const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
           const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime])
@@ -842,15 +842,23 @@ app.post('/register', async (req, res) => {
   });
 
   app.post("/deleteReservationByAdmin", verifyToken, (req, res) => {
-    const { reservationid } = req.body;
-    const query = 'DELETE FROM treservation WHERE reservationid = ?';
-    db.query(query, [reservationid], (err) => {
-      if (err) {
-        res.status(500).send(err);
+    try {
+      const { reservationid } = req.body;
+      const query = 'DELETE FROM treservation WHERE reservationid = ?';
+      const results = await queryPromise(query, [reservationid]);
+      if (results.affectedRows > 0) {
+        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining + 1 WHERE childid = ?';
+        const results2 = await queryPromise(updateRemainingQuery, [childid]);
+        if (results2.affectedRows > 0) {
+          res.json({ success: true, message: 'Reservation deleted successfully' });
+        }
       } else {
-        res.json({ success: true, message: 'Reservation canceled successfully' });
+        res.json({ success: false, message: 'No Booking data' });
       }
-    });
+    } catch (error) {
+      console.error("API deleteReservationByAdmin error: " + JSON.stringify(error));
+      res.json({ success: false, message: error.message });
+    }
   });
 
   app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
