@@ -991,23 +991,13 @@ app.post('/register', async (req, res) => {
   // });
 
   app.post('/getBookingList', verifyToken, async (req, res) => {
-    console.log("getBookingList : " + JSON.stringify(req.body));
+    console.log("getBookingList [request] : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
         const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
-        const results = await new Promise((resolve, reject) => {
-            db.query(query, [ classday ], (err, results) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(results);
-                }
-            });
-        });
-
-        let bookinglist = {};
+        const results = await queryPromise(query, [ classday ]);
         console.log("results : " + JSON.stringify(results));
-
+        let bookinglist = {};
         if (results.length > 0) {
             for (let index = 0; index < results.length; index++) {
                 let this_class = [];
@@ -1020,16 +1010,7 @@ app.post('/register', async (req, res) => {
                     'AND a.classid = ? ' +
                     'order by a.classtime asc';
 
-                const results2 = await new Promise((resolve, reject) => {
-                    db.query(query2, [ classdate, element.classid ], (err, results2) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(results2);
-                        }
-                    });
-                });
-
+                const results2 = await queryPromise(query2, [ classdate, element.classid ]);
                 console.log("results2 : " + JSON.stringify(results2));
 
                 if (results2.length > 0) {
@@ -1039,12 +1020,12 @@ app.post('/register', async (req, res) => {
                         studentlist.push(element2.nickname);
                     }
                     bookinglist[element.class_label] = studentlist;
-                    console.log("bookinglist : " + JSON.stringify(bookinglist))
+                    console.log("bookinglist : " + JSON.stringify(bookinglist));
                 } else {
                     bookinglist[element.class_label] = [];
                 }
             }
-            console.log("bookinglist end 2 : " + JSON.stringify(bookinglist));
+            console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
             res.json({ success: true, message: 'Get Booking list successful', bookinglist });
         } else {
             res.json({ success: true, message: 'No Booking list' });
