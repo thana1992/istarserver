@@ -792,7 +792,7 @@ app.post('/register', async (req, res) => {
     // }
   });
 
-  app.get("/getStudentList", verifyToken, (req, res) => {
+  app.get("/getStudentList", verifyToken, async (req, res) => {
     const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno ' +
     'from tfamilymember a ' +
     'left join tcourse b ' +
