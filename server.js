@@ -863,7 +863,7 @@ app.post('/register', async (req, res) => {
         res.json({ success: true, message: 'No Reservation list' });
       }
     } catch (error) {
-      console.error("API getReservationList error: " + JSON.stringify(error));
+      console.error("API getReservationList error:", error.message, error.stack);
       res.status(500).send(error);
     }
   });
@@ -911,7 +911,7 @@ app.post('/register', async (req, res) => {
       console.log("API datacard: " + JSON.stringify(datacard));
       res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
     } catch (error) {
-      console.error("API refreshCardDashboard error: " + JSON.stringify(error));
+      console.error("API refreshCardDashboard error:", error.message, error.stack);
       res.status(500).send(error);
     
     }
@@ -1035,7 +1035,8 @@ app.post('/register', async (req, res) => {
             res.json({ success: true, message: 'No Booking list' });
         }
     } catch (err) {
-        res.status(500).send(err);
+      console.error("API getBookingList error:", error.message, error.stack);
+      res.status(500).send(err);
     }
 });
 
