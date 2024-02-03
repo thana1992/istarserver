@@ -697,7 +697,7 @@ app.post('/register', async (req, res) => {
         }); 
           res.json({ success: true, message: 'Get Class Time successful', results });
         } else {
-          res.json({ success: true, message: 'No Class Time' });
+          res.json({ success: true, message: 'No Class Time', results: [] });
         }
       }
 
