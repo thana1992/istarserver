@@ -845,12 +845,12 @@ app.post('/register', async (req, res) => {
     try {
       const { classdate } = req.body;
       const query = `
-        SELECT a.*, b.coursename, CONCAT(c.firstname, ' ', c.lastname, ' (', c.nickname,')') fullname
-        FROM treservation a
-        LEFT JOIN tcourse b ON a.courseid = b.courseid
-        LEFT JOIN tfamilymember c ON a.childid = c.childid
-        WHERE a.classdate = ?
-        ORDER BY a.classtime ASC
+        SELECT a.*, b.coursename, CONCAT(c.firstname, ' ', c.lastname, ' (', c.nickname,')') fullname 
+        FROM treservation a 
+        LEFT JOIN tcourse b ON a.courseid = b.courseid 
+        LEFT JOIN tfamilymember c ON a.childid = c.childid 
+        WHERE a.classdate = ? 
+        ORDER BY a.classtime ASC 
       `;
   
       const results = await queryPromise(query, [classdate]);
@@ -860,7 +860,7 @@ app.post('/register', async (req, res) => {
       if (results.length > 0) {
         res.json({ success: true, message: 'Get Reservation list successful', results });
       } else {
-        res.json({ success: false, message: 'No Reservation list' });
+        res.json({ success: true, message: 'No Reservation list' });
       }
     } catch (error) {
       console.error("API getReservationList error: " + JSON.stringify(error));
