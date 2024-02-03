@@ -994,7 +994,11 @@ app.post('/register', async (req, res) => {
     console.log("getBookingList [request] : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, ' +
+          'a.classid FROM tclass a join tcourse b ' +
+          'on a.courseid = b.courseid ' +
+          'where a.classday = ? ' +
+          'order by a.classtime'
         const results = await queryPromise(query, [ classday ]);
         console.log("results : " + JSON.stringify(results));
         let bookinglist = {};
