@@ -885,7 +885,7 @@ app.post('/register', async (req, res) => {
       const results1 = await queryPromise(query1);
       if (results1.length > 0) {
         datacard.totalStudents = results1[0].total;
-        datacard.totalStudents = 700;
+        datacard.totalStudents = 999;
       }
   
       // Query 2
