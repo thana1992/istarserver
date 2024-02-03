@@ -793,24 +793,25 @@ app.post('/register', async (req, res) => {
   });
 
   app.get("/getStudentList", verifyToken, (req, res) => {
-    const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
-    db.query(query, (err, results) => {
-      console.log("API getStudentlist result :" + JSON.stringify(results));
-      try {
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Student list successful', results });
-        } else {
-          res.json({ success: false, message: 'No Student list'});
-        }
-
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API getStudentlist error :" + JSON.stringify(err));
-        res.status(500).send(err);
+    const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno ' +
+    'from tfamilymember a ' +
+    'left join tcourse b ' +
+    'on a.courseid = b.courseid ' +
+    'left join tfamily c ' +
+    'on a.familyid = c.familyid ' +
+    'left join tuser d ' +
+    'on c.username = d.username '
+    try {
+      const results = await queryPromise(query, null);
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Student list successful', results });
+      } else {
+        res.json({ success: true, message: 'No Student list'});
       }
-    });
+    } catch (error) {
+      console.log("API getStudentlist error :" + JSON.stringify(err));
+      res.status(500).send(err);
+    }
   });
 
   
