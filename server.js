@@ -1039,8 +1039,41 @@ app.post('/register', async (req, res) => {
       console.error("API getBookingList error:", error.message, error.stack);
       res.status(500).send(err);
     }
-});
+  });
 
+  app.post('/createCustomerCourse', verifyToken, async (req, res) => {
+    try{
+      const { courseid, remaining, coursetype, startdate, enddate } = req.body;
+      const referenceNumber = generateReferenceNumber(generateUniqueRandomNumber());
+      let createQuery = 'insert into tcustomer_course (courseno, courseid, remaining, coursetype, startdate, enddate) values (?, ?, ?, ?, ?, ?)';
+      const results = await queryPromise(createQuery, [referenceNumber, courseid, remaining, coursetype, startdate, enddate]);
+      if(results.affectedRows > 0){
+        res.json({ success: true, message: 'Create Customer Course successful', courseno: referenceNumber});
+      } else {
+        res.json({ success: false, message: 'Create Customer Course failed' });
+      }
+    } catch (error) {
+      console.error("API createCustomerCourse error:", error.message, error.stack);
+      res.status(500).send(error);
+    }
+  });
+
+  function generateReferenceNumber(number) {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = ('0' + (currentDate.getMonth() + 1)).slice(-2);
+    const day = ('0' + currentDate.getDate()).slice(-2);
+    const formattedDate = `${year}${month}${day}`;
+    const referenceNumber = `${formattedDate}-${number}`;
+    return referenceNumber;
+  }
+
+  function generateUniqueRandomNumber() {
+    const timestamp = Date.now(); // Get current timestamp
+    const randomPart = Math.floor(Math.random() * 10000); // Generate random number between 0 and 9999
+    const uniqueNumber = timestamp.toString() + randomPart.toString(); // Concatenate timestamp and random part
+    return parseInt(uniqueNumber); // Parse the result to integer
+  }
 // Utility function to promisify the database queries
 function queryPromise(query, params) {
   return new Promise((resolve, reject) => {
@@ -1057,8 +1090,6 @@ function queryPromise(query, params) {
     });
   });
 }
-
-
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
