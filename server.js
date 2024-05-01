@@ -3,6 +3,7 @@ require('buffer')
 const express = require('express');
 const axios = require('axios');
 const qs = require('qs');
+const iconv = require('iconv-lite');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
