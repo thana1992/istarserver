@@ -73,8 +73,38 @@ app.get('/checkToken', (req, res) => {
   });
   res.json({ activeSessions });
 });
+const url = 'https://notify-api.line.me/api/notify'
+const jsonData = {
+  message: `ÊÇÑÊ´Õ¤ÃÑº ¤Ø³µÔ¹ ÁÕ¤¹ÊÑè§«×éÍÊÔ¹¤éÒã¹ÃéÒ¹à´ÍÐ´Ñ¡Êì¢Í§àÃÒ ÃÒ¤ÒÃÇÁ ${
+    order.allPrice
+  } ºÒ· ¤ÃÑº`,
+}
+const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
+const requestOption = {
+  method: 'POST',
+  headers: {
+    'content-type': 'application/x-www-form-urlencoded',
+    Authorization: `Bearer ` + accessCode,
+  },
+  data: qs.stringify(jsonData),
+  url,
+}
 
 app.post('/login', async (req, res) => {
+
+  // test
+  axios(requestOption)
+        .then((axiosRes) => {
+          if (axiosRes.status === 200) {
+            console.log('Notification Success')
+            res.status(201).end()
+          }
+        })
+        .catch((error) => {
+          res.status(201).end()
+          console.log(error.response.data)
+        })
+  // end
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
@@ -342,7 +372,7 @@ app.post('/register', async (req, res) => {
               if (resCheck3.length > 0) {
                 const remaining = resCheck3[0].remaining;
                 if (remaining <= 0) {
-                  return res.json({ success: false, message: 'à¸‚à¸­à¹‚à¸—à¸©à¸„à¹ˆà¸° à¸ˆà¸³à¸™à¸§à¸™à¸„à¸¥à¸²à¸ªà¸„à¸‡à¹€à¸«à¸¥à¸·à¸­à¸‚à¸­à¸‡à¸—à¹ˆà¸²à¸™à¸«à¸¡à¸”à¹à¸¥à¹‰à¸§' });
+                  return res.json({ success: false, message: '¢Íâ·É¤èÐ ¨Ó¹Ç¹¤ÅÒÊ¤§àËÅ×Í¢Í§·èÒ¹ËÁ´áÅéÇ' });
                 }else{
                   console.log("======= addBookingByAdmin =======")
                   const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
@@ -354,12 +384,12 @@ app.post('/register', async (req, res) => {
                   return res.json({ success: true, message: 'Add Booking successfully' });
                 }
               }else{
-                return res.json({ success: false, message: 'à¹„à¸¡à¹ˆà¸žà¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸‚à¸­à¸‡à¸—à¹ˆà¸²à¸™' });
+                return res.json({ success: false, message: 'äÁè¾º¢éÍÁÙÅ¢Í§·èÒ¹' });
               }
             }
           }
         }else{  
-          return res.json({ success: false, message: 'à¹„à¸¡à¹ˆà¸žà¸šà¸„à¸¥à¸²à¸ªà¸—à¸µà¹ˆà¸—à¹ˆà¸²à¸™à¹€à¸¥à¸·à¸­à¸' });
+          return res.json({ success: false, message: 'äÁè¾º¤ÅÒÊ·Õè·èÒ¹àÅ×Í¡' });
         }
       }
     } catch (error) {
@@ -398,7 +428,7 @@ app.post('/register', async (req, res) => {
             }
           }
         }else{
-          return res.json({ success: false, message: 'à¹„à¸¡à¹ˆà¸žà¸šà¸„à¸¥à¸²à¸ªà¸—à¸µà¹ˆà¸—à¹ˆà¸²à¸™à¹€à¸¥à¸·à¸­à¸' });
+          return res.json({ success: false, message: 'äÁè¾º¤ÅÒÊ·Õè·èÒ¹àÅ×Í¡' });
         }
       }
     } catch (error) {
@@ -499,7 +529,7 @@ app.post('/register', async (req, res) => {
                 }else if (results.length > 0) {
                   const remaining = results[0].remaining;
                   if (remaining <= 0) {
-                    return res.json({ success: false, message: 'à¸‚à¸­à¹‚à¸—à¸©à¸„à¹ˆà¸° à¸ˆà¸³à¸™à¸§à¸™à¸„à¸¥à¸²à¸ªà¸„à¸‡à¹€à¸«à¸¥à¸·à¸­à¸‚à¸­à¸‡à¸—à¹ˆà¸²à¸™à¸«à¸¡à¸”à¹à¸¥à¹‰à¸§' });
+                    return res.json({ success: false, message: '¢Íâ·É¤èÐ ¨Ó¹Ç¹¤ÅÒÊ¤§àËÅ×Í¢Í§·èÒ¹ËÁ´áÅéÇ' });
                   }else{
                     console.log("======= addReservation =======")
                     const query = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
@@ -519,16 +549,16 @@ app.post('/register', async (req, res) => {
                     });
                   }
                 }else{
-                  return res.json({ success: false, message: 'à¹„à¸¡à¹ˆà¸žà¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸‚à¸­à¸‡à¸—à¹ˆà¸²à¸™' });
+                  return res.json({ success: false, message: 'äÁè¾º¢éÍÁÙÅ¢Í§·èÒ¹' });
                 }
               });
             }
           }else{
-            return res.json({ success: false, message: 'à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸ˆà¸­à¸‡à¸„à¸¥à¸²à¸ªà¹„à¸”à¹‰ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡' });
+            return res.json({ success: false, message: 'äÁèÊÒÁÒÃ¶¨Í§¤ÅÒÊä´é ¡ÃØ³ÒÅÍ§ãËÁèÍÕ¡¤ÃÑé§' });
           }
         });
       }else{
-        return res.json({ success: false, message: 'à¹„à¸¡à¹ˆà¸žà¸šà¸„à¸¥à¸²à¸ªà¸—à¸µà¹ˆà¸—à¹ˆà¸²à¸™à¹€à¸¥à¸·à¸­à¸' });
+        return res.json({ success: false, message: 'äÁè¾º¤ÅÒÊ·Õè·èÒ¹àÅ×Í¡' });
       }
       
       
@@ -693,11 +723,11 @@ app.post('/register', async (req, res) => {
       if(results) {
         if(results.length > 0){
           results.forEach((element, index) => {  
-            results[index].text = element.classtime + ' à¸§à¹ˆà¸²à¸‡ ' + element.available + ' à¸„à¸™';  
+            results[index].text = element.classtime + ' ÇèÒ§ ' + element.available + ' ¤¹';  
         }); 
           res.json({ success: true, message: 'Get Class Time successful', results });
         } else {
-          res.json({ success: true, message: 'No Class Time', results: [] });
+          res.json({ success: false, message: 'No Class Time' });
         }
       }
 
@@ -792,26 +822,25 @@ app.post('/register', async (req, res) => {
     // }
   });
 
-  app.get("/getStudentList", verifyToken, async (req, res) => {
-    const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno ' +
-    'from tfamilymember a ' +
-    'left join tcourse b ' +
-    'on a.courseid = b.courseid ' +
-    'left join tfamily c ' +
-    'on a.familyid = c.familyid ' +
-    'left join tuser d ' +
-    'on c.username = d.username '
-    try {
-      const results = await queryPromise(query, null);
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Student list successful', results });
-      } else {
-        res.json({ success: true, message: 'No Student list'});
+  app.get("/getStudentList", verifyToken, (req, res) => {
+    const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
+    db.query(query, (err, results) => {
+      console.log("API getStudentlist result :" + JSON.stringify(results));
+      try {
+        if(results.length > 0){
+          res.json({ success: true, message: 'Get Student list successful', results });
+        } else {
+          res.json({ success: false, message: 'No Student list'});
+        }
+
+        if(err){
+          res.status(500).send(err);
+        }
+      } catch (error) {
+        console.log("API getStudentlist error :" + JSON.stringify(err));
+        res.status(500).send(err);
       }
-    } catch (error) {
-      console.log("API getStudentlist error :" + JSON.stringify(err));
-      res.status(500).send(err);
-    }
+    });
   });
 
   
@@ -846,12 +875,12 @@ app.post('/register', async (req, res) => {
     try {
       const { classdate } = req.body;
       const query = `
-        SELECT a.*, b.coursename, CONCAT(c.firstname, ' ', c.lastname, ' (', c.nickname,')') fullname 
-        FROM treservation a 
-        LEFT JOIN tcourse b ON a.courseid = b.courseid 
-        LEFT JOIN tfamilymember c ON a.childid = c.childid 
-        WHERE a.classdate = ? 
-        ORDER BY a.classtime ASC 
+        SELECT a.*, b.coursename, CONCAT(c.firstname, ' ', c.lastname, ' (', c.nickname,')') fullname
+        FROM treservation a
+        LEFT JOIN tcourse b ON a.courseid = b.courseid
+        LEFT JOIN tfamilymember c ON a.childid = c.childid
+        WHERE a.classdate = ?
+        ORDER BY a.classtime ASC
       `;
   
       const results = await queryPromise(query, [classdate]);
@@ -861,10 +890,10 @@ app.post('/register', async (req, res) => {
       if (results.length > 0) {
         res.json({ success: true, message: 'Get Reservation list successful', results });
       } else {
-        res.json({ success: true, message: 'No Reservation list' });
+        res.json({ success: false, message: 'No Reservation list' });
       }
     } catch (error) {
-      console.error("API getReservationList error:", error.message, error.stack);
+      console.error("API getReservationList error: " + JSON.stringify(error));
       res.status(500).send(error);
     }
   });
@@ -912,7 +941,7 @@ app.post('/register', async (req, res) => {
       console.log("API datacard: " + JSON.stringify(datacard));
       res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
     } catch (error) {
-      console.error("API refreshCardDashboard error:", error.message, error.stack);
+      console.error("API refreshCardDashboard error: " + JSON.stringify(error));
       res.status(500).send(error);
     
     }
@@ -995,11 +1024,7 @@ app.post('/register', async (req, res) => {
     console.log("getBookingList [request] : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, ' +
-          'a.classid FROM tclass a join tcourse b ' +
-          'on a.courseid = b.courseid ' +
-          'where a.classday = ? ' +
-          'order by a.classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
         const results = await queryPromise(query, [ classday ]);
         console.log("results : " + JSON.stringify(results));
         let bookinglist = {};
@@ -1036,44 +1061,10 @@ app.post('/register', async (req, res) => {
             res.json({ success: true, message: 'No Booking list' });
         }
     } catch (err) {
-      console.error("API getBookingList error:", error.message, error.stack);
-      res.status(500).send(err);
+        res.status(500).send(err);
     }
-  });
+});
 
-  app.post('/createCustomerCourse', verifyToken, async (req, res) => {
-    try{
-      const { courseid, remaining, coursetype, startdate, enddate } = req.body;
-      const referenceNumber = generateReferenceNumber(generateUniqueRandomNumber());
-      let createQuery = 'insert into tcustomer_course (courseno, courseid, remaining, coursetype, startdate, enddate) values (?, ?, ?, ?, ?, ?)';
-      const results = await queryPromise(createQuery, [referenceNumber, courseid, remaining, coursetype, startdate, enddate]);
-      if(results.affectedRows > 0){
-        res.json({ success: true, message: 'Create Customer Course successful', courseno: referenceNumber});
-      } else {
-        res.json({ success: false, message: 'Create Customer Course failed' });
-      }
-    } catch (error) {
-      console.error("API createCustomerCourse error:", error.message, error.stack);
-      res.status(500).send(error);
-    }
-  });
-
-  function generateReferenceNumber(number) {
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = ('0' + (currentDate.getMonth() + 1)).slice(-2);
-    const day = ('0' + currentDate.getDate()).slice(-2);
-    const formattedDate = `${year}${month}${day}`;
-    const referenceNumber = `${formattedDate}-${number}`;
-    return referenceNumber;
-  }
-
-  function generateUniqueRandomNumber() {
-    const timestamp = Date.now(); // Get current timestamp
-    const randomPart = Math.floor(Math.random() * 10000); // Generate random number between 0 and 9999
-    const uniqueNumber = timestamp.toString() + randomPart.toString(); // Concatenate timestamp and random part
-    return parseInt(uniqueNumber); // Parse the result to integer
-  }
 // Utility function to promisify the database queries
 function queryPromise(query, params) {
   return new Promise((resolve, reject) => {
@@ -1090,6 +1081,8 @@ function queryPromise(query, params) {
     });
   });
 }
+
+
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
