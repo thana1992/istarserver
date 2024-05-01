@@ -834,7 +834,7 @@ app.post('/register', async (req, res) => {
       if(results.length > 0) {
         res.json({ success: true, message: 'Get New Students successful', results });
       } else {
-        res.json({ success: true, message: 'No New Students' });
+        res.json({ success: true, message: 'No New Students' , results});
       }
     })
     .catch((error) => {
