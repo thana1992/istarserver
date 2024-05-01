@@ -77,7 +77,7 @@ app.get('/checkToken', (req, res) => {
 });
 const url = 'https://notify-api.line.me/api/notify'
 const jsonData = {
-  message: `ทดสอบ แจ้งเตือนจาก API ของเรา`,
+  message: 'Test Notification from Istar API, ทดสอบการส่งข้อความจาก Istar API',
 }
 const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
 const requestOption = {
