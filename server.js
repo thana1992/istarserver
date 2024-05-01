@@ -826,6 +826,7 @@ app.post('/register', async (req, res) => {
 
   app.get("/getNewStudentList", verifyToken, async (req, res) => {
     const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
+    /*
     const results = await queryPromise(query, null);
     if(results.length > 0){
       res.json({ success: true, message: 'Get New Students successful', results });
@@ -833,6 +834,20 @@ app.post('/register', async (req, res) => {
       let results = [];
       res.json({ success: true, message: 'No New Students', results });
     }
+    */
+
+    await queryPromise(query, null)
+    .then((results) => {
+      if(results.length > 0) {
+        res.json({ success: true, message: 'Get New Students successful', results });
+      } else {
+        res.json({ success: true, message: 'No New Students' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
   });
 
   app.get("/courseLookup", verifyToken, async (req, res) => {
