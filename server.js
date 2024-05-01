@@ -463,20 +463,21 @@ app.post('/register', async (req, res) => {
     });
   });
 
-  app.post('/getMemberReservationDetail', verifyToken, (req, res) => {
+  app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
     const { childid } = req.body;
     const query = 'SELECT * FROM treservation WHERE childid = ? order by classdate asc';
-    db.query(query, [childid], (err, results) => {
-      if(results.length > 0){
+    await queryPromise(query, [childid])
+    .then((results) => {
+      if(results.length > 0) {
         res.json({ success: true, message: 'Get Reservation Detail successful', results });
       } else {
-        res.json({ success: false, message: 'No Reservation Detail' });
+        res.json({ success: true, message: 'No Reservation Detail' });
       }
-
-      if(err){
-        res.status(500).send(err);
-      }
-    });
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
   });
 
   app.post('/createReservation', verifyToken, (req, res) => {
