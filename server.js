@@ -250,24 +250,31 @@ app.post('/register', async (req, res) => {
           const query = 'INSERT INTO tfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
                         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
           await queryPromise(query, [item.familyid, item.firstname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining])
-  
-          const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
-          console.log("delete jfamilymember childid : " + item.childid);
-          await queryPromise(deleteQuery, [item.childid])
           .then((results) => {
-            res.json({ success: true, message: 'Family member approve successfully' });
+            const deleteQuery = 'DELETE FROM jfamilymember WHERE childid = ?';
+            console.log("delete jfamilymember childid : " + item.childid);
+            await queryPromise(deleteQuery, [item.childid])
+            .then((results) => {
+              res.json({ success: true, message: 'Family member approve successfully' });
+            })
+            .catch((error) => {
+              res.json({ success: true, message: error.message });
+              console.error('Error in queryPromise delete:', error);
+            })
           })
           .catch((error) => {
-            res.json({ success: true, message: error.message });
-            console.error('Error in queryPromise:', error);
+            console.error('Error in queryPromise insert:', error);
+            return res.json({ success: true, message: error.message });
+            
           })
+          
         }
       }
   
       
     } catch (error) {
       console.log("approveNewStudent error: " + JSON.stringify(error));
-      res.status(500).send(error);
+      return res.status(500).send(error);
     }
   });
 
