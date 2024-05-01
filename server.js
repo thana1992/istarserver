@@ -114,7 +114,7 @@ app.post('/login', async (req, res) => {
       db.query(logquery, [username]);
       
       const jsonData = {
-        message: username + 'Has login to Istar Application',
+        message: username + ' has login to istar Application',
       }
       const requestOption = {
         method: 'POST',
@@ -122,10 +122,10 @@ app.post('/login', async (req, res) => {
           'content-type': 'application/x-www-form-urlencoded',
           Authorization: `Bearer ` + accessCode,
         },
-        data: iconv.decode(new Buffer(qs.stringify(jsonData)), "ISO-8859-1"),
+        data: qs.stringify(jsonData),
         url,
       }
-      // test
+      
       axios(requestOption)
         .then((axiosRes) => {
           if (axiosRes.status === 200) {
@@ -137,7 +137,6 @@ app.post('/login', async (req, res) => {
           res.status(201).end()
           console.log(error.response.data)
         })
-      // end
       
     } else {
       res.json({ success: false, message: 'password is invalid' });
@@ -545,6 +544,31 @@ app.post('/register', async (req, res) => {
                         db.query(updateRemainingQuery, [childid], err => {
                           if (err) {
                             return res.status(500).send(err);
+                          }else{
+                            const jsonData = {
+                              message: 'Someone has booked a class for your child on ' + classdate + ' at ' + classtime,
+                            }
+                            const requestOption = {
+                              method: 'POST',
+                              headers: {
+                                'content-type': 'application/x-www-form-urlencoded',
+                                Authorization: `Bearer ` + accessCode,
+                              },
+                              data: qs.stringify(jsonData),
+                              url,
+                            }
+                            
+                            axios(requestOption)
+                              .then((axiosRes) => {
+                                if (axiosRes.status === 200) {
+                                  console.log('Notification Success')
+                                  res.status(201).end()
+                                }
+                              })
+                              .catch((error) => {
+                                res.status(201).end()
+                                console.log(error.response.data)
+                              })
                           }
                         });
                         return res.json({ success: true, message: 'Reservation added successfully' });
