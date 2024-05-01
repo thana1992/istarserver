@@ -524,7 +524,8 @@ app.post('/register', async (req, res) => {
         await queryPromise(updateRemainingQuery, [childid]);
   
         // Format date for notification
-        const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
+        var a = moment(classdate, "YYYYMMDD");
+        const bookdate = new Date(a).toLocaleDateString('th-TH', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
