@@ -78,35 +78,11 @@ app.get('/checkToken', (req, res) => {
   res.json({ activeSessions });
 });
 const url = 'https://notify-api.line.me/api/notify'
-const jsonData = {
-  message: 'Test Notification from Istar API, ทดสอบการส่งข้อความจาก Istar API',
-}
+
 const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
-const requestOption = {
-  method: 'POST',
-  headers: {
-    'content-type': 'application/x-www-form-urlencoded',
-    Authorization: `Bearer ` + accessCode,
-  },
-  data: iconv.decode(new Buffer(qs.stringify(jsonData)), "ISO-8859-1"),
-  url,
-}
+
 
 app.post('/login', async (req, res) => {
-
-  // test
-  axios(requestOption)
-    .then((axiosRes) => {
-      if (axiosRes.status === 200) {
-        console.log('Notification Success')
-        res.status(201).end()
-      }
-    })
-    .catch((error) => {
-      res.status(201).end()
-      console.log(error.response.data)
-    })
-  // end
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
@@ -137,6 +113,31 @@ app.post('/login', async (req, res) => {
       const logquery = 'INSERT INTO llogin (username) VALUES (?)';
       db.query(logquery, [username]);
       
+      const jsonData = {
+        message: username + 'Has login to Istar Application',
+      }
+      const requestOption = {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ` + accessCode,
+        },
+        data: iconv.decode(new Buffer(qs.stringify(jsonData)), "ISO-8859-1"),
+        url,
+      }
+      // test
+      axios(requestOption)
+        .then((axiosRes) => {
+          if (axiosRes.status === 200) {
+            console.log('Notification Success')
+            res.status(201).end()
+          }
+        })
+        .catch((error) => {
+          res.status(201).end()
+          console.log(error.response.data)
+        })
+      // end
       
     } else {
       res.json({ success: false, message: 'password is invalid' });
