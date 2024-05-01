@@ -1,10 +1,11 @@
 require('dotenv').config()
 require('buffer')
-require('moment')
+
 const express = require('express');
 const axios = require('axios');
 const qs = require('qs');
 const iconv = require('iconv-lite');
+const moment = require('moment');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
