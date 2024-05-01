@@ -520,7 +520,7 @@ app.post('/register', async (req, res) => {
                           if (err) {
                             return res.status(500).send(err);
                           }else{
-                            const bookdate = classdate.toLocaleDateString('th-TH', {
+                            const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',
