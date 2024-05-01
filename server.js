@@ -825,7 +825,7 @@ app.post('/register', async (req, res) => {
   });
 
   app.get("/getNewStudentList", verifyToken, async (req, res) => {
-    const query = 'select *, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname from jfamilymember';
+    const query = 'select jfamilymember.*, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname c.username from jfamilymember left join tfamily b on jfamilymember.familyid = b.familyid left join tuser c on b.username = c.username left join tfamily b on jfamilymember.familyid = b.familyid left join tuser c on b.username = c.username';
     /*
     const results = await queryPromise(query, null);
     if(results.length > 0){
@@ -1043,9 +1043,10 @@ app.post('/register', async (req, res) => {
       console.log("API datacard: " + JSON.stringify(datacard));
       res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
     } catch (error) {
+      
       console.error("API refreshCardDashboard error: " + JSON.stringify(error));
       res.status(500).send(error);
-    
+      throw error;
     }
   });
   
