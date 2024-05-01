@@ -417,7 +417,7 @@ app.post('/register', async (req, res) => {
     try {
       const { reservationid } = req.body;
       const query = 'DELETE FROM treservation WHERE reservationid = ?';
-      const results = await queryPromise(query, [reservationid]);
+      const results = await queryPromise(query, [reservationid, childid]);
       if (results.affectedRows > 0) {
         const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining + 1 WHERE childid = ?';
         const results2 = await queryPromise(updateRemainingQuery, [childid]);
@@ -480,6 +480,84 @@ app.post('/register', async (req, res) => {
     })
   });
 
+  app.post('/createReservation', verifyToken, async (req, res) => {
+    try {
+      console.log("addReservation : " + JSON.stringify(req.body));
+      const { courseid, classid, classday, classdate, classtime, childid, studentname, studentnickname, coursename } = req.body;
+  
+      // Query to check max person for the class
+      const checkClassFullQuery = 'SELECT maxperson FROM tclass WHERE classid = ? AND classday = ? AND classtime = ?';
+      const maxPersonResults = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
+      console.log("checkClassFullQuery results 1 : " + JSON.stringify(maxPersonResults));
+  
+      if (maxPersonResults.length > 0) {
+        const maxperson = maxPersonResults[0].maxperson;
+        
+        // Query to count reservations for the class
+        const countReservationsQuery = 'SELECT COUNT(*) AS count FROM treservation WHERE classid = ? AND classdate = ? AND classtime = ?';
+        const countResults = await queryPromise(countReservationsQuery, [classid, classdate, classtime]);
+        console.log("checkClassFullQuery results 2 : " + JSON.stringify(countResults));
+  
+        const count = countResults[0].count;
+        
+        if (count >= maxperson) {
+          return res.json({ success: false, message: 'Sorry, This class is full' });
+        }
+  
+        // Query to check remaining class slots for the user
+        const checkRemainingQuery = 'SELECT remaining FROM tfamilymember WHERE childid = ?';
+        const remainingResults = await queryPromise(checkRemainingQuery, [childid]);
+        console.log("checkRemainingQuery results : " + JSON.stringify(remainingResults));
+  
+        const remaining = remainingResults[0].remaining;
+  
+        if (remaining <= 0) {
+          return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
+        }
+  
+        // Insert reservation into database
+        const insertReservationQuery = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
+        await queryPromise(insertReservationQuery, [courseid, classid, classdate, classtime, childid]);
+  
+        // Update remaining class slots for the user
+        const updateRemainingQuery = 'UPDATE tfamilymember SET remaining = remaining - 1 WHERE childid = ?';
+        await queryPromise(updateRemainingQuery, [childid]);
+  
+        // Format date for notification
+        const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+  
+        // Prepare notification data
+        const jsonData = {
+          message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+        };
+  
+        // Send notification
+        const requestOption = {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            Authorization: `Bearer ` + accessCode,
+          },
+          data: qs.stringify(jsonData),
+          url,
+        };
+  
+        await axios(requestOption);
+        console.log('Notification Success');
+        return res.json({ success: true, message: 'Reservation added successfully' });
+      } else {
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
+      }
+    } catch (error) {
+      console.error("Error occurred: ", error);
+      return res.status(500).send(error.message);
+    }
+  });
+  /*
   app.post('/createReservation', verifyToken, (req, res) => {
     console.log("addReservation : " + JSON.stringify(req.body));
     const { courseid, classid, classday, classdate, classtime, childid, studentname, studentnickname, coursename } = req.body;
@@ -572,7 +650,7 @@ app.post('/register', async (req, res) => {
       
     });
   });
-
+*/
   app.post('/deleteReservation', verifyToken, (req, res) => {
     const { reservationid } = req.body;
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
