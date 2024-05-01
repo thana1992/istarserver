@@ -825,7 +825,7 @@ app.post('/register', async (req, res) => {
   });
 
   app.get("/getNewStudentList", verifyToken, async (req, res) => {
-    const query = 'select jfamilymember.*, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname, c.username from jfamilymember left join tfamily b on jfamilymember.familyid = b.familyid left join tuser c on b.username = c.username left join tfamily b on jfamilymember.familyid = b.familyid left join tuser c on b.username = c.username';
+    const query = 'select jfamilymember.*, CONCAT(firstname, \' \', lastname, \' (\', nickname,\')\') fullname, c.username from jfamilymember left join tfamily b on jfamilymember.familyid = b.familyid left join tuser c on b.username = c.username';
     /*
     const results = await queryPromise(query, null);
     if(results.length > 0){
