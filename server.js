@@ -1,10 +1,8 @@
 require('dotenv').config()
-require('buffer')
 
 const express = require('express');
 const axios = require('axios');
 const qs = require('qs');
-const iconv = require('iconv-lite');
 const moment = require('moment');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
@@ -16,6 +14,9 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = "your-secret-key";
 const db = mysql.createConnection(process.env.DATABASE_URL)
 const activeSessions = [];
+const url = 'https://notify-api.line.me/api/notify'
+const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
+
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization; // Assuming the token is included in the Authorization header
@@ -79,10 +80,6 @@ app.get('/checkToken', (req, res) => {
   });
   res.json({ activeSessions });
 });
-const url = 'https://notify-api.line.me/api/notify'
-
-//const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
-const accessCode = 'gTaAqFvV5yVc9goTmJOeA6XDAA5gP4iYn9S8DtMmxan'
 
 app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
@@ -484,7 +481,7 @@ app.post('/register', async (req, res) => {
 
   app.post('/createReservation', verifyToken, (req, res) => {
     console.log("addReservation : " + JSON.stringify(req.body));
-    const { courseid, classid, classday, classdate, classtime, childid, studentname, studentnickname } = req.body;
+    const { courseid, classid, classday, classdate, classtime, childid, studentname, studentnickname, coursename } = req.body;
     let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
     db.query(checkClassFullQuery, [classid, classday, classtime], (err, results) => {
       console.log("checkClassFullQuery results 1 : " + JSON.stringify(results));
@@ -530,7 +527,7 @@ app.post('/register', async (req, res) => {
                               day: 'numeric',
                             })
                             const jsonData = {
-                              message: studentname + ' (' + studentnickname + ') ได้จองคลาส ' + bookdate + ' เวลา ' + classtime,
+                              message: coursename + studentnickname + ' ' + studentname +' วันที่ ' + bookdate + ' เวลา ' + classtime,
                             }
                             const requestOption = {
                               method: 'POST',
