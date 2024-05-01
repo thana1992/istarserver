@@ -415,7 +415,7 @@ app.post('/register', async (req, res) => {
 
   app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     try {
-      const { reservationid } = req.body;
+      const { reservationid, childid } = req.body;
       const query = 'DELETE FROM treservation WHERE reservationid = ?';
       const results = await queryPromise(query, [reservationid, childid]);
       if (results.affectedRows > 0) {
