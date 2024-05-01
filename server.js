@@ -87,7 +87,7 @@ const requestOption = {
     'content-type': 'application/x-www-form-urlencoded',
     Authorization: `Bearer ` + accessCode,
   },
-  data: iconv.decode(new Buffer(qs.stringify(jsonData)), "TIS-620");
+  data: iconv.decode(new Buffer(qs.stringify(jsonData)), "TIS-620"),
   url,
 }
 
