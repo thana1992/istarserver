@@ -374,7 +374,7 @@ app.post('/register', async (req, res) => {
               if (resCheck3.length > 0) {
                 const remaining = resCheck3[0].remaining;
                 if (remaining <= 0) {
-                  return res.json({ success: false, message: '���ɤ�� �ӹǹ���ʤ�����ͧ͢��ҹ�������' });
+                  return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
                 }else{
                   console.log("======= addBookingByAdmin =======")
                   const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
@@ -386,12 +386,12 @@ app.post('/register', async (req, res) => {
                   return res.json({ success: true, message: 'Add Booking successfully' });
                 }
               }else{
-                return res.json({ success: false, message: '��辺�����Ţͧ��ҹ' });
+                return res.json({ success: false, message: 'ไม่พบข้อมูลของท่าน' });
               }
             }
           }
         }else{  
-          return res.json({ success: false, message: '��辺���ʷ���ҹ���͡' });
+          return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
         }
       }
     } catch (error) {
@@ -430,7 +430,7 @@ app.post('/register', async (req, res) => {
             }
           }
         }else{
-          return res.json({ success: false, message: '��辺���ʷ���ҹ���͡' });
+          return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
         }
       }
     } catch (error) {
@@ -531,7 +531,7 @@ app.post('/register', async (req, res) => {
                 }else if (results.length > 0) {
                   const remaining = results[0].remaining;
                   if (remaining <= 0) {
-                    return res.json({ success: false, message: '���ɤ�� �ӹǹ���ʤ�����ͧ͢��ҹ�������' });
+                    return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
                   }else{
                     console.log("======= addReservation =======")
                     const query = 'INSERT INTO treservation (courseid, classid, classdate, classtime, childid) VALUES (?, ?, ?, ?, ?)';
@@ -576,16 +576,16 @@ app.post('/register', async (req, res) => {
                     });
                   }
                 }else{
-                  return res.json({ success: false, message: '��辺�����Ţͧ��ҹ' });
+                  return res.json({ success: false, message: 'ไม่พบข้อมูลของท่าน' });
                 }
               });
             }
           }else{
-            return res.json({ success: false, message: '�������ö�ͧ������ ��س��ͧ�����ա����' });
+            return res.json({ success: false, message: 'ไม่สามารถจองคลาสได้ กรุณาลองใหม่อีกครั้ง' });
           }
         });
       }else{
-        return res.json({ success: false, message: '��辺���ʷ���ҹ���͡' });
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
       }
       
       
@@ -750,11 +750,11 @@ app.post('/register', async (req, res) => {
       if(results) {
         if(results.length > 0){
           results.forEach((element, index) => {  
-            results[index].text = element.classtime + ' ��ҧ ' + element.available + ' ��';  
+            results[index].text = element.classtime + ' ว่าง ' + element.available + ' คน';  
         }); 
           res.json({ success: true, message: 'Get Class Time successful', results });
         } else {
-          res.json({ success: false, message: 'No Class Time' });
+          res.json({ success: true, message: 'No Class Time', results: [] });
         }
       }
 
@@ -917,7 +917,7 @@ app.post('/register', async (req, res) => {
       if (results.length > 0) {
         res.json({ success: true, message: 'Get Reservation list successful', results });
       } else {
-        res.json({ success: false, message: 'No Reservation list' });
+        res.json({ success: true, message: 'No Reservation list' });
       }
     } catch (error) {
       console.error("API getReservationList error: " + JSON.stringify(error));
