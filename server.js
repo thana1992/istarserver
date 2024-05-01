@@ -917,54 +917,23 @@ app.post('/register', async (req, res) => {
     // }
   });
 
-  app.get("/getStudentList", verifyToken, (req, res) => {
-    const query = 'select a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno from tfamilymember a left join tcourse b on a.courseid = b.courseid left join tfamily c on a.familyid = c.familyid left join tuser d on c.username = d.username '
-    db.query(query, (err, results) => {
-      console.log("API getStudentlist result :" + JSON.stringify(results));
-      try {
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Student list successful', results });
-        } else {
-          res.json({ success: false, message: 'No Student list'});
-        }
-
-        if(err){
-          res.status(500).send(err);
-        }
-      } catch (error) {
-        console.log("API getStudentlist error :" + JSON.stringify(err));
-        res.status(500).send(err);
-      }
-    });
-  });
-
+  app.get("/getStudentList", verifyToken, async (req, res) => {
+    try {
+      const query = 'SELECT a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno FROM tfamilymember a LEFT JOIN tcourse b ON a.courseid = b.courseid LEFT JOIN tfamily c ON a.familyid = c.familyid LEFT JOIN tuser d ON c.username = d.username';
+      const results = await queryPromise(query);
   
-
-  // app.post("/getReservationList", verifyToken, (req, res) => {
-  //   const { classdate } = req.body;
-  //   const query = 'SELECT a.*, b.coursename, CONCAT(c.firstname, \' \', c.lastname, \' (\', c.nickname,\')\') fullname ' +
-  //                 'FROM treservation a left join tcourse b on a.courseid = b.courseid ' +
-  //                 'left join tfamilymember c on a.childid = c.childid ' +
-  //                 'WHERE a.classdate = ? ' +
-  //                 'order by a.classtime asc';
-  //   db.query(query, [classdate], (err, results) => {
-  //     console.log("API getReservationList result :" + JSON.stringify(results));
-  //     try {
-  //       if(results.length > 0){
-  //         res.json({ success: true, message: 'Get Reservation list successful', results });
-  //       } else {
-  //         res.json({ success: false, message: 'No Reservation list'});
-  //       }
-
-  //       if(err){
-  //         res.status(500).send(err);
-  //       }
-  //     } catch (error) {
-  //       console.log("API getReservationList error :" + JSON.stringify(err));
-  //       res.status(500).send(err);
-  //     }
-  //   });
-  // });
+      console.log("API getStudentlist result :" + JSON.stringify(results));
+  
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Student list successful', results });
+      } else {
+        res.json({ success: true, message: 'No Student list', results });
+      }
+    } catch (error) {
+      console.error("API getStudentlist error :" + JSON.stringify(error));
+      res.status(500).send(error);
+    }
+  });
 
   app.post("/getReservationList", verifyToken, async (req, res) => {
     try {
@@ -985,7 +954,7 @@ app.post('/register', async (req, res) => {
       if (results.length > 0) {
         res.json({ success: true, message: 'Get Reservation list successful', results });
       } else {
-        res.json({ success: true, message: 'No Reservation list' });
+        res.json({ success: true, message: 'No Reservation list' , results });
       }
     } catch (error) {
       console.error("API getReservationList error: " + JSON.stringify(error));
