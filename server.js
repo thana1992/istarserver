@@ -1,4 +1,5 @@
 require('dotenv').config()
+require('buffer')
 const express = require('express');
 const axios = require('axios');
 const qs = require('qs');
@@ -86,7 +87,7 @@ const requestOption = {
     'content-type': 'application/x-www-form-urlencoded',
     Authorization: `Bearer ` + accessCode,
   },
-  data: qs.stringify(jsonData),
+  data: iconv.decode(new Buffer(qs.stringify(jsonData)), "TIS-620");
   url,
 }
 
@@ -94,16 +95,16 @@ app.post('/login', async (req, res) => {
 
   // test
   axios(requestOption)
-        .then((axiosRes) => {
-          if (axiosRes.status === 200) {
-            console.log('Notification Success')
-            res.status(201).end()
-          }
-        })
-        .catch((error) => {
-          res.status(201).end()
-          console.log(error.response.data)
-        })
+    .then((axiosRes) => {
+      if (axiosRes.status === 200) {
+        console.log('Notification Success')
+        res.status(201).end()
+      }
+    })
+    .catch((error) => {
+      res.status(201).end()
+      console.log(error.response.data)
+    })
   // end
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
