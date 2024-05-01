@@ -76,9 +76,7 @@ app.get('/checkToken', (req, res) => {
 });
 const url = 'https://notify-api.line.me/api/notify'
 const jsonData = {
-  message: `สวัสดีครับ คุณติน มีคนสั่งซื้อสินค้าในร้านเดอะดักส์ของเรา ราคารวม ${
-    order.allPrice
-  } บาท ครับ`,
+  message: `ทดสอบ แจ้งเตือนจาก API ของเรา`,
 }
 const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
 const requestOption = {
