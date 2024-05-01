@@ -527,7 +527,7 @@ app.post('/register', async (req, res) => {
                               day: 'numeric',
                             })
                             const jsonData = {
-                              message: coursename + studentnickname + ' ' + studentname +' วันที่ ' + bookdate + ' เวลา ' + classtime,
+                              message: coursename + '\n' + studentnickname + ' ' + studentname +'\nวันที่ ' + bookdate + '\nเวลา ' + classtime,
                             }
                             const requestOption = {
                               method: 'POST',
