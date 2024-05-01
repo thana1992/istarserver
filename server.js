@@ -79,8 +79,8 @@ app.get('/checkToken', (req, res) => {
 });
 const url = 'https://notify-api.line.me/api/notify'
 
-const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
-
+//const accessCode = 'KyIQwdLE1VOWdnP5CAATIFfLAAruXabv9CFiPxcN5Oi'
+const accessCode = 'gTaAqFvV5yVc9goTmJOeA6XDAA5gP4iYn9S8DtMmxan'
 
 app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
@@ -112,31 +112,6 @@ app.post('/login', async (req, res) => {
 
       const logquery = 'INSERT INTO llogin (username) VALUES (?)';
       db.query(logquery, [username]);
-      
-      const jsonData = {
-        message: username + ' has login to istar Application',
-      }
-      const requestOption = {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ` + accessCode,
-        },
-        data: qs.stringify(jsonData),
-        url,
-      }
-      
-      axios(requestOption)
-        .then((axiosRes) => {
-          if (axiosRes.status === 200) {
-            console.log('Notification Success')
-            res.status(201).end()
-          }
-        })
-        .catch((error) => {
-          res.status(201).end()
-          console.log(error.response.data)
-        })
       
     } else {
       res.json({ success: false, message: 'password is invalid' });
@@ -507,7 +482,7 @@ app.post('/register', async (req, res) => {
 
   app.post('/createReservation', verifyToken, (req, res) => {
     console.log("addReservation : " + JSON.stringify(req.body));
-    const { courseid, classid, classday, classdate, classtime, childid } = req.body;
+    const { courseid, classid, classday, classdate, classtime, childid, studentname, studentnickname } = req.body;
     let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
     db.query(checkClassFullQuery, [classid, classday, classtime], (err, results) => {
       console.log("checkClassFullQuery results 1 : " + JSON.stringify(results));
@@ -545,8 +520,13 @@ app.post('/register', async (req, res) => {
                           if (err) {
                             return res.status(500).send(err);
                           }else{
+                            const bookdate = classdate.toLocaleDateString('th-TH', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })
                             const jsonData = {
-                              message: 'Someone has booked a class for your child on ' + classdate + ' at ' + classtime,
+                              message: studentname + ' ได้จองคลาสวันที่ ' + bookdate + ' เวลา ' + classtime,
                             }
                             const requestOption = {
                               method: 'POST',
