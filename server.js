@@ -177,7 +177,7 @@ app.post('/register', async (req, res) => {
         if(results.length > 0){
           res.json({ success: true, message: 'Get Family Member successful', results });
         } else {
-          res.json({ success: false, message: 'No Family Member' });
+          res.json({ success: true, message: 'No Family Member', results });
         }
       }
 
