@@ -962,6 +962,24 @@ app.post('/register', async (req, res) => {
     }
   });
 
+  app.post("/checkinByAdmin", verifyToken, async (req, res) => {
+    try {
+      const { reservationid, childid } = req.body;
+      const query = 'UPDATE treservation SET checkedin = 1 WHERE reservationid = ? AND childid = ?';
+      const results = await queryPromise(query, [reservationid, childid]);
+  
+      if (results.affectedRows > 0) {
+        res.json({ success: true, message: 'Checkin successful' });
+      } else {
+        res.json({ success: false, message: 'No Reservation data' });
+      }
+    }
+    catch (error) {
+      console.error("API checkinByAdmin error: " + JSON.stringify(error));
+      res.status(500).send
+    }
+  });
+
   app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
     const { today, tomorrow } = req.body;
     var datacard = {
