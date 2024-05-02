@@ -20,32 +20,31 @@ const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
-    const token = req.headers.authorization; // Assuming the token is included in the Authorization header
-    console.log('Received token:', token);
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
+  const token = req.headers.authorization; // Assuming the token is included in the Authorization header
+  console.log('Received token:', token);
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  jwt.verify(token.replace('Bearer ', ''), SECRET_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: 'Session expried please login again' });
     }
 
-    jwt.verify(token.replace('Bearer ', ''), SECRET_KEY, (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ message: 'Session expried please login again' });
-      }
+    // Check if the user is already in activeSessions
+    const existingUser = activeSessions.find((user) => user.username === decoded.username);
 
-      // Check if the user is already in activeSessions
-      const existingUser = activeSessions.find((user) => user.username === decoded.username);
-
-      if (!existingUser) {
-        // Add the decoded user information to the activeSessions array
-        activeSessions.push(decoded);
-      }
-      // Attach the decoded user information to the request for use in route handlers
-      req.user = decoded;
-      next();
-    });
-  } catch (error) {
-    console.error('Error in verifyToken:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  };
+    if (!existingUser) {
+      // Add the decoded user information to the activeSessions array
+      activeSessions.push(decoded);
+    }
+    // Attach the decoded user information to the request for use in route handlers
+    req.user = decoded;
+    next();
+  });
+} catch (error) {
+  console.error('Error in verifyToken:', error);
+  res.status(500).json({ message: 'Internal server error' });
 };
 
 db.connect(err => {
@@ -196,7 +195,21 @@ app.post('/register', async (req, res) => {
   });
 
   app.post('/addFamilyMember', verifyToken, (req, res) => {
-    res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
+    try {
+      const { familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
+      const query = 'INSERT INTO jfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, photo) ' +
+                    ' VALUES (?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
+        }
+      });
+    } catch (error) {
+      console.log("addFamilyMember error : " + JSON.stringify(error));
+      res.status(500).send(error);
+    }
   });
 
   // app.post('/approveNewStudent', verifyToken, (req, res) => {
