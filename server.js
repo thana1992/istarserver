@@ -179,9 +179,12 @@ app.post('/register', async (req, res) => {
         } else {
           res.json({ success: true, message: 'No Family Member', results });
         }
+      }else{
+        res.json({ success: false, message: 'No Family Member' });
       }
 
       if(err){
+        console.log("API getFamilyMember error : " + JSON.stringify(err));
         res.status(500).send(err);
       }
     });
