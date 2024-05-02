@@ -196,21 +196,7 @@ app.post('/register', async (req, res) => {
   });
 
   app.post('/addFamilyMember', verifyToken, (req, res) => {
-    try {
-      const { familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
-      const query = 'INSERT INTO jfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, photo) ' +
-                    ' VALUES (?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
-        }
-      });
-    } catch (error) {
-      console.log("addFamilyMember error : " + JSON.stringify(error));
-      res.status(500).send(error);
-    }
+    res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   });
 
   // app.post('/approveNewStudent', verifyToken, (req, res) => {
