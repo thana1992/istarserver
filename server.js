@@ -1130,8 +1130,11 @@ app.post('/register', async (req, res) => {
                     let studentlist = [];
                     for (let index2 = 0; index2 < results2.length; index2++) {
                         const element2 = results2[index2];
-                        if()
-                        studentlist.push(element2.nickname+"("+element2.checkedin+")";
+                        if(element2.checkedin == 1) {
+                          studentlist.push(element2.nickname+"("+element2.checkedin+")");
+                        } else {
+                          studentlist.push(element2.nickname);
+                        }
                     }
                     bookinglist[element.class_label] = studentlist;
                     console.log("bookinglist : " + JSON.stringify(bookinglist));
