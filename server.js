@@ -1115,7 +1115,7 @@ app.post('/register', async (req, res) => {
             for (let index = 0; index < results.length; index++) {
                 let this_class = [];
                 const element = results[index];
-                const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname  ' +
+                const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
                     'FROM treservation a ' +
                     'join tcourse b on  a.courseid = b.courseid ' +
                     'left join tfamilymember c on a.childid = c.childid ' +
@@ -1130,7 +1130,8 @@ app.post('/register', async (req, res) => {
                     let studentlist = [];
                     for (let index2 = 0; index2 < results2.length; index2++) {
                         const element2 = results2[index2];
-                        studentlist.push(element2.nickname);
+                        if()
+                        studentlist.push(element2.nickname+"("+element2.checkedin+")";
                     }
                     bookinglist[element.class_label] = studentlist;
                     console.log("bookinglist : " + JSON.stringify(bookinglist));
