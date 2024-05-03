@@ -1157,50 +1157,50 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
     }
 });
 
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'username',
-  password: 'password',
-  database: 'database_name',
-  connectionLimit: 10 // Adjust based on your requirements
+
+// Utility function to promisify the database queries
+// async function queryPromise(query, params) {
+//   return new Promise((resolve, reject) => {
+//     await db.query(query, params, (err, results) => {
+//       console.log("Query : " + query);
+//       console.log("Params : " + params);
+//       if (err) {
+//         console.log("Query error: " + JSON.stringify(err));
+//         reject(err);
+//       } else {
+//         console.log("Query results: " + JSON.stringify(results));
+//         resolve(results);
+//       }
+//     });
+//   });
+// }
+
+const mysql2 = require('mysql2/promise');
+
+// Create a connection pool
+const pool = mysql2.createPool({
+  host: 'istardb-do-user-15700861-0.c.db.ondigitalocean.com',
+  user: 'doadmin',
+  password: 'AVNS_WXj7F6yfu4VzF5b4St-',
+  database: 'istardb',
+  waitForConnections: true,
+  connectionLimit: 0,
+  queueLimit: 0
 });
 
-function queryPromise(query, params) {
-  return new Promise((resolve, reject) => {
-    pool.getConnection((err, connection) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      db.query(query, params, (error, results) => {
-        db.release(); // Release the connection back to the pool
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(results);
-      });
-    });
-  });
+// Function to execute queries using the connection pool
+async function queryPromise(query, params) {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [results] = await connection.query(query, params);
+    return results;
+  } catch (error) {
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
 }
-
-/*
-function queryPromise(query, params) {
-  return new Promise((resolve, reject) => {
-    db.query(query, params, (err, results) => {
-      console.log("Query : " + query);
-      console.log("Params : " + params);
-      if (err) {
-        console.log("Query error: " + JSON.stringify(err));
-        reject(err);
-      } else {
-        console.log("Query results: " + JSON.stringify(results));
-        resolve(results);
-      }
-    });
-  });
-}
-*/
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
