@@ -1157,7 +1157,34 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
     }
 });
 
-// Utility function to promisify the database queries
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'username',
+  password: 'password',
+  database: 'database_name',
+  connectionLimit: 10 // Adjust based on your requirements
+});
+
+function queryPromise(query, params) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      db.query(query, params, (error, results) => {
+        db.release(); // Release the connection back to the pool
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(results);
+      });
+    });
+  });
+}
+
+/*
 function queryPromise(query, params) {
   return new Promise((resolve, reject) => {
     db.query(query, params, (err, results) => {
@@ -1173,8 +1200,7 @@ function queryPromise(query, params) {
     });
   });
 }
-
-
+*/
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
