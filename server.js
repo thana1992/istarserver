@@ -137,111 +137,78 @@ app.post('/logout', verifyToken, (req, res) => {
 
   res.json({ success: true, message: 'Logout successful' });
 });
-/*
+
 app.post('/register', async (req, res) => {
-    console.log("register : " + JSON.stringify(req.body));
-    const { username, password, fullname, address, email, mobileno, lineid } = req.body;
-    const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
-    db.query(checkUsernameQuery, [username], (err, results) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
+  console.log("register : " + JSON.stringify(req.body));
+  const { username, password, fullname, address, email, mobileno, lineid } = req.body;
+  
+  try {
+      // Check if the username is already taken
+      const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
+      const existingUser = await queryPromise(checkUsernameQuery, [username]);
 
-      if (results.length > 0) {
-        return res.json({ success: false, message: 'Username is already taken' });
+      if (existingUser.length > 0) {
+          return res.json({ success: false, message: 'Username is already taken' });
       } else {
-        //const encryptedPassword = crypto.createHash("sha256").update(password).digest("hex");
-        const query = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
-        db.query(query, [username, password, fullname, address, email, mobileno, lineid], (err) => {
-          if (err) {
-            res.status(500).send(err);
-          } else {
-            const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-            db.query(createFamilyQuery, [username], (err2) => {
-              if(err2){
-                res.status(500).send(err2);
-              } else {
-                res.json({ success: true, message: 'User registered successfully' });
-              }
-            });
-          }
-        });
+          // Insert new user
+          const insertUserQuery = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
+          await queryPromise(insertUserQuery, [username, password, fullname, address, email, mobileno, lineid]);
+
+          // Create associated family
+          const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
+          await queryPromise(createFamilyQuery, [username]);
+
+          return res.json({ success: true, message: 'User registered successfully' });
       }
-    });
-  });
-*/
-  app.post('/register', async (req, res) => {
-    console.log("register : " + JSON.stringify(req.body));
-    const { username, password, fullname, address, email, mobileno, lineid } = req.body;
-    
-    try {
-        // Check if the username is already taken
-        const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
-        const existingUser = await queryPromise(checkUsernameQuery, [username]);
-
-        if (existingUser.length > 0) {
-            return res.json({ success: false, message: 'Username is already taken' });
-        } else {
-            // Insert new user
-            const insertUserQuery = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
-            await queryPromise(insertUserQuery, [username, password, fullname, address, email, mobileno, lineid]);
-
-            // Create associated family
-            const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-            await queryPromise(createFamilyQuery, [username]);
-
-            return res.json({ success: true, message: 'User registered successfully' });
-        }
-    } catch (error) {
-        console.error("Error registering user:", error);
-        return res.status(500).send(error);
-    }
+  } catch (error) {
+      console.error("Error registering user:", error);
+      return res.status(500).send(error);
+  }
 });
 
 
-  app.post("/getFamilyMember", verifyToken, (req, res) => {
-    const { familyid } = req.body;
-    const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, a.courseid, b.coursename, b.course_shortname' +
-                    ' from tfamilymember a ' +
-                    ' left join tcourse b ' +
-                    ' on a.courseid = b.courseid ' +
-                    ' where a.familyid = ?';
-    db.query(query, [familyid], (err, results) => {
-      console.log("API getFamilyMember result :" + JSON.stringify(results));
-      if(results){
-        if(results.length > 0){
-          res.json({ success: true, message: 'Get Family Member successful', results });
-        } else {
-          res.json({ success: true, message: 'No Family Member', results });
-        }
-      }else{
-        res.json({ success: false, message: 'No Family Member' });
+app.post("/getFamilyMember", verifyToken, (req, res) => {
+  const { familyid } = req.body;
+  const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, a.courseid, b.coursename, b.course_shortname' +
+                  ' from tfamilymember a ' +
+                  ' left join tcourse b ' +
+                  ' on a.courseid = b.courseid ' +
+                  ' where a.familyid = ?';
+  db.query(query, [familyid], (err, results) => {
+    console.log("API getFamilyMember result :" + JSON.stringify(results));
+    if(results){
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get Family Member successful', results });
+      } else {
+        res.json({ success: true, message: 'No Family Member', results });
       }
+    }else{
+      res.json({ success: false, message: 'No Family Member' });
+    }
 
-      if(err){
-        console.log("API getFamilyMember error : " + JSON.stringify(err));
-        res.status(500).send(err);
-      }
-    });
-  });
-
-  app.post('/addFamilyMember', verifyToken, (req, res) => {
-    try {
-      const { familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
-      const query = 'INSERT INTO jfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, photo) ' +
-                    ' VALUES (?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-      db.query(query, [familyid, firstname, lastname, nickname, gender, dateofbirth], (err) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
-        }
-      });
-    } catch (error) {
-      console.log("addFamilyMember error : " + JSON.stringify(error));
-      res.status(500).send(error);
+    if(err){
+      console.log("API getFamilyMember error : " + JSON.stringify(err));
+      res.status(500).send(err);
     }
   });
+});
+
+  app.post('/addFamilyMember', verifyToken, async (req, res) => {
+    try {
+        const { familyid, firstname, lastname, nickname, gender, dateofbirth } = req.body;
+        const query = 'INSERT INTO jfamilymember (familyid, firstname, lastname, nickname, gender, dateofbirth, photo) ' +
+                      ' VALUES (?, ?, ?, ?, ?, ?, ?)';
+        const defaultPhotoUrl = 'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png';
+
+        await queryPromise(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, defaultPhotoUrl]);
+        
+        res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
+    } catch (error) {
+        console.error("addFamilyMember error:", error);
+        res.status(500).send(error);
+    }
+});
+
 
   // app.post('/approveNewStudent', verifyToken, (req, res) => {
   //   try {
