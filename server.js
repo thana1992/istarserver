@@ -1180,12 +1180,16 @@ const mysql2 = require('mysql2/promise');
 // Create a connection pool
 const pool = mysql2.createPool({
   host: 'istardb-do-user-15700861-0.c.db.ondigitalocean.com',
+  port: 25060,
   user: 'doadmin',
   password: 'AVNS_WXj7F6yfu4VzF5b4St-',
   database: 'istardb',
   waitForConnections: true,
   connectionLimit: 0,
   queueLimit: 0
+  // ssl: {
+  //   ca: fs.readFileSync('./ca-certificate.crt')
+  // }
 });
 
 // Function to execute queries using the connection pool
