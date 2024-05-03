@@ -171,7 +171,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.childid, a.familyid, a.firstname, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.remaining, a.courseid, b.coursename, b.course_shortname' +
                   ' from tfamilymember a ' +
-                  ' left join tcourse b ' +
+                  ' left join tcousetype b ' +
                   ' on a.courseid = b.courseid ' +
                   ' where a.familyid = ?';
   db.query(query, [familyid], (err, results) => {
@@ -679,7 +679,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
   });
 
   app.get('/getAllCourses', verifyToken, (req, res) => {
-    const query = 'SELECT * FROM tcourse';
+    const query = 'SELECT * FROM tcousetype';
     db.query(query, (err, results) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get All Course successful', results });
@@ -695,7 +695,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
 
   app.post('/addCourse', verifyToken, (req, res) => {
     const { coursename, course_shortname } = req.body;
-    const query = 'INSERT INTO tcourse (coursename, course_shortname) VALUES (?, ?)';
+    const query = 'INSERT INTO tcousetype (coursename, course_shortname) VALUES (?, ?)';
     db.query(query, [coursename, course_shortname], (err) => {
       if (err) {
         res.status(500).send(err);
@@ -707,7 +707,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
 
   app.post('/updateCourse', verifyToken, (req, res) => {
     const { coursename, course_shortname, courseid } = req.body;
-    const query = 'UPDATE tcourse SET coursename = ?, course_shortname = ? WHERE courseid = ?';
+    const query = 'UPDATE tcousetype SET coursename = ?, course_shortname = ? WHERE courseid = ?';
     db.query(query, [ coursename, course_shortname, courseid ], (err) => {
       if (err) {
         res.status(500).send(err);
@@ -719,8 +719,8 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
 
   app.post('/deleteCourse', verifyToken, (req, res) => {
     const { courseid } = req.body;
-    const deleteTcouseQuery = 'DELETE FROM tcourse WHERE courseid = ?';
-    db.query(deleteTcouseQuery, [courseid], (err) => {
+    const deleteTcouseTypeQuery = 'DELETE FROM tcousetype WHERE courseid = ?';
+    db.query(deleteTcouseTypeQuery, [courseid], (err) => {
       if (err) {
         res.status(500).send(err);
       } else {
@@ -738,7 +738,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
 
   app.get('/getAllClasses', verifyToken, (req, res) => {
     const { courseid } = req.body;
-    const query = 'SELECT b.courseid, b.coursename, a.* FROM tclass a inner join tcourse b on a.courseid = b.courseid order by b.coursename , a.classday ';
+    const query = 'SELECT b.courseid, b.coursename, a.* FROM tclass a inner join tcousetype b on a.courseid = b.courseid order by b.coursename , a.classday ';
     db.query(query, [courseid], (err, results) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get All Class successful', results });
@@ -849,7 +849,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
   });
 
   app.get("/courseLookup", verifyToken, async (req, res) => {
-    const query = 'SELECT * FROM tcourse';
+    const query = 'SELECT * FROM tcousetype';
     await queryPromise(query, null)
     .then((results) => {
       if(results.length > 0) {
@@ -924,7 +924,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
 
   app.get("/getStudentList", verifyToken, async (req, res) => {
     try {
-      const query = 'SELECT a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno FROM tfamilymember a LEFT JOIN tcourse b ON a.courseid = b.courseid LEFT JOIN tfamily c ON a.familyid = c.familyid LEFT JOIN tuser d ON c.username = d.username';
+      const query = 'SELECT a.*, CONCAT(a.firstname, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno FROM tfamilymember a LEFT JOIN tcousetype b ON a.courseid = b.courseid LEFT JOIN tfamily c ON a.familyid = c.familyid LEFT JOIN tuser d ON c.username = d.username';
       const results = await queryPromise(query);
   
       console.log("API getStudentlist result :" + JSON.stringify(results));
@@ -946,7 +946,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
       const query = `
         SELECT a.*, b.coursename, CONCAT(c.firstname, ' ', c.lastname, ' (', c.nickname,')') fullname
         FROM treservation a
-        LEFT JOIN tcourse b ON a.courseid = b.courseid
+        LEFT JOIN tcousetype b ON a.courseid = b.courseid
         LEFT JOIN tfamilymember c ON a.childid = c.childid
         WHERE a.classdate = ?
         ORDER BY a.classtime ASC
@@ -1112,7 +1112,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
     console.log("getBookingList [request] : " + JSON.stringify(req.body));
     try {
         const { classday, classdate } = req.body;
-        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcourse b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
+        const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcousetype b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
         const results = await queryPromise(query, [ classday ]);
         console.log("results : " + JSON.stringify(results));
         let bookinglist = {};
@@ -1122,7 +1122,7 @@ app.post("/getFamilyMember", verifyToken, (req, res) => {
                 const element = results[index];
                 const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
                     'FROM treservation a ' +
-                    'join tcourse b on  a.courseid = b.courseid ' +
+                    'join tcousetype b on  a.courseid = b.courseid ' +
                     'left join tfamilymember c on a.childid = c.childid ' +
                     'WHERE a.classdate = ? ' +
                     'AND a.classid = ? ' +
