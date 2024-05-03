@@ -137,7 +137,7 @@ app.post('/logout', verifyToken, (req, res) => {
 
   res.json({ success: true, message: 'Logout successful' });
 });
-
+/*
 app.post('/register', async (req, res) => {
     console.log("register : " + JSON.stringify(req.body));
     const { username, password, fullname, address, email, mobileno, lineid } = req.body;
@@ -169,6 +169,35 @@ app.post('/register', async (req, res) => {
       }
     });
   });
+*/
+  app.post('/register', async (req, res) => {
+    console.log("register : " + JSON.stringify(req.body));
+    const { username, password, fullname, address, email, mobileno, lineid } = req.body;
+    
+    try {
+        // Check if the username is already taken
+        const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
+        const existingUser = await queryPromise(checkUsernameQuery, [username]);
+
+        if (existingUser.length > 0) {
+            return res.json({ success: false, message: 'Username is already taken' });
+        } else {
+            // Insert new user
+            const insertUserQuery = 'INSERT INTO tuser (username, userpassword, fullname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            await queryPromise(insertUserQuery, [username, password, fullname, address, email, mobileno, lineid]);
+
+            // Create associated family
+            const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
+            await queryPromise(createFamilyQuery, [username]);
+
+            return res.json({ success: true, message: 'User registered successfully' });
+        }
+    } catch (error) {
+        console.error("Error registering user:", error);
+        return res.status(500).send(error);
+    }
+});
+
 
   app.post("/getFamilyMember", verifyToken, (req, res) => {
     const { familyid } = req.body;
