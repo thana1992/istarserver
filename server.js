@@ -139,6 +139,7 @@ app.post('/logout', verifyToken, (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
+    console.log("register : " + JSON.stringify(req.body));
     const { username, password, fullname, address, email, mobileno, lineid } = req.body;
     const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
     db.query(checkUsernameQuery, [username], (err, results) => {
