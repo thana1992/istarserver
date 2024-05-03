@@ -16,7 +16,7 @@ const db = mysql.createConnection(process.env.DATABASE_URL)
 const activeSessions = [];
 const url = 'https://notify-api.line.me/api/notify'
 const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
-
+const accessCode2 = '3bviOJYg6u2T5vQYEtaKUdsZ3L6apeoVtZJSrzzTT30'
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
@@ -542,7 +542,7 @@ app.post('/register', async (req, res) => {
           method: 'POST',
           headers: {
             'content-type': 'application/x-www-form-urlencoded',
-            Authorization: `Bearer ` + accessCode,
+            Authorization: `Bearer ` + accessCode2,
           },
           data: qs.stringify(jsonData),
           url,
