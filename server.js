@@ -20,31 +20,32 @@ const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
-  const token = req.headers.authorization; // Assuming the token is included in the Authorization header
-  console.log('Received token:', token);
-  if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-
-  jwt.verify(token.replace('Bearer ', ''), SECRET_KEY, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Session expried please login again' });
+    const token = req.headers.authorization; // Assuming the token is included in the Authorization header
+    console.log('Received token:', token);
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    // Check if the user is already in activeSessions
-    const existingUser = activeSessions.find((user) => user.username === decoded.username);
+    jwt.verify(token.replace('Bearer ', ''), SECRET_KEY, (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Session expried please login again' });
+      }
 
-    if (!existingUser) {
-      // Add the decoded user information to the activeSessions array
-      activeSessions.push(decoded);
-    }
-    // Attach the decoded user information to the request for use in route handlers
-    req.user = decoded;
-    next();
-  });
-} catch (error) {
-  console.error('Error in verifyToken:', error);
-  res.status(500).json({ message: 'Internal server error' });
+      // Check if the user is already in activeSessions
+      const existingUser = activeSessions.find((user) => user.username === decoded.username);
+
+      if (!existingUser) {
+        // Add the decoded user information to the activeSessions array
+        activeSessions.push(decoded);
+      }
+      // Attach the decoded user information to the request for use in route handlers
+      req.user = decoded;
+      next();
+    });
+  } catch (error) {
+    console.error('Error in verifyToken:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  };
 };
 
 db.connect(err => {
