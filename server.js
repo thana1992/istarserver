@@ -90,40 +90,49 @@ app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
-  const results = await queryPromise(query, [username]);
-  if (results.length > 0) {
-    const storedPassword = results[0].userpassword;
-    //console.log("storedPassword : " + storedPassword);
-    if (storedPassword === password) {
-      //res.status(200).json({ message: "Login successful" });
-      const user = results[0];
-      const userdata = {
-          username: results[0].username,
-          fullname: results[0].fullname,
-          address: results[0].address,
-          email: results[0].email,
-          mobileno: results[0].mobileno,
-          usertype: results[0].usertype,
-          familyid: results[0].familyid,
-      }
-      if (userdata.usertype == '1') {
-        const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
-        res.json({ success: true, message: 'Login successful', token, userdata });
-      }else{ 
-        const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
-        res.json({ success: true, message: 'Login successful', token, userdata });
-      }
+  try {
+    await queryPromise(query, [username])
+    .then((results) => {
+      if (results.length > 0) {
+        const storedPassword = results[0].userpassword;
+        //console.log("storedPassword : " + storedPassword);
+        if (storedPassword === password) {
+          //res.status(200).json({ message: "Login successful" });
+          const user = results[0];
+          const userdata = {
+              username: results[0].username,
+              fullname: results[0].fullname,
+              address: results[0].address,
+              email: results[0].email,
+              mobileno: results[0].mobileno,
+              usertype: results[0].usertype,
+              familyid: results[0].familyid,
+          }
+          if (userdata.usertype == '1') {
+            const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+            res.json({ success: true, message: 'Login successful', token, userdata });
+          }else{ 
+            const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
+            res.json({ success: true, message: 'Login successful', token, userdata });
+          }
 
-      const logquery = 'INSERT INTO llogin (username) VALUES (?)';
-      db.query(logquery, [username]);
-      
-    } else {
-      res.json({ success: false, message: 'password is invalid' });
-    }
-  }else{
-    res.json({ success: false, message: 'username invalid' });
+          const logquery = 'INSERT INTO llogin (username) VALUES (?)';
+          db.query(logquery, [username]);
+          
+        } else {
+          res.json({ success: false, message: 'password is invalid' });
+        }
+      }else{
+        res.json({ success: false, message: 'username invalid' });
+      }
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).send(error);
   }
-    
 });
 
 app.post('/logout', verifyToken, (req, res) => {
