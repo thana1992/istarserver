@@ -644,6 +644,7 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
   catch (error) {
     console.error('Error in getAllClasses:', error);
     return res.status(500).send(error);
+  }
 });
 
 app.post('/addClass', verifyToken, async (req, res) => {
