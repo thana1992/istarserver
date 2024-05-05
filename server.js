@@ -510,7 +510,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
         method: 'POST',
         headers: {
           'content-type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ` + accessCode2,
+          Authorization: `Bearer ` + accessCode,
         },
         data: qs.stringify(jsonData),
         url,
