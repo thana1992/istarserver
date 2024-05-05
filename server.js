@@ -317,7 +317,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             if (resCheck3.length > 0) {
               const remaining = resCheck3[0].remaining;
               if (remaining <= 0) {
-                return res.json({ success: false, message: '���ɤ�� �ӹǹ���ʤ�����ͧ͢��ҹ�������' });
+                return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
               }else{
                 console.log("======= addBookingByAdmin =======")
                 const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
@@ -329,12 +329,12 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 return res.json({ success: true, message: 'Add Booking successfully' });
               }
             }else{
-              return res.json({ success: false, message: '��辺�����Ţͧ��ҹ' });
+              return res.json({ success: false, message: 'ไม่พบข้อมูลของท่าน' });
             }
           }
         }
       }else{  
-        return res.json({ success: false, message: '��辺���ʷ���ҹ���͡' });
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
       }
     }
   } catch (error) {
@@ -373,7 +373,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           }
         }
       }else{
-        return res.json({ success: false, message: '��辺���ʷ���ҹ���͡' });
+        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
       }
     }
   } catch (error) {
@@ -481,7 +481,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
       const remaining = remainingResults[0].remaining;
 
       if (remaining <= 0) {
-        return res.json({ success: false, message: '���ɤ�� �ӹǹ���ʤ�����ͧ͢��ҹ�������' });
+        return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
       }
 
       // Insert reservation into database
@@ -502,7 +502,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
       // Prepare notification data
       const jsonData = {
-        message: coursename + '\n' + studentnickname + ' ' + studentname + '\n�ѹ��� ' + bookdate + ' ' + classtime,
+        message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
       };
 
       // Send notification
@@ -520,7 +520,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
       console.log('Notification Success');
       return res.json({ success: true, message: 'Reservation added successfully' });
     } else {
-      return res.json({ success: false, message: '��辺���ʷ���ҹ���͡' });
+      return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
     }
   } catch (error) {
     console.error("Error occurred: ", error);
@@ -724,7 +724,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     .then((results) => {
       if(results.length > 0){
         results.forEach((element, index) => {  
-          results[index].text = element.classtime + ' ��ҧ ' + element.available + ' ��';  
+          results[index].text = element.classtime + ' ว่าง ' + element.available + ' คน';  
       }); 
         res.json({ success: true, message: 'Get Class Time successful', results });
       } else {
