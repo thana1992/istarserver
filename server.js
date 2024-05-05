@@ -317,7 +317,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             if (resCheck3.length > 0) {
               const remaining = resCheck3[0].remaining;
               if (remaining <= 0) {
-                return res.json({ success: false, message: 'à¸ÿà¸­à¹ÿà¸—à¸©à¸ÿà¹ÿà¸° à¸ÿà¸³à¸ÿà¸§à¸ÿà¸ÿà¸¥à¸²à¸ªà¸ÿà¸ÿà¹€à¸«à¸¥à¸·à¸­à¸ÿà¸­à¸ÿà¸—à¹ÿà¸²à¸ÿà¸«à¸¡à¸”à¹ÿà¸¥à¹ÿà¸§' });
+                return res.json({ success: false, message: '¢Íâ·É¤èÐ ¨Ó¹Ç¹¤ÅÒÊ¤§àËÅ×Í¢Í§·èÒ¹ËÁ´áÅéÇ' });
               }else{
                 console.log("======= addBookingByAdmin =======")
                 const query = 'INSERT INTO treservation (childid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
@@ -329,12 +329,12 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 return res.json({ success: true, message: 'Add Booking successfully' });
               }
             }else{
-              return res.json({ success: false, message: 'à¹ÿà¸¡à¹ÿà¸ÿà¸ÿà¸ÿà¹ÿà¸­à¸¡à¸¹à¸¥à¸ÿà¸­à¸ÿà¸—à¹ÿà¸²à¸ÿ' });
+              return res.json({ success: false, message: 'äÁè¾º¢éÍÁÙÅ¢Í§·èÒ¹' });
             }
           }
         }
       }else{  
-        return res.json({ success: false, message: 'à¹ÿà¸¡à¹ÿà¸ÿà¸ÿà¸ÿà¸¥à¸²à¸ªà¸—à¸µà¹ÿà¸—à¹ÿà¸²à¸ÿà¹€à¸¥à¸·à¸­à¸ÿ' });
+        return res.json({ success: false, message: 'äÁè¾º¤ÅÒÊ·Õè·èÒ¹àÅ×Í¡' });
       }
     }
   } catch (error) {
@@ -373,7 +373,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           }
         }
       }else{
-        return res.json({ success: false, message: 'à¹ÿà¸¡à¹ÿà¸ÿà¸ÿà¸ÿà¸¥à¸²à¸ªà¸—à¸µà¹ÿà¸—à¹ÿà¸²à¸ÿà¹€à¸¥à¸·à¸­à¸ÿ' });
+        return res.json({ success: false, message: 'äÁè¾º¤ÅÒÊ·Õè·èÒ¹àÅ×Í¡' });
       }
     }
   } catch (error) {
@@ -481,7 +481,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
       const remaining = remainingResults[0].remaining;
 
       if (remaining <= 0) {
-        return res.json({ success: false, message: 'à¸ÿà¸­à¹ÿà¸—à¸©à¸ÿà¹ÿà¸° à¸ÿà¸³à¸ÿà¸§à¸ÿà¸ÿà¸¥à¸²à¸ªà¸ÿà¸ÿà¹€à¸«à¸¥à¸·à¸­à¸ÿà¸­à¸ÿà¸—à¹ÿà¸²à¸ÿà¸«à¸¡à¸”à¹ÿà¸¥à¹ÿà¸§' });
+        return res.json({ success: false, message: '¢Íâ·É¤èÐ ¨Ó¹Ç¹¤ÅÒÊ¤§àËÅ×Í¢Í§·èÒ¹ËÁ´áÅéÇ' });
       }
 
       // Insert reservation into database
@@ -502,7 +502,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
       // Prepare notification data
       const jsonData = {
-        message: coursename + '\n' + studentnickname + ' ' + studentname + '\nà¸§à¸±à¸ÿà¸—à¸µà¹ÿ ' + bookdate + ' ' + classtime,
+        message: coursename + '\n' + studentnickname + ' ' + studentname + '\nÇÑ¹·Õè ' + bookdate + ' ' + classtime,
       };
 
       // Send notification
@@ -520,7 +520,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
       console.log('Notification Success');
       return res.json({ success: true, message: 'Reservation added successfully' });
     } else {
-      return res.json({ success: false, message: 'à¹ÿà¸¡à¹ÿà¸ÿà¸ÿà¸ÿà¸¥à¸²à¸ªà¸—à¸µà¹ÿà¸—à¹ÿà¸²à¸ÿà¹€à¸¥à¸·à¸­à¸ÿ' });
+      return res.json({ success: false, message: 'äÁè¾º¤ÅÒÊ·Õè·èÒ¹àÅ×Í¡' });
     }
   } catch (error) {
     console.error("Error occurred: ", error);
@@ -1036,6 +1036,8 @@ const pool = mysql2.createPool({
 async function queryPromise(query, params) {
   let connection;
   try {
+    console.log("Query : " + query);
+    console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
