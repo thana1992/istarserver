@@ -724,7 +724,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     .then((results) => {
       if(results.length > 0){
         results.forEach((element, index) => {  
-          results[index].text = element.classtime + ' à¸§à¹ÿà¸²à¸ÿ ' + element.available + ' à¸ÿà¸ÿ';  
+          results[index].text = element.classtime + ' ÇèÒ§ ' + element.available + ' ¤¹';  
       }); 
         res.json({ success: true, message: 'Get Class Time successful', results });
       } else {
