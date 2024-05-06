@@ -112,28 +112,28 @@ app.post('/login', async (req, res) => {
           }
           if (userdata.usertype == '1') {
             const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
-            res.json({ success: true, message: 'Login successful', token, userdata });
+            return res.json({ success: true, message: 'Login successful', token, userdata });
           }else{ 
             const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
-            res.json({ success: true, message: 'Login successful', token, userdata });
+            return res.json({ success: true, message: 'Login successful', token, userdata });
           }
 
           const logquery = 'INSERT INTO llogin (username) VALUES (?)';
           db.query(logquery, [username]);
           
         } else {
-          res.json({ success: false, message: 'password is invalid' });
+          return res.json({ success: false, message: 'password is invalid' });
         }
       }else{
-        res.json({ success: false, message: 'username invalid' });
+        return res.json({ success: false, message: 'username invalid' });
       }
     })
     .catch((error) => {
-      res.status(500).send(error);
+      return res.status(500).send(error);
     });
   } catch (error) {
     console.error("Error logging in:", error);
-    res.status(500).send(error);
+    return res.status(500).send(error);
   }
 });
 
