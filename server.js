@@ -183,7 +183,7 @@ app.post("/getStudent", verifyToken, async (req, res) => {
                   ' from tstudent a ' +
                   ' left join tcustomer_course b ' +
                   ' on a.courserefer = b.courserefer ' +
-                  ' left join tcourseinfo b ' +
+                  ' left join tcourseinfo c ' +
                   ' on b.courseid = c.courseid ' +
                   ' where a.familyid = ?';
   try {
