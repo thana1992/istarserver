@@ -151,7 +151,7 @@ app.post('/logout', verifyToken, (req, res) => {
 
 app.post('/register', async (req, res) => {
   console.log("register : " + JSON.stringify(req.body));
-  const { username, password, firstname, middlename, lastname, address, email, mobileno, lineid } = req.body;
+  const { username, password, firstname, middlename, lastname, address, email, mobileno } = req.body;
   
   try {
       // Check if the username is already taken
@@ -162,8 +162,8 @@ app.post('/register', async (req, res) => {
           return res.json({ success: false, message: 'Username is already taken' });
       } else {
           // Insert new user
-          const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, lineid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-          await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, lineid]);
+          const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+          await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno]);
 
           // Create associated family
           const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
