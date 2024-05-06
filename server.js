@@ -299,162 +299,207 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, classid, classdate, classtime, courseid, classday } = req.body;
     const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate])
+    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
+
     if (resCheckDuplicateReservation.length > 0) {
-      return res.json({ success: false, message: 'You have already booking on this day' });
-    }else{
-      let checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
-      const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime])
-      if (resCheck.length > 0) {
-        const maxperson = resCheck[0].maxperson;
-        checkClassFullQuery = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
-        await queryPromise(checkClassFullQuery, [classid, classdate, classtime])
-        .then((results1) => {
-          if (results1.length > 0) {
-            const count = results1[0].count;
-            if (count >= maxperson) {
-              return res.json({ success: false, message: 'Sorry, This class is full' });
-            }else{
-              const checkCourseQuery = 'select a.courserefer from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
-              await queryPromise(checkCourseQuery, [studentid])
-              .then((results) => {
-                if (results.length > 0) {
-                  const courserefer = results[0].courserefer;
-                  const checkCourseExpiredQuery = 'select expiredate from tcustomer_course where courserefer = ?';
-                  await queryPromise(checkCourseExpiredQuery, [courserefer])
-                  .then((results2) => {
-                    if (results2.length > 0) {
-                      const expiredate = results2[0].expiredate;
-                      const today = new Date();
-                      if (today > expiredate) {
-                        return res.json({ success: false, message: 'ขอโทษค่ะ คอร์สของท่านหมดอายุแล้ว' });
-                      }else{
-                        const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where courserefer = ?';
-                        await queryPromise(checkRemainingQuery, [studentid])
-                        .then((results3) => {
-                          if (results3.length > 0) {
-                            const remaining = results3[0].remaining;
-                            if (remaining <= 0) {
-                              return res.json({ success: false, message: 'ขอโทษค่ะ จำนวนคลาสคงเหลือของท่านหมดแล้ว' });
-                            }else{
-                              console.log("======= addBookingByAdmin =======")
-                              const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
-                              const results = await queryPromise(query, [studentid, classid, classdate, classtime, courseid])
-                              if(results.affectedRows > 0) {
-                                const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-                                await queryPromise(updateRemainingQuery, [courserefer])
-                                .then((rs) => {
-                                  try {
-                                    // Format date for notification
-                                    var a = moment(classdate, "YYYYMMDD");
-                                    const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric',
-                                    });
+      return res.json({ success: false, message: 'You have already booked on this day' });
+    }
 
-                                    // Prepare notification data
-                                    const jsonData = {
-                                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
-                                    };
+    const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+    const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
 
-                                    // Send notification
-                                    const requestOption = {
-                                      method: 'POST',
-                                      headers: {
-                                        'content-type': 'application/x-www-form-urlencoded',
-                                        Authorization: `Bearer ` + accessCode,
-                                      },
-                                      data: qs.stringify(jsonData),
-                                      url,
-                                    };
+    if (resCheck.length > 0) {
+      const maxperson = resCheck[0].maxperson;
+      const checkClassFullQueryCount = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
+      const results1 = await queryPromise(checkClassFullQueryCount, [classid, classdate, classtime]);
 
-                                    await axios(requestOption);
-                                    console.log('Notification Success');
-                                  } catch (error) {
-                                    console.error('Error in sending notification:', error);
-                                  }
-                                  return res.json({ success: true, message: 'Add Booking successfully' });
-                                })
-                                .catch((error) => {
-                                  return res.json({ success: false, message: error.message });
-                                });
-                              }
-                              return res.json({ success: true, message: 'Add Booking successfully' });
-                            }
-                          }else{
-                            return res.json({ success: false, message: 'ไม่พบข้อมูลของท่าน' });
-                          }
-                        })
-                        .catch((error) => {
-                          return res.json({ success: false, message: error.message });
-                        });
-                      }
-                    }else{
-                      return res.json({ success: false, message: 'ไม่พบคอร์สของท่าน' });
-                    }
-                  })
-                  .catch((error) => {
-                    return res.json({ success: false, message: error.message });
+      if (results1.length > 0) {
+        const count = results1[0].count;
+        if (count >= maxperson) {
+          return res.json({ success: false, message: 'Sorry, this class is full' });
+        }
+
+        const checkCourseQuery = 'select a.courserefer from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
+        const results2 = await queryPromise(checkCourseQuery, [studentid]);
+
+        if (results2.length > 0) {
+          const courserefer = results2[0].courserefer;
+          const checkCourseExpiredQuery = 'select expiredate from tcustomer_course where courserefer = ?';
+          const results3 = await queryPromise(checkCourseExpiredQuery, [courserefer]);
+
+          if (results3.length > 0) {
+            const expiredate = results3[0].expiredate;
+            const today = new Date();
+
+            if (today > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expired' });
+            }
+
+            const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where courserefer = ?';
+            const results4 = await queryPromise(checkRemainingQuery, [studentid]);
+
+            if (results4.length > 0) {
+              const remaining = results4[0].remaining;
+
+              if (remaining <= 0) {
+                return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+              }
+
+              console.log("======= addBookingByAdmin =======");
+              const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
+              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+
+              if (insertResult.affectedRows > 0) {
+                const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
+                const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
+
+                try {
+                  // Format date for notification
+                  var a = moment(classdate, "YYYYMMDD");
+                  const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
                   });
-                }else{
-                  return res.json({ success: false, message: 'ไม่พบคอร์สของท่าน' });
-                }
-              })
-              .catch((error) => {
-                return res.json({ success: false, message: error.message });
-              });
 
+                  // Prepare notification data
+                  const jsonData = {
+                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
+                  };
+
+                  // Send notification
+                  const requestOption = {
+                    method: 'POST',
+                    headers: {
+                      'content-type': 'application/x-www-form-urlencoded',
+                      Authorization: `Bearer ` + accessCode,
+                    },
+                    data: qs.stringify(jsonData),
+                    url,
+                  };
+
+                  await axios(requestOption);
+                  console.log('Notification Sent Successfully');
+                } catch (error) {
+                  console.error('Error sending notification:', error);
+                }
+
+                return res.json({ success: true, message: 'Booking added successfully' });
+              }
             }
           }
-        })
-        .catch((error) => {
-          return res.json({ success: false, message: error.message });
-        });
-      
-      }else{  
-        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
+        }
       }
     }
+
+    return res.json({ success: false, message: 'Error in processing booking' });
+
   } catch (error) {
     console.log("addBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
 
+
 app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
   // todo : check duplicate booking on same day
   try {
     const { studentid, classid, classdate, classtime, courseid, classday, reservationid } = req.body;
-    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? and reservationid <> ?';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate, reservationid])
+    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
+    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
+
     if (resCheckDuplicateReservation.length > 0) {
-      return res.json({ success: false, message: 'You have already booking on this day' });
-    }else{
-      const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ? and courseid = ?';
-      const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime, courseid])
-      console.log(resCheck.length+"resCheck : " + JSON.stringify(resCheck));
-      if (resCheck.length > 0) {
-        const maxperson = resCheck[0].maxperson;
-        const checkClassFullQuery2 = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ? and courseid = ?';
-        const resCheck2 = await queryPromise(checkClassFullQuery2, [classid, classdate, classtime, courseid])
-        console.log("resCheck2 : " + JSON.stringify(resCheck2));
-        if(resCheck2.length > 0) {
-          const count = resCheck2[0].count;
-          if (count >= maxperson) {
-            return res.json({ success: false, message: 'Sorry, This class is full' });
-          }else{
-            const query = 'UPDATE treservation set classid = ?, classdate = ?, classtime = ?, courseid = ?  ' +
-                          ' WHERE reservationid = ?' +
-                          ' and studentid = ?';
-            const results = await queryPromise(query, [ classid, classdate, classtime, courseid, reservationid, studentid])
-            return res.json({ success: true, message: 'Update Booking successfully' });
+      return res.json({ success: false, message: 'You have already booked on this day' });
+    }
+
+    const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+    const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
+
+    if (resCheck.length > 0) {
+      const maxperson = resCheck[0].maxperson;
+      const checkClassFullQueryCount = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
+      const results1 = await queryPromise(checkClassFullQueryCount, [classid, classdate, classtime]);
+
+      if (results1.length > 0) {
+        const count = results1[0].count;
+        if (count >= maxperson) {
+          return res.json({ success: false, message: 'Sorry, this class is full' });
+        }
+
+        const checkCourseQuery = 'select a.courserefer from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
+        const results2 = await queryPromise(checkCourseQuery, [studentid]);
+
+        if (results2.length > 0) {
+          const courserefer = results2[0].courserefer;
+          const checkCourseExpiredQuery = 'select expiredate from tcustomer_course where courserefer = ?';
+          const results3 = await queryPromise(checkCourseExpiredQuery, [courserefer]);
+
+          if (results3.length > 0) {
+            const expiredate = results3[0].expiredate;
+            const today = new Date();
+
+            if (today > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expired' });
+            }
+
+            const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where courserefer = ?';
+            const results4 = await queryPromise(checkRemainingQuery, [studentid]);
+
+            if (results4.length > 0) {
+              const remaining = results4[0].remaining;
+
+              if (remaining <= 0) {
+                return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+              }
+
+              console.log("======= addBookingByAdmin =======");
+              const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
+              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+
+              if (insertResult.affectedRows > 0) {
+                const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
+                const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
+
+                try {
+                  // Format date for notification
+                  var a = moment(classdate, "YYYYMMDD");
+                  const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  });
+
+                  // Prepare notification data
+                  const jsonData = {
+                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
+                  };
+
+                  // Send notification
+                  const requestOption = {
+                    method: 'POST',
+                    headers: {
+                      'content-type': 'application/x-www-form-urlencoded',
+                      Authorization: `Bearer ` + accessCode,
+                    },
+                    data: qs.stringify(jsonData),
+                    url,
+                  };
+
+                  await axios(requestOption);
+                  console.log('Notification Sent Successfully');
+                } catch (error) {
+                  console.error('Error sending notification:', error);
+                }
+
+                return res.json({ success: true, message: 'Booking added successfully' });
+              }
+            }
           }
         }
-      }else{
-        return res.json({ success: false, message: 'ไม่พบคลาสที่ท่านเลือก' });
       }
     }
+
+    return res.json({ success: false, message: 'Error in processing booking' });
   } catch (error) {
     console.log("updateBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
