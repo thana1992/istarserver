@@ -213,7 +213,7 @@ app.post('/addStudent', verifyToken, async (req, res) => {
       
       res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
-      console.error("addFamilyMember error:", error);
+      console.error("addStudent error:", error);
       res.status(500).send(error);
   }
 });
