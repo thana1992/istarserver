@@ -1200,6 +1200,7 @@ async function queryPromise(query, params) {
     const [results] = await connection.query(query, params);
     return results;
   } catch (error) {
+    console.error('Error in queryPromise:', error);
     throw error;
   } finally {
     if (connection) connection.release();
