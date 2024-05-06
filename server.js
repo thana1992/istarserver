@@ -17,6 +17,7 @@ const activeSessions = [];
 const url = 'https://notify-api.line.me/api/notify'
 const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
 const accessCode2 = '3bviOJYg6u2T5vQYEtaKUdsZ3L6apeoVtZJSrzzTT30'
+console.log("accessCode : " + accessCode);
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
