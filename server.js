@@ -308,7 +308,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'You have already booked on this day' });
     }
 
-    const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+    const checkClassFullQuery = 'select maxperson from tclassinfo where classid = ? and classday = ? and classtime = ?';
     const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
 
     if (resCheck.length > 0) {
@@ -415,7 +415,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'You have already booked on this day' });
     }
 
-    const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+    const checkClassFullQuery = 'select maxperson from tclassinfo where classid = ? and classday = ? and classtime = ?';
     const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
 
     if (resCheck.length > 0) {
@@ -594,7 +594,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'You have already booked on this day' });
     }
 
-    const checkClassFullQuery = 'select maxperson from tclass where classid = ? and classday = ? and classtime = ?';
+    const checkClassFullQuery = 'select maxperson from tclassinfo where classid = ? and classday = ? and classtime = ?';
     const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
 
     if (resCheck.length > 0) {
@@ -781,8 +781,8 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
   try {
     await queryPromise(deletetcourseinfoQuery, [courseid])
     .then((results) => {
-      const deleteTclassQuery = 'DELETE FROM tclass WHERE courseid = ?';
-      db.query(deleteTclassQuery, [courseid]);
+      const deleteTclassinfoQuery = 'DELETE FROM tclassinfo WHERE courseid = ?';
+      db.query(deleteTclassinfoQuery, [courseid]);
       res.json({ success: true, message: 'Course deleted successfully' });
     })
     .catch((error) => {
@@ -796,7 +796,7 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
 
 app.get('/getAllClasses', verifyToken, async (req, res) => {
   const { courseid } = req.body;
-  const query = 'SELECT b.courseid, b.coursename, a.* FROM tclass a inner join tcourseinfo b on a.courseid = b.courseid order by b.coursename , a.classday ';
+  const query = 'SELECT b.courseid, b.coursename, a.* FROM tclassinfo a inner join tcourseinfo b on a.courseid = b.courseid order by b.coursename , a.classday ';
   try {
     await queryPromise(query, null)
     .then((results) => {
@@ -818,7 +818,7 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
 
 app.post('/addClass', verifyToken, async (req, res) => {
   const { courseid, classday, classtime, maxperson } = req.body;
-  const query = 'INSERT INTO tclass (courseid, classday, classtime, maxperson) VALUES (?, ?, ?, ?)';
+  const query = 'INSERT INTO tclassinfo (courseid, classday, classtime, maxperson) VALUES (?, ?, ?, ?)';
   try {
     await queryPromise(query, [courseid, classday, classtime, maxperson])
     .then((results) => {
@@ -835,7 +835,7 @@ app.post('/addClass', verifyToken, async (req, res) => {
 
 app.post('/updateClass', verifyToken, async (req, res) => {
   const { classid, courseid, classday, classtime, maxperson } = req.body;
-  const query = 'UPDATE tclass SET courseid = ?, classday = ?, classtime = ?, maxperson = ? WHERE classid = ?';
+  const query = 'UPDATE tclassinfo SET courseid = ?, classday = ?, classtime = ?, maxperson = ? WHERE classid = ?';
   try {
     await queryPromise(query, [courseid, classday, classtime, maxperson, classid])
     .then((results) => {
@@ -852,7 +852,7 @@ app.post('/updateClass', verifyToken, async (req, res) => {
 
 app.post('/deleteClass', verifyToken, async(req, res) => {
   const { classid } = req.body;
-  const query = 'DELETE FROM tclass WHERE classid = ?';
+  const query = 'DELETE FROM tclassinfo WHERE classid = ?';
   try {
     await queryPromise(query, [classid])
     .then((results) => {
@@ -872,7 +872,7 @@ app.post('/deleteClass', verifyToken, async(req, res) => {
 app.post('/getClassTime', verifyToken, async (req, res) => {
   const { classdate, classday, courseid } = req.body;
   const query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available '+
-  'FROM tclass a ' +
+  'FROM tclassinfo a ' +
   'left join treservation b ' +
   'on a.classid = b.classid ' +
   'and b.classdate = ? ' +
@@ -1112,7 +1112,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
-    const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclass a join tcourseinfo b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
+    const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
     const results = await queryPromise(query, [ classday ]);
     console.log("results : " + JSON.stringify(results));
     let bookinglist = {};
