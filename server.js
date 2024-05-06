@@ -912,8 +912,8 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
       }
     })
     .catch((error) => {
-      res.json({ success: false, message: error.message });
       console.error('Error in queryPromise:', error);
+      res.json({ success: false, message: error.message });
     })
   } catch (error) {
     console.error('Error in getNewStudentList:', error);
@@ -997,7 +997,7 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
-    const query = 'SELECT a.*, CONCAT(a.firstname, \' \', a.middlename, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, b.coursename, d.mobileno FROM tstudent a LEFT JOIN tcourseinfo b ON a.courseid = b.courseid LEFT JOIN tfamily c ON a.familyid = c.familyid LEFT JOIN tuser d ON c.username = d.username';
+    const query = 'SELECT a.*, CONCAT(a.firstname, \' \', a.middlename, \' \', a.lastname, \' (\', a.nickname,\')\') fullname, t.coursename, d.mobileno FROM tstudent a LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer LEFT JOIN tcourseinfo t on b.courseid = t.courseid LEFT JOIN tfamily c ON a.familyid = c.familyid LEFT JOIN tuser d ON c.username = d.username';
     const results = await queryPromise(query);
 
     console.log("API getStudentlist result :" + JSON.stringify(results));
