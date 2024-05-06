@@ -1181,7 +1181,7 @@ const pool = mysql2.createPool({
   port: 25060,
   user: 'doadmin',
   password: 'AVNS_WXj7F6yfu4VzF5b4St-',
-  database: 'istardb',
+  database: 'istardb2',
   waitForConnections: true,
   connectionLimit: 0,
   queueLimit: 0
