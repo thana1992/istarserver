@@ -225,11 +225,12 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
     for (const item of apprObj) {
       const getQuery = 'SELECT * FROM jstudent WHERE studentid = ?';
       const results = await queryPromise(getQuery, [item.studentid]);
+      const studentid = generateRefer('S');
 
       if (results.length > 0) {
-        const query = 'INSERT INTO tstudent (familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, courseid, photo) ' +
-                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-        await queryPromise(query, [item.familyid, item.firstname, item.middlename, item.lastname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
+        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, courseid, photo) ' +
+                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+        await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
 
         const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
         console.log("delete jstudent studentid : " + item.studentid);
@@ -1152,6 +1153,23 @@ async function queryPromise(query, params) {
   } finally {
     if (connection) connection.release();
   }
+}
+
+async function generateRefer(refertype) {
+  let refer = '';
+  const query = 'SELECT running, referdate  FROM trunning WHERE refertype = ? and referdate = curdate()';
+  const results = await queryPromise(query, [refertype]);
+  if (results.length > 0) {
+    let referno = results[0].referno;
+    let referdate = results[0].referdate;
+    referno = referno + 1;
+    refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + referno;
+    const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()'; 
+    await queryPromise(query2, [referno, refertype]);
+  } else {
+    refer = refertype + "-" + moment().format('YYYYMMDD') + "-1";
+  }
+  return refer;
 }
 
 app.listen(port, '0.0.0.0', () => {
