@@ -231,9 +231,9 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
       
       if (results.length > 0) {
         const studentid = await generateRefer('S');
-        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, courseid, photo) ' +
-                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-        await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
+        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, photo) ' +
+                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+        await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth]);
 
         const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
         console.log("delete jstudent studentid : " + item.studentid);
