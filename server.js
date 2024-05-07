@@ -1220,7 +1220,7 @@ async function generateRefer(refertype) {
       let referno = results[0].referno;
       let referdate = results[0].referdate;
       referno = referno + 1;
-      refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + pad(referno, 4);
+      refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + pad(4, referno, "0");
       const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()'; 
       await queryPromise(query2, [referno, refertype]);
     } else {
@@ -1228,7 +1228,7 @@ async function generateRefer(refertype) {
       const query3 = 'INSERT INTO trunning (refertype, referdate, running) VALUES (?, curdate(), 1)';
       await queryPromise(query3, [refertype]);
       let referno = 1;
-      refer = refertype + "-" + moment().format('YYYYMMDD') + "-" + pad(referno, 4);
+      refer = refertype + "-" + moment().format('YYYYMMDD') + "-" + pad(4, referno, "0");
     }
   } catch (error) {
     console.error('Error in generateRefer:', error);
