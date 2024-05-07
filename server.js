@@ -228,9 +228,9 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
     for (const item of apprObj) {
       const getQuery = 'SELECT * FROM jstudent WHERE studentid = ?';
       const results = await queryPromise(getQuery, [item.studentid]);
-      const studentid = generateRefer('S');
-
+      
       if (results.length > 0) {
+        const studentid = await generateRefer('S');
         const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, courseid, photo) ' +
                       ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
         await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.lastname, item.nickname, item.gender, item.dateofbirth, item.courseid, item.remaining]);
