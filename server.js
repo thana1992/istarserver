@@ -1217,7 +1217,7 @@ async function generateRefer(refertype) {
   try {
     const results = await queryPromise(query, [refertype]);
     if (results.length > 0) {
-      let referno = results[0].referno;
+      let referno = results[0].running;
       let referdate = results[0].referdate;
       referno = referno + 1;
       refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + pad(4, referno, "0");
