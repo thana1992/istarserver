@@ -1159,6 +1159,38 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   }
 });
 
+app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    const query = 'SELECT a.*, b.coursename FROM tcustomer_course a inner join tcourseinfo b on a.courseid = b.courseid';
+    const results = await queryPromise(query, null);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Customer Course List successful', results });
+    } else {
+      res.json({ success: true, message: 'No Customer Course List' });
+    }
+  } catch (error) {
+    console.error('Error in getCustomerCourseList:', error);
+    res.status(500).send(error, message);
+  }
+});
+
+app.post('/getCustomerCourse', verifyToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    const query = 'SELECT a.* FROM tcustomer_course a WHERE courserefer = ?';
+    const results = await queryPromise(query, [courserefer]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Customer Course List successful', results });
+    } else {
+      res.json({ success: true, message: 'No Customer Course List' });
+    }
+  } catch (error) {
+    console.error('Error in getCustomerCourseList:', error);
+    res.status(500).send(error, message);
+  }
+});
+
 
 // Utility function to promisify the database queries
 // async function queryPromise(query, params) {
