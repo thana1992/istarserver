@@ -937,12 +937,22 @@ app.get("/courseLookup", verifyToken, async (req, res) => {
     res.json({ success: false, message: error.message });
     console.error('Error in queryPromise:', error);
   })
+});
 
-  // if(results.length > 0){
-  //   res.json({ success: true, message: 'Get Course Lookup successful', results });
-  // } else {
-  //   res.json({ success: true, message: 'No Course Lookup' });
-  // }
+app.get("/customerCourseLookup", verifyToken, async (req, res) => {
+  const query = 'SELECT * FROM tcustomer_course';
+  await queryPromise(query, null)
+  .then((results) => {
+    if(results.length > 0) {
+      res.json({ success: true, message: 'Get Customer Course Lookup successful', results });
+    } else {
+      res.json({ success: true, message: 'No Customer Course Lookup' });
+    }
+  })
+  .catch((error) => {
+    res.json({ success: false, message: error.message });
+    console.error('Error in queryPromise:', error);
+  })
 });
 
 app.get("/familyLookup", verifyToken, async (req, res) => {
@@ -1186,10 +1196,58 @@ app.post('/getCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Customer Course List' });
     }
   } catch (error) {
-    console.error('Error in getCustomerCourseList:', error);
+    console.error('Error in getCustomerCourse:', error);
     res.status(500).send(error, message);
   }
 });
+
+app.post('/addCustomerCourse', verifyToken, async (req, res) => {
+  try {
+    const courserefer = await generateRefer('CC');
+    const { courseid, coursetype, remaining, startdate, enddate } = req.body;
+    const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, enddate) VALUES (?, ?, ?, ?, ?, ?)';
+    const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining, startdate, enddate]);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Customer Course added successfully' });
+    } else {
+      res.json({ success: false, message: 'Error adding Customer Course' });
+    }
+  } catch (error) {
+    console.error('Error in addCustomerCourse:', error);
+    res.status(500).send
+  }
+});
+
+app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
+  try {
+    const { courserefer, courseid, coursetype, remaining, startdate, enddate } = req.body;
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, enddate = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, enddate, courserefer]);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Customer Course updated successfully' });
+    } else {
+      res.json({ success: false, message: 'Error updating Customer Course' });
+    }
+  } catch (error) {
+    console.error('Error in updateCustomerCourse:', error);
+    res.status(500).send
+  }
+});
+
+app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
+  try {
+    const { courserefer } = req.body;
+    const query = 'DELETE FROM tcustomer_course WHERE courserefer = ?';
+    const results = await queryPromise(query, [courserefer]);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Customer Course deleted successfully' });
+    }
+  } catch (error) {
+    console.error('Error in deleteCustomerCourse:', error);
+    res.status(500).send
+  }
+});
+
 
 
 // Utility function to promisify the database queries
