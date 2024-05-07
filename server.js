@@ -1204,9 +1204,9 @@ app.post('/getCustomerCourse', verifyToken, async (req, res) => {
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
     const courserefer = await generateRefer('CC');
-    const { courseid, coursetype, remaining, startdate, enddate } = req.body;
-    const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, enddate) VALUES (?, ?, ?, ?, ?, ?)';
-    const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining, startdate, enddate]);
+    const { courseid, coursetype, remaining, startdate, expiredate } = req.body;
+    const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
+    const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining, startdate, expiredate]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course added successfully' });
     } else {
@@ -1220,9 +1220,9 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, remaining, startdate, enddate } = req.body;
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, enddate = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, enddate, courserefer]);
+    const { courserefer, courseid, coursetype, remaining, startdate, expiredate } = req.body;
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, courserefer]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
