@@ -1212,17 +1212,23 @@ async function queryPromise(query, params) {
 async function generateRefer(refertype) {
   let refer = '';
   const query = 'SELECT running, referdate  FROM trunning WHERE refertype = ? and referdate = curdate()';
-  const results = await queryPromise(query, [refertype]);
-  if (results.length > 0) {
-    let referno = results[0].referno;
-    let referdate = results[0].referdate;
-    referno = referno + 1;
-    refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + referno;
-    const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()'; 
-    await queryPromise(query2, [referno, refertype]);
-  } else {
-    refer = refertype + "-" + moment().format('YYYYMMDD') + "-1";
+  try {
+    const results = await queryPromise(query, [refertype]);
+    if (results.length > 0) {
+      let referno = results[0].referno;
+      let referdate = results[0].referdate;
+      referno = referno + 1;
+      refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + referno;
+      const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()'; 
+      await queryPromise(query2, [referno, refertype]);
+    } else {
+      refer = refertype + "-" + moment().format('YYYYMMDD') + "-1";
+    }
+  } catch (error) {
+    console.error('Error in generateRefer:', error);
+    throw error;
   }
+  console.log("generateRefer() Refer : " + refer);
   return refer;
 }
 
