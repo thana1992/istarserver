@@ -651,7 +651,6 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 if (results.length > 0) {
                   const studentnickname = results[0].nickname;
                   const studentname = results[0].fullname;
-                  
                   var a = moment(classdate, "YYYYMMDD");
                   const bookdate = new Date(a).toLocaleDateString('th-TH', {
                     year: 'numeric',
@@ -664,19 +663,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                     message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
                   };
 
-                  // Send notification
-                  const requestOption = {
-                    method: 'POST',
-                    headers: {
-                      'content-type': 'application/x-www-form-urlencoded',
-                      Authorization: `Bearer ` + accessCode,
-                    },
-                    data: qs.stringify(jsonData),
-                    url,
-                  };
-
-                  await axios(requestOption);
-                  console.log('Notification Sent Successfully');
+                  sendNotification(jsonData);
                 }
               } catch (error) {
                 console.error('Error sending notification:', error);
@@ -695,6 +682,26 @@ app.post('/createReservation', verifyToken, async (req, res) => {
   }
 });
 
+async function sendNotification(jsonData) {
+  try {
+    // Send notification
+    const requestOption = {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        Authorization: `Bearer ` + accessCode,
+      },
+      data: qs.stringify(jsonData),
+      url,
+    };
+
+    await axios(requestOption);
+    console.log('Notification Sent Successfully');
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    throw error;
+  }
+}
 app.post('/deleteReservation', verifyToken, async (req, res) => {
   const { reservationid } = req.body;
   const query = 'DELETE FROM treservation WHERE reservationid = ?';
