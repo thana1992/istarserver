@@ -615,8 +615,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
         if (results2.length > 0) {
           const courserefer = results2[0].courserefer;
           const coursetype = results2[0].coursetype;
-          const expiredate = results3[0].expiredate;
-          const remaining = results3[0].remaining;
+          const expiredate = results2[0].expiredate;
+          const remaining = results2[0].remaining;
           const today = new Date();
 
             if (today > expiredate) {
