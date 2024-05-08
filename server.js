@@ -176,6 +176,7 @@ app.post('/register', async (req, res) => {
 app.post("/getStudent", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, a.courserefer, c.coursename, c.course_shortname' +
+                  ', b.coursetype, b.remaining, b.expiredate ' +
                   ' from tstudent a ' +
                   ' left join tcustomer_course b ' +
                   ' on a.courserefer = b.courserefer ' +
