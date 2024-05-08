@@ -282,11 +282,11 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
-    const { familyid, studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
+    const { familyid, studentid, firstname, middlename, lastname, nickname, gender, dateofbirth } = req.body;
     const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  ' courseid = ?, remaining = ?, familyid = ?' +
+                  'familyid = ?' +
                   ' WHERE studentid = ?';
-    const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, courseid, remaining, familyid, studentid])
+    const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, studentid])
     res.json({ success: true, message: 'Update Student successfully' });
 
   } catch (error) {
