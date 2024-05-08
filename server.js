@@ -534,15 +534,19 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
 app.post('/deleteStudent', verifyToken, async (req, res) => {
   const { familyid, studentid } = req.body;
   const queryDeleteTstudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
-  db.query(queryDeleteTstudent, [familyid, studentid], (err) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
+  try {
+    const results = await queryPromise(queryDeleteTstudent, [familyid, studentid]);
+    if (results.affectedRows > 0) {
       const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
-      db.query(queryDeleteTreservation, [studentid]);
+      await queryPromise(queryDeleteTreservation, [studentid]);
       res.json({ success: true, message: 'Family member deleted successfully' });
+    } else {
+      res.json({ success: false, message: 'No Family member data' });
     }
-  });
+  } catch (error) {
+    console.error('Error in deleteStudent:', error);
+    res.status(500).send(error);
+  }
 });
 
 app.post('/getMemberInfo', verifyToken, async (req, res) => {
