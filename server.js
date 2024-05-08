@@ -263,11 +263,11 @@ app.post('/deleteNewStudent', verifyToken, async (req, res) => {
 });
 
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
-  const { familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining } = req.body;
-  const query = 'INSERT INTO tstudent (familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining, photo) ' +
-                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
+  const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, photo) ' +
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
   try {
-    await queryPromise(query, [familyid, firstname, lastname, nickname, gender, dateofbirth, courseid, remaining])
+    await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer])
     .then((results) => {
       res.json({ success: true, message: 'Family member added successfully' });
     })
@@ -282,11 +282,11 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
-    const { familyid, studentid, firstname, middlename, lastname, nickname, gender, dateofbirth } = req.body;
+    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
     const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  'familyid = ?' +
+                  'familyid = ?, courserefer = ? ' +
                   ' WHERE studentid = ?';
-    const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, studentid])
+    const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
     res.json({ success: true, message: 'Update Student successfully' });
 
   } catch (error) {
