@@ -1179,10 +1179,10 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/getCustomerCourse', verifyToken, async (req, res) => {
+app.post('/getCustomerCourseLookup', verifyToken, async (req, res) => {
   try {
     const { username } = req.body;
-    const query = 'SELECT a.* FROM tcustomer_course a WHERE courserefer = ?';
+    const query = 'SELECT a.* FROM tcustomer_course a';
     const results = await queryPromise(query, [courserefer]);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Customer Course List successful', results });
@@ -1190,7 +1190,7 @@ app.post('/getCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Customer Course List' });
     }
   } catch (error) {
-    console.error('Error in getCustomerCourse:', error);
+    console.error('Error in getCustomerCourseLookup:', error);
     res.status(500).send(error, message);
   }
 });
