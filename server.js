@@ -587,7 +587,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 app.post('/createReservation', verifyToken, async (req, res) => {
   // todo : check duplicate booking on same day
   try {
-    const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
+    const { courseid, classid, classday, classdate, classtime, studentid, coursename } = req.body;
     const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
     const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
 
@@ -639,31 +639,45 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
               try {
                 // Format date for notification
-                var a = moment(classdate, "YYYYMMDD");
-                const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                });
+                const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname' +
+                                        ' c.coursename ' +
+                                        ' FROM tstudent a ' +
+                                        ' INNER JOIN tcustomercourse b ' +
+                                        ' ON a.courserefer = b.courserefer ' +
+                                        ' INNER JOIN tcourseinfo c ' +
+                                        ' ON b.courseid = c.courseid ' +
+                                        ' WHERE studentid = ?';
+                const results = await queryPromise(queryNotifyData, [studentid]);
+                if (results.length > 0) {
+                  const studentnickname = results[0].nickname;
+                  const studentname = results[0].fullname;
+                  
+                  var a = moment(classdate, "YYYYMMDD");
+                  const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  });
 
-                // Prepare notification data
-                const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
-                };
+                  // Prepare notification data
+                  const jsonData = {
+                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
+                  };
 
-                // Send notification
-                const requestOption = {
-                  method: 'POST',
-                  headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                    Authorization: `Bearer ` + accessCode,
-                  },
-                  data: qs.stringify(jsonData),
-                  url,
-                };
+                  // Send notification
+                  const requestOption = {
+                    method: 'POST',
+                    headers: {
+                      'content-type': 'application/x-www-form-urlencoded',
+                      Authorization: `Bearer ` + accessCode,
+                    },
+                    data: qs.stringify(jsonData),
+                    url,
+                  };
 
-                await axios(requestOption);
-                console.log('Notification Sent Successfully');
+                  await axios(requestOption);
+                  console.log('Notification Sent Successfully');
+                }
               } catch (error) {
                 console.error('Error sending notification:', error);
               }
