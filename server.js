@@ -275,8 +275,8 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
         if(coursetype == 'Monthly') {
-          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ?';
-          const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
+          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? AND studentid <> ?';
+          const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, studentid]);
           if (resCheckUserd.length > 0) {
             const count = resCheckUserd[0].count;
             if (count > 0) {
@@ -324,10 +324,11 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
         if(coursetype == 'Monthly') {
-          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? AND studentid <> ?';
+          const queryCheckUserd = 'SELECT count(*) count FROM tstudent WHERE courserefer = ? AND studentid <> ?';
           const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, studentid]);
           if (resCheckUserd.length > 0) {
             const count = resCheckUserd[0].count;
+            console.log("count : " + count);
             if (count > 0) {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
