@@ -583,8 +583,6 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 });
 
 app.post('/createReservation', verifyToken, async (req, res) => {
-    
-    
   // todo : check duplicate booking on same day
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
@@ -609,76 +607,68 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           return res.json({ success: false, message: 'Sorry, this class is full' });
         }
 
-        const checkCourseQuery = 'select a.courserefer from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
+        const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
         const results2 = await queryPromise(checkCourseQuery, [studentid]);
 
         if (results2.length > 0) {
           const courserefer = results2[0].courserefer;
-          const checkCourseExpiredQuery = 'select expiredate from tcustomer_course where courserefer = ?';
-          const results3 = await queryPromise(checkCourseExpiredQuery, [courserefer]);
-
-          if (results3.length > 0) {
-            const expiredate = results3[0].expiredate;
-            const today = new Date();
+          const coursetype = results2[0].coursetype;
+          const expiredate = results3[0].expiredate;
+          const remaining = results3[0].remaining;
+          const today = new Date();
 
             if (today > expiredate) {
               return res.json({ success: false, message: 'Sorry, your course has expired' });
             }
-
-            const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where courserefer = ?';
-            const results4 = await queryPromise(checkRemainingQuery, [studentid]);
-
-            if (results4.length > 0) {
-              const remaining = results4[0].remaining;
-
+              
+            if(coursetype != 'Monthly') {
               if (remaining <= 0) {
                 return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
               }
+            }
 
-              console.log("======= addBookingByAdmin =======");
-              const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
-              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+            console.log("======= addBookingByAdmin =======");
+            const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
+            const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
 
-              if (insertResult.affectedRows > 0) {
-                const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-                const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
+            if (insertResult.affectedRows > 0) {
+              const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
+              const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
 
-                try {
-                  // Format date for notification
-                  var a = moment(classdate, "YYYYMMDD");
-                  const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  });
+              try {
+                // Format date for notification
+                var a = moment(classdate, "YYYYMMDD");
+                const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                });
 
-                  // Prepare notification data
-                  const jsonData = {
-                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
-                  };
+                // Prepare notification data
+                const jsonData = {
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
+                };
 
-                  // Send notification
-                  const requestOption = {
-                    method: 'POST',
-                    headers: {
-                      'content-type': 'application/x-www-form-urlencoded',
-                      Authorization: `Bearer ` + accessCode,
-                    },
-                    data: qs.stringify(jsonData),
-                    url,
-                  };
+                // Send notification
+                const requestOption = {
+                  method: 'POST',
+                  headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                    Authorization: `Bearer ` + accessCode,
+                  },
+                  data: qs.stringify(jsonData),
+                  url,
+                };
 
-                  await axios(requestOption);
-                  console.log('Notification Sent Successfully');
-                } catch (error) {
-                  console.error('Error sending notification:', error);
-                }
-
-                return res.json({ success: true, message: 'Booking added successfully' });
+                await axios(requestOption);
+                console.log('Notification Sent Successfully');
+              } catch (error) {
+                console.error('Error sending notification:', error);
               }
+
+              return res.json({ success: true, message: 'Booking added successfully' });
             }
           }
-        }
       }
     }
 
