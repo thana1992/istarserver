@@ -639,10 +639,10 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
               try {
                 // Format date for notification
-                const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname' +
+                const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
                                         ' c.coursename ' +
                                         ' FROM tstudent a ' +
-                                        ' INNER JOIN tcustomercourse b ' +
+                                        ' INNER JOIN tcustomer_course b ' +
                                         ' ON a.courserefer = b.courserefer ' +
                                         ' INNER JOIN tcourseinfo c ' +
                                         ' ON b.courseid = c.courseid ' +
