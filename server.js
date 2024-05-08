@@ -1181,9 +1181,8 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
 
 app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
   try {
-    const { username } = req.body;
     const query = 'SELECT a.* FROM tcustomer_course a';
-    const results = await queryPromise(query, [courserefer]);
+    const results = await queryPromise(query, null);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Customer Course List successful', results });
     } else {
