@@ -266,16 +266,47 @@ app.post('/deleteNewStudent', verifyToken, async (req, res) => {
 
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
   const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
-  const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, photo) ' +
-                ' VALUES (?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
   try {
-    await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer])
-    .then((results) => {
-      res.json({ success: true, message: 'Family member added successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+    if(courserefer!=null && courserefer!='') {
+      const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+      const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
+      if (resCheckCustomerCourse.length <= 0) {
+        return res.json({ success: false, message: 'Course not found' });
+      } else {
+        const coursetype = resCheckCustomerCourse[0].coursetype;
+        if(coursetype == 'Monthly') {
+          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ?';
+          const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
+          if (resCheckUserd.length > 0) {
+            const count = resCheckUserd[0].count;
+            if (count > 0) {
+              return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
+            } else {
+              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, photo) ' +
+                            ' VALUES (?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid])
+              .then((results) => {
+                res.json({ success: true, message: 'Family member added successfully' });
+              })
+              .catch((error) => {
+                res.status(500).send(error);
+              });
+            }
+          }
+        } else {
+          const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, photo) ' +
+                        ' VALUES (?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+          await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer])
+          .then((results) => {
+            res.json({ success: true, message: 'Family member added successfully' });
+          })
+          .catch((error) => {
+            res.status(500).send(error);
+          });
+        }
+      }
+    }
+
   } catch (error) {
     console.error('Error in addStudentByAdmin:', error);
     res.status(500).send(error);
@@ -285,37 +316,43 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
-
-    const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
-    const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
-    if (resCheckCustomerCourse.length <= 0) {
-      return res.json({ success: false, message: 'Course not found' });
-    } else {
-      const coursetype = resCheckCustomerCourse[0].coursetype;
-      if(coursetype == 'Monthly') {
-        const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ?';
-        const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
-        if (resCheckUserd.length > 0) {
-          const count = resCheckUserd[0].count;
-          if (count > 0) {
-            return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
-          } else {
-            const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  'familyid = ?, courserefer = ? ' +
-                  ' WHERE studentid = ?';
-            const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
-            return res.json({ success: true, message: 'Update Student successfully' });
-          }
-        }
+    if(courserefer!=null && courserefer!='') {
+      const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+      const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
+      if (resCheckCustomerCourse.length <= 0) {
+        return res.json({ success: false, message: 'Course not found' });
       } else {
-        const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  'familyid = ?, courserefer = ? ' +
-                  ' WHERE studentid = ?';
-        const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
-        return res.json({ success: true, message: 'Update Student successfully' });
+        const coursetype = resCheckCustomerCourse[0].coursetype;
+        if(coursetype == 'Monthly') {
+          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ?';
+          const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
+          if (resCheckUserd.length > 0) {
+            const count = resCheckUserd[0].count;
+            if (count > 0) {
+              return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
+            } else {
+              const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
+                    'familyid = ?, courserefer = ? ' +
+                    ' WHERE studentid = ?';
+              const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
+              return res.json({ success: true, message: 'Update Student successfully' });
+            }
+          }
+        } else {
+          const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
+                    'familyid = ?, courserefer = ? ' +
+                    ' WHERE studentid = ?';
+          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
+          return res.json({ success: true, message: 'Update Student successfully' });
+        }
       }
+    } else {
+      const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
+                  'familyid = ?' +
+                  ' WHERE studentid = ?';
+      const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, studentid])
+      return res.json({ success: true, message: 'Update Student successfully' });
     }
-    
 
   } catch (error) {
     console.log("updateStudentByAdmin error : " + JSON.stringify(error));
