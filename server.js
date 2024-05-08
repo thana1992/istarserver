@@ -285,11 +285,37 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
-    const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
+
+    const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+    const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
+    if (resCheckCustomerCourse.length <= 0) {
+      return res.json({ success: false, message: 'Course not found' });
+    } else {
+      const coursetype = resCheckCustomerCourse[0].coursetype;
+      if(coursetype == 'Monthly') {
+        const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ?';
+        const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
+        if (resCheckUserd.length > 0) {
+          const count = resCheckUserd[0].count;
+          if (count > 0) {
+            return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
+          } else {
+            const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
                   'familyid = ?, courserefer = ? ' +
                   ' WHERE studentid = ?';
-    const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
-    res.json({ success: true, message: 'Update Student successfully' });
+            const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
+            return res.json({ success: true, message: 'Update Student successfully' });
+          }
+        }
+      } else {
+        const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
+                  'familyid = ?, courserefer = ? ' +
+                  ' WHERE studentid = ?';
+        const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
+        return res.json({ success: true, message: 'Update Student successfully' });
+      }
+    }
+    
 
   } catch (error) {
     console.log("updateStudentByAdmin error : " + JSON.stringify(error));
@@ -660,7 +686,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
                   // Prepare notification data
                   const jsonData = {
-                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
+                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
                   };
 
                   sendNotification(jsonData);
@@ -1219,7 +1245,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
     const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
     const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining, startdate, expiredate]);
     if (results.affectedRows > 0) {
-      res.json({ success: true, message: 'Customer Course added successfully' });
+      res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
     }
