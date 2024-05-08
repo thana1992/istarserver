@@ -539,13 +539,13 @@ app.post('/deleteStudent', verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
       const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
       await queryPromise(queryDeleteTreservation, [studentid]);
-      res.json({ success: true, message: 'Family member deleted successfully' });
+      return res.json({ success: true, message: 'Family member deleted successfully' });
     } else {
-      res.json({ success: false, message: 'No Family member data' });
+      return res.json({ success: false, message: 'No Family member data' });
     }
   } catch (error) {
     console.error('Error in deleteStudent:', error);
-    res.status(500).send(error);
+    return res.status(500).send(error);
   }
 });
 
