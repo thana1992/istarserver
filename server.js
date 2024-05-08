@@ -1179,7 +1179,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/getCustomerCourseLookup', verifyToken, async (req, res) => {
+app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
   try {
     const { username } = req.body;
     const query = 'SELECT a.* FROM tcustomer_course a';
