@@ -85,7 +85,7 @@ app.get('/checkToken', (req, res) => {
   activeSessions.forEach(item => {
     let iat = new Date(item.iat * 1000)
     let exp = new Date(item.exp * 1000)
-    console.log(item.username + " : " + iat.toLocaleString() + " : " + exp.toLocaleString())
+    console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString()+"\n")
   });
   res.json({ activeSessions });
 });
@@ -213,7 +213,8 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
                 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, '1' journal ' +
                   ' from jstudent a ' +
-                  ' where a.familyid = ?' +
+                  ' where a.familyid = ?';
+                  
   try {
     const results = await queryPromise(query, [familyid])
     .then((results) => {
