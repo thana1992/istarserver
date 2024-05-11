@@ -173,7 +173,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-app.post("/getStudent", verifyToken, async (req, res) => {
+app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
                   ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
@@ -185,6 +185,35 @@ app.post("/getStudent", verifyToken, async (req, res) => {
                   ' left join tcourseinfo c ' +
                   ' on b.courseid = c.courseid ' +
                   ' where a.familyid = ?';
+  try {
+    const results = await queryPromise(query, [familyid])
+    .then((results) => {
+      if(results.length > 0){
+        res.json({ success: true, message: 'Get FamilyMember successful', results });
+      } else {
+        res.json({ success: true, message: 'Not found FamilyMember', results });
+      }
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  } catch (error) {
+    console.error("getStudent error:", error);
+    res.status(500).send(error);
+  }
+});
+
+app.post("/getFamilyList", verifyToken, async (req, res) => {
+  const { familyid } = req.body;
+  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
+                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, '0' journal ' +
+                  ' from tstudent a ' +
+                  ' where a.familyid = ?' +
+                'UNION ALL' +
+                'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
+                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, '1' journal ' +
+                  ' from jstudent a ' +
+                  ' where a.familyid = ?' +
   try {
     const results = await queryPromise(query, [familyid])
     .then((results) => {
@@ -202,7 +231,6 @@ app.post("/getStudent", verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-
 app.post('/addStudent', verifyToken, async (req, res) => {
   try {
       const { familyid, firstname, middlename, lastname, nickname, gender, dateofbirth } = req.body;
