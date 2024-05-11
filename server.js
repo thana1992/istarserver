@@ -208,15 +208,15 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
                   ' from tstudent a ' +
-                  ' where a.familyid = ?' +
+                  ' where a.familyid = ? ' +
                 ' UNION ALL ' +
                 ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
                   ' from jstudent a ' +
-                  ' where a.familyid = ?';
+                  ' where a.familyid = ? ';
 
   try {
-    const results = await queryPromise(query, [familyid])
+    const results = await queryPromise(query, [familyid, familyid])
     .then((results) => {
       if(results.length > 0){
         res.json({ success: true, message: 'Get Family Member successful', results });
