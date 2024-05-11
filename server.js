@@ -1307,10 +1307,11 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const courserefer = await generateRefer('CC');
-    const { courseid, coursetype, remaining, startdate, expiredate } = req.body;
+    
+    const { courseid, coursetype, course, remaining, startdate, expiredate } = req.body;
+    const courserefer = await generateRefer(course.course_shortname);
     const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
-    const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining, startdate, expiredate]);
+    const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
     } else {
