@@ -198,7 +198,7 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
       res.status(500).send(error);
     });
   } catch (error) {
-    console.error("getStudent error:", error);
+    console.error("getFamilyMember error:", error);
     res.status(500).send(error);
   }
 });
