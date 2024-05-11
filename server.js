@@ -1309,14 +1309,29 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
     
     const { courseid, coursetype, course, remaining, startdate, expiredate } = req.body;
-    const courserefer = await generateRefer(course.course_shortname);
-    const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
-    const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
-    if (results.affectedRows > 0) {
-      res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
+    const courserefer = await generateRefer(course.refercode);
+    if(startdate == null || startdate == undefined || startdate == '') {
+      const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining) VALUES (?, ?, ?, ?)';
+      const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining]);
+      if (results.affectedRows > 0) {
+        res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
+      } else {
+        res.json({ success: false, message: 'Error adding Customer Course' });
+      }
     } else {
-      res.json({ success: false, message: 'Error adding Customer Course' });
+      if(expiredate == null || expiredate == undefined || expiredate == '') {
+        res.json({ success: false, message: 'Please enter expire date' });
+      } else {
+        const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
+        const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
+        if (results.affectedRows > 0) {
+          res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
+        } else {
+          res.json({ success: false, message: 'Error adding Customer Course' });
+        }
+      }
     }
+    
   } catch (error) {
     console.error('Error in addCustomerCourse:', error);
     res.status(500).send
