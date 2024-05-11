@@ -206,15 +206,15 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 app.post("/getFamilyList", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
-                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, '0' journal ' +
+                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
                   ' from tstudent a ' +
                   ' where a.familyid = ?' +
                 'UNION ALL' +
                 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
-                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, '1' journal ' +
+                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
                   ' from jstudent a ' +
                   ' where a.familyid = ?';
-                  
+
   try {
     const results = await queryPromise(query, [familyid])
     .then((results) => {
