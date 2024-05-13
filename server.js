@@ -1314,7 +1314,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining) VALUES (?, ?, ?, ?)';
       const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining]);
       if (results.affectedRows > 0) {
-        res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
+        res.json({ success: true, message: 'Successfully Course No :'+courserefer });
       } else {
         res.json({ success: false, message: 'Error adding Customer Course' });
       }
@@ -1325,7 +1325,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
         const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
         const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
         if (results.affectedRows > 0) {
-          res.json({ success: true, message: 'Customer Course added successfully Course No:'+courserefer });
+          res.json({ success: true, message: 'Successfully Course No :'+courserefer });
         } else {
           res.json({ success: false, message: 'Error adding Customer Course' });
         }
