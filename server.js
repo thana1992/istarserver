@@ -1368,7 +1368,8 @@ app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
     console.error('Error in checkbeforeDeleteCustomerCourse:', error);
     res.status(500).send
   }
-}
+});
+
 app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer } = req.body;
