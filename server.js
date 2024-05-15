@@ -1376,7 +1376,12 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
     const query = 'DELETE FROM tcustomer_course WHERE courserefer = ?';
     const results = await queryPromise(query, [courserefer]);
     if (results.affectedRows > 0) {
-      res.json({ success: true, message: 'Customer Course deleted successfully' });
+      const deleteTstudent = await queryPromise('UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?', [courserefer]);
+      if (deleteTstudent.affectedRows > 0) {
+        res.json({ success: true, message: 'Customer Course deleted successfully' });
+      } else {
+        res.json({ success: false, message: 'Error deleting Customer Course' });
+      }
     }
   } catch (error) {
     console.error('Error in deleteCustomerCourse:', error);
