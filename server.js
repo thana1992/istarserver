@@ -1354,6 +1354,21 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
+app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
+  try {
+    const { courserefer } = req.body;
+    const query = 'SELECT * FROM tstudent WHERE courserefer = ?';
+    const results = await queryPromise(query, [courserefer]);
+    if (results.length > 0) {
+      res.json({ success: false, message: 'This course is currently being used.', results });
+    } else {
+      res.json({ success: true, message: 'This course is not currently in use.' });
+    }
+  } catch (error) {
+    console.error('Error in checkbeforeDeleteCustomerCourse:', error);
+    res.status(500).send
+  }
+}
 app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer } = req.body;
