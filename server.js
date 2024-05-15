@@ -18,7 +18,27 @@ const activeSessions = [];
 const url = 'https://notify-api.line.me/api/notify'
 const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
 const accessCode2 = '3bviOJYg6u2T5vQYEtaKUdsZ3L6apeoVtZJSrzzTT30'
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = './uploads'; // Directory to store uploads
+    // Create the directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Generate a unique filename for the uploaded file
+    const ext = path.extname(file.originalname);
+    const filename = `${Date.now()}${ext}`;
+    cb(null, filename);
+  }
+});
 
+const upload = multer({ storage: storage });
 console.log("accessCode : " + accessCode);
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
@@ -1385,6 +1405,27 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
+app.post('/profileUpload', upload.single('profilePicture'), verifyToken, async (req, res) => {
+  try {
+    // Path to the uploaded file
+    const filePath = req.file.path;
+    
+    // Assuming you have a User model with a 'profilePicture' field
+    const studentid = req.body.studentid;
+
+    const query = 'UPDATE FROM tstudent SET profilepic = ? WHERE studentid = ?';
+    const results = await queryPromise(query, [filePath, studentid]);
+    if (results.affectedRows > 0) {
+      res.status(200).json({ message: 'Profile picture uploaded successfully' });
+    } else {
+      res.status(500).json({ error: 'Error uploading profile picture' });
+    }
+
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 // Utility function to promisify the database queries
