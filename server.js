@@ -1073,6 +1073,23 @@ app.get("/customerCourseLookup", verifyToken, async (req, res) => {
   })
 });
 
+app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
+  const { studentid } = req.body;
+  const query = 'SELECT * from tcustomer_course where courserefer = (select courserefer from tstudent where studentid = ?)';
+  try {
+    await queryPromise(query, [studentid])
+    .then((results) => {
+      return res.json({ success: true, results });
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  } catch (error) {
+    console.error('Error in getCustomerCourseInfo:', error);
+    res.status(500).send(error);
+  }
+});
+
 app.get("/familyLookup", verifyToken, async (req, res) => {
   const query = 'SELECT * FROM tfamily';
   await queryPromise(query, null)
