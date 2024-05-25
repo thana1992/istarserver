@@ -22,23 +22,24 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = './uploads'; // Directory to store uploads
-    // Create the directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, uploadDir);
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
   },
-  filename: (req, file, cb) => {
-    // Generate a unique filename for the uploaded file
-    const ext = path.extname(file.originalname);
-    const filename = `${Date.now()}${ext}`;
-    cb(null, filename);
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}_${file.originalname}`);
+  },
+});
+const upload = multer({ storage: storage });
+
+app.post('/upload', upload.single('profileImage'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
   }
+  res.send({ imageUrl: `/uploads/${req.file.filename}` });
 });
 
-const upload = multer({ storage: storage });
+// Serve the uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 console.log("accessCode : " + accessCode);
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
@@ -70,6 +71,20 @@ const verifyToken = (req, res, next) => {
     res.status(500).json({ message: 'Internal server error' });
   };
 };
+
+app.put('/gymnasts/:id/profile-image', async (req, res) => {
+  const { id } = req.params;
+  const { imageUrl } = req.body;
+
+  // Update the gymnast's profile with the image URL in your database
+  try {
+    // สมมุติว่าคุณใช้ Mongoose สำหรับ MongoDB
+    console.log('Updating profile image URL:', imageUrl);
+    res.send({ success: true });
+  } catch (error) {
+    res.status(500).send('Error updating profile image URL.');
+  }
+});
 
 db.connect(err => {
   if (err) {
@@ -1416,28 +1431,6 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error in deleteCustomerCourse:', error);
     res.status(500).send
-  }
-});
-
-app.post('/profileUpload', upload.single('profilePicture'), verifyToken, async (req, res) => {
-  try {
-    // Path to the uploaded file
-    const filePath = req.file.path;
-    
-    // Assuming you have a User model with a 'profilePicture' field
-    const studentid = req.body.studentid;
-
-    const query = 'UPDATE FROM tstudent SET profilepic = ? WHERE studentid = ?';
-    const results = await queryPromise(query, [filePath, studentid]);
-    if (results.affectedRows > 0) {
-      res.status(200).json({ message: 'Profile picture uploaded successfully' });
-    } else {
-      res.status(500).json({ error: 'Error uploading profile picture' });
-    }
-
-  } catch (error) {
-    console.error('Error uploading profile picture:', error);
-    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
