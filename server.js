@@ -1107,7 +1107,7 @@ app.get("/familyLookup", verifyToken, async (req, res) => {
 
 app.post("/studentLookup", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  const query = 'SELECT *, CONCAT(nickname, \' \', firstname, \' \', middlename \' \', lastname) as name FROM tstudent'
+  const query = 'SELECT *, CONCAT(nickname, \' \', firstname, \' \', middlename, \' \', lastname) as name FROM tstudent'
   if(familyid !== null && familyid !== undefined && familyid !== '') {
     query = query + ' WHERE familyid = ?';
   }
@@ -1124,17 +1124,21 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
     res.json({ success: false, message: error.message });
     console.error('Error in queryPromise:', error);
   })
-
-  // if(results.length > 0){
-  //   res.json({ success: true, message: 'Get Student Lookup successful', results });
-  // } else {
-  //   res.json({ success: true, message: 'No Student Lookup' });
-  // }
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
-    const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), \' \', IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, b.remaining ,b.expiredate, t.coursename, d.mobileno FROM tstudent a LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer LEFT JOIN tcourseinfo t on b.courseid = t.courseid LEFT JOIN tfamily c ON a.familyid = c.familyid LEFT JOIN tuser d ON c.username = d.username';
+    const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), \' \', IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
+                  ' b.startdate, b.remaining ,b.expiredate, t.coursename, d.mobileno ' +
+                  ' FROM tstudent a ' +
+                  ' LEFT JOIN tcustomer_course b ' +
+                  ' ON a.courserefer = b.courserefer ' +
+                  ' LEFT JOIN tcourseinfo t ' +
+                  ' ON b.courseid = t.courseid ' +
+                  ' LEFT JOIN tfamily c ' +
+                  ' ON a.familyid = c.familyid ' +
+                  ' LEFT JOIN tuser d ' +
+                  ' ON c.username = d.username';
     const results = await queryPromise(query);
 
     console.log("API getStudentlist result :" + JSON.stringify(results));
