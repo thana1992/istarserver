@@ -495,6 +495,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
             return res.json({ success: true, message: 'Booking added successfully' });
           }
+        } else {
+          return res.json({ success: false, message: 'Not found customer\'s course' });
         }
       }
     } else {
