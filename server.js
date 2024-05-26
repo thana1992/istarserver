@@ -1451,9 +1451,11 @@ app.put('/student/:studentid/profile-image', async (req, res) => {
 
 app.get('/student/:studentid/profile-image', async (req, res) => {
   const { studentid } = req.body;
-
+  console.log("get profile image for studentid : " + studentid)
   const query = 'SELECT profile_image FROM tstudent WHERE studentid = ?';
   const results = await queryPromise(query, [studentid]);
+  
+  console.log("get profile image results : " + JSON.stringify(results));
   if (results.length > 0) {
     res.json({ success: true, image: results[0].profile_image });
   } else {
@@ -1501,7 +1503,7 @@ async function queryPromise(query, params) {
   let connection;
   try {
     console.log("Query : " + query);
-    //console.log("Params : " + params);
+    console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
