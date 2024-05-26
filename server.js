@@ -372,9 +372,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
           }
         } else {
           const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ?, profile_image =? ' +
+                    'familyid = ?, courserefer = ?, profile_image = ? ' +
                     ' WHERE studentid = ?';
-          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, courserefer, profile_image, studentid])
+          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, studentid])
           return res.json({ success: true, message: 'Update Student successfully' });
         }
       }
