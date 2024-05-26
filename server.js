@@ -296,7 +296,7 @@ app.post('/deleteNewStudent', verifyToken, async (req, res) => {
 });
 
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
-  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
+  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image } = req.body;
   try {
     if(courserefer!=null && courserefer!='') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
@@ -313,9 +313,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             if (count > 0) {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
-              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, photo) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid])
+              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image) ' +
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?')';
+              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image])
               .then((results) => {
                 res.json({ success: true, message: 'Family member added successfully' });
               })
@@ -346,7 +346,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
-    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer } = req.body;
+    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image } = req.body;
     if(courserefer!=null && courserefer!='') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
       const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
@@ -364,25 +364,25 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ? ' +
+                    'familyid = ?, courserefer = ?, profile_image ' +
                     ' WHERE studentid = ?';
-              const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
+              const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, studentid])
               return res.json({ success: true, message: 'Update Student successfully' });
             }
           }
         } else {
           const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ? ' +
+                    'familyid = ?, courserefer = ?, profile_image ' +
                     ' WHERE studentid = ?';
-          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, studentid])
+          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, courserefer, profile_image, studentid])
           return res.json({ success: true, message: 'Update Student successfully' });
         }
       }
     } else {
       const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  'familyid = ?, courserefer = NULL' +
+                  'familyid = ?, profile_image = ?, courserefer = NULL' +
                   ' WHERE studentid = ?';
-      const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, studentid])
+      const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, studentid])
       return res.json({ success: true, message: 'Update Student successfully' });
     }
 
