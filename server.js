@@ -1488,9 +1488,9 @@ app.post('/upload', (req, res) => {
   }
   try {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    db.query(query, [imageUrl, studentid], (err, result) => {
+    db.query(query, [image, studentid], (err, result) => {
     if (err) throw err;
-    res.send({ imageUrl: `data:image/jpeg;base64,${image}` }); // ส่ง URL ที่มีข้อมูล Base64 กลับไป
+    res.send({ image: `data:image/jpeg;base64,${image}` }); // ส่ง URL ที่มีข้อมูล Base64 กลับไป
   });
   } catch (error) {
     throw error;
@@ -1500,12 +1500,12 @@ app.post('/upload', (req, res) => {
 
 app.put('/student/:studentid/profile-image', async (req, res) => {
   const { studentid } = req.params;
-  const { imageUrl } = req.body;
+  const { image } = req.body;
 
   // Update the gymnast's profile with the image URL in your database
   try {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    db.query(query, [imageUrl, studentid], (err, result) => {
+    db.query(query, [image, studentid], (err, result) => {
     if (err) throw err;
     res.send({ success: true });
   });
@@ -1516,13 +1516,13 @@ app.put('/student/:studentid/profile-image', async (req, res) => {
 
 app.get('/student/:studentid/profile-image', (req, res) => {
   const { studentid } = req.params;
-  const { imageUrl } = req.body;
+  const { image } = req.body;
 
   const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
   db.query(query, [id], (err, result) => {
     if (err) throw err;
     if (result.length > 0) {
-      res.send({ imageUrl: result[0].profile_image });
+      res.send({ image: result[0].profile_image });
     } else {
       res.status(404).send('Profile image not found');
     }
