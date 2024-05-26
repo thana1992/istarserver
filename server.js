@@ -1503,7 +1503,7 @@ async function queryPromise(query, params) {
   let connection;
   try {
     console.log("Query : " + query);
-    console.log("Params : " + params);
+    //console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
