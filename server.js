@@ -1403,10 +1403,13 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 
 
 app.post('/upload', async (req, res) => {
-  const { image } = req.body;
-  const { studentid } = req.params;
+  const { image, studentid } = req.body;
+  console.log("upload image : " + studentid)
   if (!image) {
     return res.status(400).send('No image provided.');
+  }
+  if (Buffer.byteLength(image, 'base64') > 5 * 1024 * 1024) {
+    return res.status(400).send('Image size exceeds 5MB.');
   }
   try {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
@@ -1423,8 +1426,7 @@ app.post('/upload', async (req, res) => {
 });
 
 app.put('/student/:studentid/profile-image', async (req, res) => {
-  const { studentid } = req.params;
-  const { image } = req.body;
+  const { image, studentid } = req.body;
 
   // Update the gymnast's profile with the image URL in your database
   try {
@@ -1438,19 +1440,16 @@ app.put('/student/:studentid/profile-image', async (req, res) => {
   }
 });
 
-app.get('/student/:studentid/profile-image', (req, res) => {
-  const { studentid } = req.params;
-  const { image } = req.body;
+app.get('/student/:studentid/profile-image', async (req, res) => {
+  const { studentid } = req.body;
 
-  const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-  db.query(query, [id], (err, result) => {
-    if (err) throw err;
-    if (result.length > 0) {
-      res.send({ image: result[0].profile_image });
-    } else {
-      res.status(404).send('Profile image not found');
-    }
-  });
+  const query = 'SELECT profile_image FROM tstudent WHERE studentid = ?';
+  const results = await queryPromise(query, [studentid]);
+  if (results.length > 0) {
+    res.json({ success: true, image: results[0].profile_image });
+  } else {
+    res.json({ success: false, message: 'No profile image found' });
+  }
 });
 
 
@@ -1493,7 +1492,7 @@ async function queryPromise(query, params) {
   let connection;
   try {
     console.log("Query : " + query);
-    console.log("Params : " + params);
+    //console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
