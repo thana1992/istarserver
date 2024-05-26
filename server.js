@@ -20,26 +20,7 @@ const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
 const accessCode2 = '3bviOJYg6u2T5vQYEtaKUdsZ3L6apeoVtZJSrzzTT30'
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}_${file.originalname}`);
-  },
-});
-const upload = multer({ storage: storage });
 
-app.post('/upload', upload.single('profileImage'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
-  res.send({ imageUrl: `/uploads/${req.file.filename}` });
-});
-
-// Serve the uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 console.log("accessCode : " + accessCode);
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
@@ -72,20 +53,6 @@ const verifyToken = (req, res, next) => {
   };
 };
 
-app.put('/gymnasts/:id/profile-image', async (req, res) => {
-  const { id } = req.params;
-  const { imageUrl } = req.body;
-
-  // Update the gymnast's profile with the image URL in your database
-  try {
-    // สมมุติว่าคุณใช้ Mongoose สำหรับ MongoDB
-    console.log('Updating profile image URL:', imageUrl);
-    res.send({ success: true });
-  } catch (error) {
-    res.status(500).send('Error updating profile image URL.');
-  }
-});
-
 db.connect(err => {
   if (err) {
     console.error('Error connecting to the database:', err);
@@ -94,7 +61,7 @@ db.connect(err => {
   }
 });
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '5mb' }));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   // other headers...
@@ -1512,6 +1479,55 @@ async function generateRefer(refertype) {
   console.log("generateRefer() Refer : " + refer);
   return refer;
 }
+
+app.post('/upload', (req, res) => {
+  const { image } = req.body;
+  const { studentid } = req.params;
+  if (!image) {
+    return res.status(400).send('No image provided.');
+  }
+  try {
+    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+    db.query(query, [imageUrl, studentid], (err, result) => {
+    if (err) throw err;
+    res.send({ imageUrl: `data:image/jpeg;base64,${image}` }); // ส่ง URL ที่มีข้อมูล Base64 กลับไป
+  });
+  } catch (error) {
+    res.status(500).send('Error updating profile image URL.');
+  }
+});
+
+app.put('/student/:studentid/profile-image', async (req, res) => {
+  const { studentid } = req.params;
+  const { imageUrl } = req.body;
+
+  // Update the gymnast's profile with the image URL in your database
+  try {
+    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+    db.query(query, [imageUrl, studentid], (err, result) => {
+    if (err) throw err;
+    res.send({ success: true });
+  });
+  } catch (error) {
+    res.status(500).send('Error updating profile image URL.');
+  }
+});
+
+app.get('/student/:studentid/profile-image', (req, res) => {
+  const { studentid } = req.params;
+  const { imageUrl } = req.body;
+
+  const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) throw err;
+    if (result.length > 0) {
+      res.send({ imageUrl: result[0].profile_image });
+    } else {
+      res.status(404).send('Profile image not found');
+    }
+  });
+});
+
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
