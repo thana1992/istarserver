@@ -1426,7 +1426,8 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 // });
 
 app.put('/student/:studentid/profile-image', async (req, res) => {
-  const { image, studentid } = req.body;
+  const { studentid } = req.params;
+  const { image } = req.body;
   console.log("upload image for studentid : " + studentid)
   if (!image) {
     return res.status(400).send('No image provided.');
@@ -1450,7 +1451,7 @@ app.put('/student/:studentid/profile-image', async (req, res) => {
 });
 
 app.get('/student/:studentid/profile-image', async (req, res) => {
-  const { studentid } = req.body;
+  const { studentid } = req.params;
   console.log("get profile image for studentid : " + studentid)
   const query = 'SELECT profile_image FROM tstudent WHERE studentid = ?';
   const results = await queryPromise(query, [studentid]);
