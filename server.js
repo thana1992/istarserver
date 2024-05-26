@@ -314,7 +314,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?)';
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
               await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image])
               .then((results) => {
                 res.json({ success: true, message: 'Family member added successfully' });
@@ -325,9 +325,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             }
           }
         } else {
-          const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, photo) ' +
-                        ' VALUES (?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
-          await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer])
+          const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image) ' +
+                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+          await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image])
           .then((results) => {
             res.json({ success: true, message: 'Family member added successfully' });
           })
