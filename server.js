@@ -1402,6 +1402,58 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 });
 
 
+app.post('/upload', async (req, res) => {
+  const { image } = req.body;
+  const { studentid } = req.params;
+  if (!image) {
+    return res.status(400).send('No image provided.');
+  }
+  try {
+    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+    const results = await queryPromise(query, [image, studentid]);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Profile image uploaded successfully', image: `data:image/jpeg;base64,${image}` });
+    } else {
+      res.json({ success: false, message: 'Error uploading profile image' });
+    }
+  } catch (error) {
+    throw error;
+    res.status(500).send('Error updating profile image URL.');
+  }
+});
+
+app.put('/student/:studentid/profile-image', async (req, res) => {
+  const { studentid } = req.params;
+  const { image } = req.body;
+
+  // Update the gymnast's profile with the image URL in your database
+  try {
+    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+    db.query(query, [image, studentid], (err, result) => {
+    if (err) throw err;
+    res.send({ success: true });
+  });
+  } catch (error) {
+    res.status(500).send('Error updating profile image URL.');
+  }
+});
+
+app.get('/student/:studentid/profile-image', (req, res) => {
+  const { studentid } = req.params;
+  const { image } = req.body;
+
+  const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) throw err;
+    if (result.length > 0) {
+      res.send({ image: result[0].profile_image });
+    } else {
+      res.status(404).send('Profile image not found');
+    }
+  });
+});
+
+
 // Utility function to promisify the database queries
 // async function queryPromise(query, params) {
 //   return new Promise((resolve, reject) => {
@@ -1479,56 +1531,6 @@ async function generateRefer(refertype) {
   console.log("generateRefer() Refer : " + refer);
   return refer;
 }
-
-app.post('/upload', (req, res) => {
-  const { image } = req.body;
-  const { studentid } = req.params;
-  if (!image) {
-    return res.status(400).send('No image provided.');
-  }
-  try {
-    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    db.query(query, [image, studentid], (err, result) => {
-    if (err) throw err;
-    res.send({ image: `data:image/jpeg;base64,${image}` }); // ส่ง URL ที่มีข้อมูล Base64 กลับไป
-  });
-  } catch (error) {
-    throw error;
-    res.status(500).send('Error updating profile image URL.');
-  }
-});
-
-app.put('/student/:studentid/profile-image', async (req, res) => {
-  const { studentid } = req.params;
-  const { image } = req.body;
-
-  // Update the gymnast's profile with the image URL in your database
-  try {
-    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    db.query(query, [image, studentid], (err, result) => {
-    if (err) throw err;
-    res.send({ success: true });
-  });
-  } catch (error) {
-    res.status(500).send('Error updating profile image URL.');
-  }
-});
-
-app.get('/student/:studentid/profile-image', (req, res) => {
-  const { studentid } = req.params;
-  const { image } = req.body;
-
-  const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-  db.query(query, [id], (err, result) => {
-    if (err) throw err;
-    if (result.length > 0) {
-      res.send({ image: result[0].profile_image });
-    } else {
-      res.status(404).send('Profile image not found');
-    }
-  });
-});
-
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
