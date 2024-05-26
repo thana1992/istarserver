@@ -1402,15 +1402,39 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 });
 
 
-app.post('/upload', async (req, res) => {
+// app.post('/upload', async (req, res) => {
+//   const { image, studentid } = req.body;
+//   console.log("upload image : " + studentid)
+//   if (!image) {
+//     return res.status(400).send('No image provided.');
+//   }
+//   if (Buffer.byteLength(image, 'base64') > 5 * 1024 * 1024) {
+//     return res.status(400).send('Image size exceeds 5MB.');
+//   }
+//   try {
+//     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
+//     const results = await queryPromise(query, [image, studentid]);
+//     if (results.affectedRows > 0) {
+//       res.json({ success: true, message: 'Profile image uploaded successfully', image: `data:image/jpeg;base64,${image}` });
+//     } else {
+//       res.json({ success: false, message: 'Error uploading profile image' });
+//     }
+//   } catch (error) {
+//     throw error;
+//     res.status(500).send('Error updating profile image URL.');
+//   }
+// });
+
+app.put('/student/:studentid/profile-image', async (req, res) => {
   const { image, studentid } = req.body;
-  console.log("upload image : " + studentid)
+  console.log("upload image for studentid : " + studentid)
   if (!image) {
     return res.status(400).send('No image provided.');
   }
   if (Buffer.byteLength(image, 'base64') > 5 * 1024 * 1024) {
     return res.status(400).send('Image size exceeds 5MB.');
   }
+  // Update the gymnast's profile with the image URL in your database
   try {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
     const results = await queryPromise(query, [image, studentid]);
@@ -1421,21 +1445,6 @@ app.post('/upload', async (req, res) => {
     }
   } catch (error) {
     throw error;
-    res.status(500).send('Error updating profile image URL.');
-  }
-});
-
-app.put('/student/:studentid/profile-image', async (req, res) => {
-  const { image, studentid } = req.body;
-
-  // Update the gymnast's profile with the image URL in your database
-  try {
-    const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    db.query(query, [image, studentid], (err, result) => {
-    if (err) throw err;
-    res.send({ success: true });
-  });
-  } catch (error) {
     res.status(500).send('Error updating profile image URL.');
   }
 });
