@@ -1493,6 +1493,7 @@ app.post('/upload', (req, res) => {
     res.send({ imageUrl: `data:image/jpeg;base64,${image}` }); // ส่ง URL ที่มีข้อมูล Base64 กลับไป
   });
   } catch (error) {
+    throw error;
     res.status(500).send('Error updating profile image URL.');
   }
 });
