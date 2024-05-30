@@ -177,7 +177,7 @@ app.post('/register', async (req, res) => {
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
+  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.profile_image, ' +
                   ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
                   ' b.coursetype, b.remaining, b.expiredate, a.shortnote ' + 
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
@@ -207,12 +207,12 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 
 app.post("/getFamilyList", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
+  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.profile_image, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
                   ' from tstudent a ' +
                   ' where a.familyid = ? ' +
                 ' UNION ALL ' +
-                ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
+                ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.profile_image, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
                   ' from jstudent a ' +
                   ' where a.familyid = ? ';
@@ -237,11 +237,10 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
 app.post('/addStudent', verifyToken, async (req, res) => {
   try {
       const { familyid, firstname, middlename, lastname, nickname, gender, dateofbirth } = req.body;
-      const query = 'INSERT INTO jstudent (familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, photo) ' +
-                    ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-      const defaultPhotoUrl = 'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png';
+      const query = 'INSERT INTO jstudent (familyid, firstname, middlename, lastname, nickname, gender, dateofbirth) ' +
+                    ' VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-      await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, defaultPhotoUrl]);
+      await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth]);
       
       res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
@@ -261,8 +260,8 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
       
       if (results.length > 0) {
         const studentid = await generateRefer('S');
-        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, photo) ' +
-                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'https://cdn3.iconfinder.com/data/icons/family-member-flat-happy-family-day/512/Son-512.png\')';
+        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth) ' +
+                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
         await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth]);
 
         const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
