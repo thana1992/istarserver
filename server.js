@@ -179,7 +179,7 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.photo, ' +
                   ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
-                  ' b.coursetype, b.remaining, b.expiredate, ' + 
+                  ' b.coursetype, b.remaining, b.expiredate, a.shortnote ' + 
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
                   ' from tstudent a ' +
                   ' left join tcustomer_course b ' +
@@ -296,7 +296,7 @@ app.post('/deleteNewStudent', verifyToken, async (req, res) => {
 });
 
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
-  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image } = req.body;
+  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote } = req.body;
   try {
     if(courserefer!=null && courserefer!='') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
@@ -313,9 +313,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             if (count > 0) {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
-              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image) ' +
+              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote) ' +
                             ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image])
+              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote])
               .then((results) => {
                 res.json({ success: true, message: 'Family member added successfully' });
               })
@@ -325,9 +325,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             }
           }
         } else {
-          const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image) ' +
+          const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
                         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-          await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image])
+          await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
           .then((results) => {
             res.json({ success: true, message: 'Family member added successfully' });
           })
@@ -346,7 +346,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
-    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image } = req.body;
+    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote } = req.body;
     if(courserefer!=null && courserefer!='') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
       const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
@@ -364,25 +364,25 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ?, profile_image =? ' +
+                    'familyid = ?, courserefer = ?, profile_image =? , shortnote = ? ' +
                     ' WHERE studentid = ?';
-              const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, studentid])
+              const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote, studentid])
               return res.json({ success: true, message: 'Update Student successfully' });
             }
           }
         } else {
           const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ?, profile_image = ? ' +
+                    'familyid = ?, courserefer = ?, profile_image = ? , shortnote = ? ' +
                     ' WHERE studentid = ?';
-          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, studentid])
+          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote, studentid])
           return res.json({ success: true, message: 'Update Student successfully' });
         }
       }
     } else {
       const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  'familyid = ?, profile_image = ?, courserefer = NULL' +
+                  'familyid = ?, profile_image = ?, shortnote = ?, courserefer = NULL' +
                   ' WHERE studentid = ?';
-      const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, studentid])
+      const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote, studentid])
       return res.json({ success: true, message: 'Update Student successfully' });
     }
 
@@ -1121,7 +1121,7 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
     const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), \' \', IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
-                  ' b.startdate, b.remaining ,b.expiredate, t.coursename, d.mobileno ' +
+                  ' b.startdate, b.remaining ,b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
                   ' FROM tstudent a ' +
                   ' LEFT JOIN tcustomer_course b ' +
                   ' ON a.courserefer = b.courserefer ' +
