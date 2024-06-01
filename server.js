@@ -313,7 +313,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
               await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
               .then((results) => {
                 res.json({ success: true, message: 'Family member added successfully' });
@@ -325,7 +325,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
           }
         } else {
           const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
-                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
           await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
           .then((results) => {
             res.json({ success: true, message: 'Family member added successfully' });
@@ -337,7 +337,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
       }
     } else {
       const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
       await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote])
       .then((results) => {
         res.json({ success: true, message: 'Family member added successfully' });
