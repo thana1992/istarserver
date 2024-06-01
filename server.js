@@ -312,9 +312,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             if (count > 0) {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
-              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote) ' +
+              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
                             ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote])
+              await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
               .then((results) => {
                 res.json({ success: true, message: 'Family member added successfully' });
               })
@@ -335,6 +335,16 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
           });
         }
       }
+    } else {
+      const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote) ' +
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(query, [familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote])
+      .then((results) => {
+        res.json({ success: true, message: 'Family member added successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
     }
 
   } catch (error) {
