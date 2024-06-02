@@ -636,12 +636,12 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
 app.post('/deleteStudent', verifyToken, async (req, res) => {
   const { familyid, studentid, journal } = req.body;
   console.log("deleteStudent : " + JSON.stringify(req.body));
-  let queryDeleteTstudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
+  let queryDeleteStudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
   if (journal === '1') {
-    queryDeleteJstudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
+    queryDeleteStudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
   }
   try {
-    const results = await queryPromise(queryDeleteTstudent, [familyid, studentid]);
+    const results = await queryPromise(queryDeleteStudent, [familyid, studentid]);
     if (results.affectedRows > 0) {
       if (journal != '1') {
         const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
