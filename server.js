@@ -16,7 +16,7 @@ const SECRET_KEY = "your-secret-key";
 const db = mysql.createConnection(process.env.DATABASE_URL)
 const activeSessions = [];
 const url = process.env.LINENOTIFY_URL;
-const accessCode = process.env.LINE_ACCESS_CODE;
+const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const multer = require('multer');
 const path = require('path');
 
