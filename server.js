@@ -542,7 +542,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Sorry, your course has expired' });
             }
 
-            const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where courserefer = ?';
+            const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where a.courserefer = ?';
             const results4 = await queryPromise(checkRemainingQuery, [studentid]);
 
             if (results4.length > 0) {
