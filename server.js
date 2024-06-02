@@ -633,13 +633,19 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
 });
 
 app.post('/deleteStudent', verifyToken, async (req, res) => {
-  const { familyid, studentid } = req.body;
-  const queryDeleteTstudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
+  const { familyid, studentid, journal } = req.body;
+  
+  let queryDeleteTstudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
+  if (journal == '1') {
+    queryDeleteJstudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
+  }
   try {
     const results = await queryPromise(queryDeleteTstudent, [familyid, studentid]);
     if (results.affectedRows > 0) {
-      const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
-      await queryPromise(queryDeleteTreservation, [studentid]);
+      if (journal != '1') {
+        const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
+        await queryPromise(queryDeleteTreservation, [studentid]);
+      }
       return res.json({ success: true, message: 'Family member deleted successfully' });
     } else {
       return res.json({ success: false, message: 'No Family member data' });
