@@ -15,13 +15,11 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = "your-secret-key";
 const db = mysql.createConnection(process.env.DATABASE_URL)
 const activeSessions = [];
-const url = 'https://notify-api.line.me/api/notify'
-const accessCode = 'tggzxbTM0Ixias1nhlqTjwcg65ENMrJAOHL5h9LxxkS'
-const accessCode2 = '3bviOJYg6u2T5vQYEtaKUdsZ3L6apeoVtZJSrzzTT30'
+const url = process.env.LINENOTIFY_URL;
+const accessCode = process.env.LINE_ACCESS_CODE;
 const multer = require('multer');
 const path = require('path');
 
-console.log("accessCode : " + accessCode);
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
@@ -312,9 +310,10 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             if (count > 0) {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
-              const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-              await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
+              const studentid = await generateRefer('S');
+              const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+              await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
               .then((results) => {
                 res.json({ success: true, message: 'Family member added successfully' });
               })
@@ -324,9 +323,10 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             }
           }
         } else {
-          const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
-                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-          await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
+          const studentid = await generateRefer('S');
+          const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote) ' +
+                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+          await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, profile_image, shortnote])
           .then((results) => {
             res.json({ success: true, message: 'Family member added successfully' });
           })
@@ -336,9 +336,10 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
         }
       }
     } else {
-      const query = 'INSERT INTO tstudent (firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote])
+      const studentid = await generateRefer('S');
+      const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote) ' +
+                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(query, [studentid. firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, profile_image, shortnote])
       .then((results) => {
         res.json({ success: true, message: 'Family member added successfully' });
       })
