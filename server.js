@@ -634,7 +634,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
 
 app.post('/deleteStudent', verifyToken, async (req, res) => {
   const { familyid, studentid, journal } = req.body;
-  
+  console.log("deleteStudent : " + JSON.stringify(req.body));
   let queryDeleteTstudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
   if (journal == '1') {
     queryDeleteJstudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
@@ -1497,7 +1497,7 @@ async function queryPromise(query, params) {
   let connection;
   try {
     console.log("Query : " + query);
-    //console.log("Params : " + params);
+    console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
