@@ -637,7 +637,7 @@ app.post('/deleteStudent', verifyToken, async (req, res) => {
   const { familyid, studentid, journal } = req.body;
   console.log("deleteStudent : " + JSON.stringify(req.body));
   let queryDeleteTstudent = 'DELETE FROM tstudent WHERE familyid = ? AND studentid = ?';
-  if (journal == '1') {
+  if (journal === '1') {
     queryDeleteJstudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
   }
   try {
