@@ -67,7 +67,7 @@ app.use((req, res, next) => {
 });
 app.use(cors());
 
-app.get('/', function(req, res, next) {
+app.get('/', function (req, res, next) {
   console.log("API called : " + req.path);
   res.send('Hello World from Istar API :) ');
   next();
@@ -85,7 +85,7 @@ app.get('/checkToken', (req, res) => {
   activeSessions.forEach(item => {
     let iat = new Date(item.iat * 1000)
     let exp = new Date(item.exp * 1000)
-    console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString()+"\n")
+    console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString() + "\n")
   });
   res.json({ activeSessions });
 });
@@ -103,28 +103,28 @@ app.post('/login', async (req, res) => {
         //res.status(200).json({ message: "Login successful" });
         const user = results[0];
         const userdata = {
-            username: results[0].username,
-            fullname: results[0].fullname,
-            address: results[0].address,
-            email: results[0].email,
-            mobileno: results[0].mobileno,
-            usertype: results[0].usertype,
-            familyid: results[0].familyid,
+          username: results[0].username,
+          fullname: results[0].fullname,
+          address: results[0].address,
+          email: results[0].email,
+          mobileno: results[0].mobileno,
+          usertype: results[0].usertype,
+          familyid: results[0].familyid,
         }
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
         if (userdata.usertype == '1') {
           const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
-        }else{ 
+        } else {
           const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         }
-        
+
       } else {
         return res.json({ success: false, message: 'password is invalid' });
       }
-    }else{
+    } else {
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
@@ -148,55 +148,55 @@ app.post('/logout', verifyToken, (req, res) => {
 app.post('/register', async (req, res) => {
   console.log("register : " + JSON.stringify(req.body));
   const { username, password, firstname, middlename, lastname, address, email, mobileno } = req.body;
-  
+
   try {
-      // Check if the username is already taken
-      const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
-      const existingUser = await queryPromise(checkUsernameQuery, [username]);
+    // Check if the username is already taken
+    const checkUsernameQuery = 'SELECT * FROM tuser WHERE username = ?';
+    const existingUser = await queryPromise(checkUsernameQuery, [username]);
 
-      if (existingUser.length > 0) {
-          return res.json({ success: false, message: 'Username is already taken' });
-      } else {
-          // Insert new user
-          const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-          await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno]);
+    if (existingUser.length > 0) {
+      return res.json({ success: false, message: 'Username is already taken' });
+    } else {
+      // Insert new user
+      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno]);
 
-          // Create associated family
-          const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-          await queryPromise(createFamilyQuery, [username]);
+      // Create associated family
+      const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
+      await queryPromise(createFamilyQuery, [username]);
 
-          return res.json({ success: true, message: 'User registered successfully' });
-      }
+      return res.json({ success: true, message: 'User registered successfully' });
+    }
   } catch (error) {
-      console.error("Error registering user:", error);
-      return res.status(500).send(error);
+    console.error("Error registering user:", error);
+    return res.status(500).send(error);
   }
 });
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-                  ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
-                  ' b.coursetype, b.remaining, b.expiredate, ' + 
-                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
-                  ' from tstudent a ' +
-                  ' left join tcustomer_course b ' +
-                  ' on a.courserefer = b.courserefer ' +
-                  ' left join tcourseinfo c ' +
-                  ' on b.courseid = c.courseid ' +
-                  ' where a.familyid = ?';
+    ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
+    ' b.coursetype, b.remaining, b.expiredate, ' +
+    ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
+    ' from tstudent a ' +
+    ' left join tcustomer_course b ' +
+    ' on a.courserefer = b.courserefer ' +
+    ' left join tcourseinfo c ' +
+    ' on b.courseid = c.courseid ' +
+    ' where a.familyid = ?';
   try {
     const results = await queryPromise(query, [familyid])
-    .then((results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get FamilyMember successful', results });
-      } else {
-        res.json({ success: true, message: 'Not found FamilyMember', results });
-      }
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        if (results.length > 0) {
+          res.json({ success: true, message: 'Get FamilyMember successful', results });
+        } else {
+          res.json({ success: true, message: 'Not found FamilyMember', results });
+        }
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error("getFamilyMember error:", error);
     res.status(500).send(error);
@@ -206,27 +206,27 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 app.post("/getFamilyList", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
-                  ' from tstudent a ' +
-                  ' where a.familyid = ? ' +
-                ' UNION ALL ' +
-                ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-                  ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
-                  ' from jstudent a ' +
-                  ' where a.familyid = ? ';
+    ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
+    ' from tstudent a ' +
+    ' where a.familyid = ? ' +
+    ' UNION ALL ' +
+    ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
+    ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
+    ' from jstudent a ' +
+    ' where a.familyid = ? ';
 
   try {
     const results = await queryPromise(query, [familyid, familyid])
-    .then((results) => {
-      if(results.length > 0){
-        res.json({ success: true, message: 'Get Family Member successful', results });
-      } else {
-        res.json({ success: true, message: 'No Family Member', results });
-      }
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        if (results.length > 0) {
+          res.json({ success: true, message: 'Get Family Member successful', results });
+        } else {
+          res.json({ success: true, message: 'No Family Member', results });
+        }
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error("getStudent error:", error);
     res.status(500).send(error);
@@ -234,17 +234,17 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
 });
 app.post('/addStudent', verifyToken, async (req, res) => {
   try {
-      const studentid = await generateRefer('TMP');
-      const { familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school } = req.body;
-      const query = 'INSERT INTO jstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
-                    ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const studentid = await generateRefer('TMP');
+    const { familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school } = req.body;
+    const query = 'INSERT INTO jstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-      await queryPromise(query, [studentid. familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school ]);
-      
-      res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
+    await queryPromise(query, [studentid.familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school]);
+
+    res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
-      console.error("addStudent error:", error);
-      res.status(500).send(error);
+    console.error("addStudent error:", error);
+    res.status(500).send(error);
   }
 });
 
@@ -256,11 +256,11 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
     for (const item of apprObj) {
       const getQuery = 'SELECT * FROM jstudent WHERE studentid = ?';
       const results = await queryPromise(getQuery, [item.studentid]);
-      
+
       if (results.length > 0) {
         const studentid = await generateRefer('S');
         const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth) ' +
-                      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
         await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth]);
 
         const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
@@ -281,12 +281,12 @@ app.post('/deleteNewStudent', verifyToken, async (req, res) => {
   const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
   try {
     await queryPromise(deleteQuery, [studentid])
-    .then((results) => {
-      res.json({ success: true, message: 'New student deleted successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        res.json({ success: true, message: 'New student deleted successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.log("deleteNewStudent error : " + JSON.stringify(error));
     res.status(500).send(error);
@@ -296,14 +296,14 @@ app.post('/deleteNewStudent', verifyToken, async (req, res) => {
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
   const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote } = req.body;
   try {
-    if(courserefer!=null && courserefer!='') {
+    if (courserefer != null && courserefer != '') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
       const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
       if (resCheckCustomerCourse.length <= 0) {
         return res.json({ success: false, message: 'Course not found' });
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
-        if(coursetype == 'Monthly') {
+        if (coursetype == 'Monthly') {
           const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? ';
           const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
           if (resCheckUserd.length > 0) {
@@ -313,40 +313,40 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             } else {
               const studentid = await generateRefer('S');
               const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
               await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
-              .then((results) => {
-                res.json({ success: true, message: 'Family member added successfully' });
-              })
-              .catch((error) => {
-                res.status(500).send(error);
-              });
+                .then((results) => {
+                  res.json({ success: true, message: 'Family member added successfully' });
+                })
+                .catch((error) => {
+                  res.status(500).send(error);
+                });
             }
           }
         } else {
           const studentid = await generateRefer('S');
           const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote) ' +
-                        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
           await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
-          .then((results) => {
-            res.json({ success: true, message: 'Family member added successfully' });
-          })
-          .catch((error) => {
-            res.status(500).send(error);
-          });
+            .then((results) => {
+              res.json({ success: true, message: 'Family member added successfully' });
+            })
+            .catch((error) => {
+              res.status(500).send(error);
+            });
         }
       }
     } else {
       const studentid = await generateRefer('S');
       const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote) ' +
-                            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(query, [studentid. firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote])
-      .then((results) => {
-        res.json({ success: true, message: 'Family member added successfully' });
-      })
-      .catch((error) => {
-        res.status(500).send(error);
-      });
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(query, [studentid.firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote])
+        .then((results) => {
+          res.json({ success: true, message: 'Family member added successfully' });
+        })
+        .catch((error) => {
+          res.status(500).send(error);
+        });
     }
 
   } catch (error) {
@@ -358,14 +358,14 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote } = req.body;
-    if(courserefer!=null && courserefer!='') {
+    if (courserefer != null && courserefer != '') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
       const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
       if (resCheckCustomerCourse.length <= 0) {
         return res.json({ success: false, message: 'Course not found' });
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
-        if(coursetype == 'Monthly') {
+        if (coursetype == 'Monthly') {
           const queryCheckUserd = 'SELECT count(*) count FROM tstudent WHERE courserefer = ? AND studentid <> ?';
           const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, studentid]);
           if (resCheckUserd.length > 0) {
@@ -375,25 +375,25 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ?, shortnote = ? ' +
-                    ' WHERE studentid = ?';
-              const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, studentid])
+                'familyid = ?, courserefer = ?, shortnote = ? ' +
+                ' WHERE studentid = ?';
+              const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, studentid])
               return res.json({ success: true, message: 'Update Student successfully' });
             }
           }
         } else {
           const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                    'familyid = ?, courserefer = ?, shortnote = ? ' +
-                    ' WHERE studentid = ?';
-          const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, studentid])
+            'familyid = ?, courserefer = ?, shortnote = ? ' +
+            ' WHERE studentid = ?';
+          const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, studentid])
           return res.json({ success: true, message: 'Update Student successfully' });
         }
       }
     } else {
       const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                  'familyid = ?, shortnote = ?, courserefer = NULL' +
-                  ' WHERE studentid = ?';
-      const results = await queryPromise(query, [ firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, studentid])
+        'familyid = ?, shortnote = ?, courserefer = NULL' +
+        ' WHERE studentid = ?';
+      const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, studentid])
       return res.json({ success: true, message: 'Update Student successfully' });
     }
 
@@ -441,7 +441,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
-          if(coursetype != 'Monthly') {
+          if (coursetype != 'Monthly') {
             if (remaining <= 0) {
               return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
             }
@@ -677,21 +677,21 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
   const { studentid } = req.body;
   const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate asc';
   await queryPromise(query, [studentid])
-  .then((results) => {
-    if(results.length > 0) {
-      res.json({ success: true, message: 'Get Reservation Detail successful', results });
-    } else {
-      res.json({ success: true, message: 'No Reservation Detail' });
-    }
-  })
-  .catch((error) => {
-    res.json({ success: false, message: error.message });
-    console.error('Error in queryPromise:', error);
-  })
+    .then((results) => {
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Reservation Detail successful', results });
+      } else {
+        res.json({ success: true, message: 'No Reservation Detail' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
 });
 
 app.post('/createReservation', verifyToken, async (req, res) => {
-  
+
   try {
     const { courseid, classid, classday, classdate, classtime, studentid, coursename } = req.body;
     const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
@@ -725,58 +725,58 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           const remaining = results2[0].remaining;
           const today = new Date();
 
-            if (today > expiredate) {
-              return res.json({ success: false, message: 'Sorry, your course has expired' });
-            }
-              
-            if(coursetype != 'Monthly') {
-              if (remaining <= 0) {
-                return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
-              }
-            }
+          if (today > expiredate) {
+            return res.json({ success: false, message: 'Sorry, your course has expired' });
+          }
 
-            const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
-            const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
-
-            if (insertResult.affectedRows > 0) {
-              const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-              const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
-
-              try {
-                // Format date for notification
-                const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
-                                        ' c.coursename ' +
-                                        ' FROM tstudent a ' +
-                                        ' INNER JOIN tcustomer_course b ' +
-                                        ' ON a.courserefer = b.courserefer ' +
-                                        ' INNER JOIN tcourseinfo c ' +
-                                        ' ON b.courseid = c.courseid ' +
-                                        ' WHERE studentid = ?';
-                const results = await queryPromise(queryNotifyData, [studentid]);
-                if (results.length > 0) {
-                  const studentnickname = results[0].nickname;
-                  const studentname = results[0].fullname;
-                  var a = moment(classdate, "YYYYMMDD");
-                  const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  });
-
-                  // Prepare notification data
-                  const jsonData = {
-                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
-                  };
-
-                  sendNotification(jsonData);
-                }
-              } catch (error) {
-                console.error('Error sending notification:', error);
-              }
-
-              return res.json({ success: true, message: 'Booking added successfully' });
+          if (coursetype != 'Monthly') {
+            if (remaining <= 0) {
+              return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
             }
           }
+
+          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
+          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+
+          if (insertResult.affectedRows > 0) {
+            const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
+            const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
+
+            try {
+              // Format date for notification
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
+                ' c.coursename ' +
+                ' FROM tstudent a ' +
+                ' INNER JOIN tcustomer_course b ' +
+                ' ON a.courserefer = b.courserefer ' +
+                ' INNER JOIN tcourseinfo c ' +
+                ' ON b.courseid = c.courseid ' +
+                ' WHERE studentid = ?';
+              const results = await queryPromise(queryNotifyData, [studentid]);
+              if (results.length > 0) {
+                const studentnickname = results[0].nickname;
+                const studentname = results[0].fullname;
+                var a = moment(classdate, "YYYYMMDD");
+                const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                });
+
+                // Prepare notification data
+                const jsonData = {
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+                };
+
+                sendNotification(jsonData);
+              }
+            } catch (error) {
+              console.error('Error sending notification:', error);
+            }
+
+            return res.json({ success: true, message: 'Booking added successfully' });
+          }
+        }
       }
     }
 
@@ -812,12 +812,12 @@ app.post('/deleteReservation', verifyToken, async (req, res) => {
   const query = 'DELETE FROM treservation WHERE reservationid = ?';
   try {
     await queryPromise(query, [reservationid])
-    .then((results) => {
-      res.json({ success: true, message: 'Reservation deleted successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        res.json({ success: true, message: 'Reservation deleted successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in deleteReservation:', error);
     res.status(500).send(error, message);
@@ -844,16 +844,16 @@ app.get('/getAllCourses', verifyToken, async (req, res) => {
   const query = 'SELECT * FROM tcourseinfo';
   try {
     await queryPromise(query, null)
-    .then((results) => {
-      if(results.length > 0){
-        return res.json({ success: true, message: 'Get All Course successful', results });
-      } else {
-        return res.json({ success: false, message: 'No Course' });
-      }
-    })
-    .catch((error) => {
-      return res.status(500).send(error, message);
-    });
+      .then((results) => {
+        if (results.length > 0) {
+          return res.json({ success: true, message: 'Get All Course successful', results });
+        } else {
+          return res.json({ success: false, message: 'No Course' });
+        }
+      })
+      .catch((error) => {
+        return res.status(500).send(error, message);
+      });
   } catch (error) {
     console.error('Error in getAllCourses:', error);
     return res.status(500).send(error, message);
@@ -865,12 +865,12 @@ app.post('/addCourse', verifyToken, async (req, res) => {
   const query = 'INSERT INTO tcourseinfo (coursename, course_shortname) VALUES (?, ?)';
   try {
     await queryPromise(query, [coursename, course_shortname])
-    .then((results) => {
-      res.json({ success: true, message: 'Course added successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        res.json({ success: true, message: 'Course added successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in addCourse:', error);
     res.status(500).send(error, message);
@@ -882,12 +882,12 @@ app.post('/updateCourse', verifyToken, async (req, res) => {
   const query = 'UPDATE tcourseinfo SET coursename = ?, course_shortname = ? WHERE courseid = ?';
   try {
     await queryPromise(query, [coursename, course_shortname, courseid])
-    .then((results) => {
-      res.json({ success: true, message: 'Course updated successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error, message);
-    });
+      .then((results) => {
+        res.json({ success: true, message: 'Course updated successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error, message);
+      });
   } catch (error) {
     console.error('Error in updateCourse:', error);
     res.status(500).send(error, message);
@@ -899,14 +899,14 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
   const deletetcourseinfoQuery = 'DELETE FROM tcourseinfo WHERE courseid = ?';
   try {
     await queryPromise(deletetcourseinfoQuery, [courseid])
-    .then((results) => {
-      const deleteTclassinfoQuery = 'DELETE FROM tclassinfo WHERE courseid = ?';
-      db.query(deleteTclassinfoQuery, [courseid]);
-      res.json({ success: true, message: 'Course deleted successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        const deleteTclassinfoQuery = 'DELETE FROM tclassinfo WHERE courseid = ?';
+        db.query(deleteTclassinfoQuery, [courseid]);
+        res.json({ success: true, message: 'Course deleted successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in deleteCourse:', error);
     res.status(500).send(error, message);
@@ -918,16 +918,16 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
   const query = 'SELECT b.courseid, b.coursename, a.* FROM tclassinfo a inner join tcourseinfo b on a.courseid = b.courseid order by b.coursename , a.classday ';
   try {
     await queryPromise(query, null)
-    .then((results) => {
-      if(results.length > 0){
-        return res.json({ success: true, message: 'Get All Class successful', results });
-      } else {
-        return res.json({ success: true, message: 'No Class', results });
-      }
-    })
-    .catch((error) => {
-      return res.status(500).send(error);
-    });
+      .then((results) => {
+        if (results.length > 0) {
+          return res.json({ success: true, message: 'Get All Class successful', results });
+        } else {
+          return res.json({ success: true, message: 'No Class', results });
+        }
+      })
+      .catch((error) => {
+        return res.status(500).send(error);
+      });
   }
   catch (error) {
     console.error('Error in getAllClasses:', error);
@@ -940,12 +940,12 @@ app.post('/addClass', verifyToken, async (req, res) => {
   const query = 'INSERT INTO tclassinfo (courseid, classday, classtime, maxperson) VALUES (?, ?, ?, ?)';
   try {
     await queryPromise(query, [courseid, classday, classtime, maxperson])
-    .then((results) => {
-      return res.json({ success: true, message: 'Class added successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        return res.json({ success: true, message: 'Class added successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in addClass:', error);
     res.status(500).send(error);
@@ -957,31 +957,31 @@ app.post('/updateClass', verifyToken, async (req, res) => {
   const query = 'UPDATE tclassinfo SET courseid = ?, classday = ?, classtime = ?, maxperson = ? WHERE classid = ?';
   try {
     await queryPromise(query, [courseid, classday, classtime, maxperson, classid])
-    .then((results) => {
-      res.json({ success: true, message: 'Class updated successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        res.json({ success: true, message: 'Class updated successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in updateClass:', error);
     res.status(500).send(error, message);
   }
 });
 
-app.post('/deleteClass', verifyToken, async(req, res) => {
+app.post('/deleteClass', verifyToken, async (req, res) => {
   const { classid } = req.body;
   const query = 'DELETE FROM tclassinfo WHERE classid = ?';
   try {
     await queryPromise(query, [classid])
-    .then((results) => {
-      const query2 = 'DELETE FROM treservation WHERE classid = ?';
-      db.query(query2, [classid]);
-      res.json({ success: true, message: 'Class deleted successfully' });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        const query2 = 'DELETE FROM treservation WHERE classid = ?';
+        db.query(query2, [classid]);
+        res.json({ success: true, message: 'Class deleted successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in deleteClass:', error);
     res.status(500).send(error, message);
@@ -990,29 +990,29 @@ app.post('/deleteClass', verifyToken, async(req, res) => {
 
 app.post('/getClassTime', verifyToken, async (req, res) => {
   const { classdate, classday, courseid } = req.body;
-  const query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available '+
-  'FROM tclassinfo a ' +
-  'left join treservation b ' +
-  'on a.classid = b.classid ' +
-  'and b.classdate = ? ' +
-  'WHERE a.classday = ? ' +
-  'and a.courseid = ? ' +
-  'group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
+  const query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available ' +
+    'FROM tclassinfo a ' +
+    'left join treservation b ' +
+    'on a.classid = b.classid ' +
+    'and b.classdate = ? ' +
+    'WHERE a.classday = ? ' +
+    'and a.courseid = ? ' +
+    'group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
   try {
     await queryPromise(query, [classdate, classday, courseid])
-    .then((results) => {
-      if(results.length > 0){
-        results.forEach((element, index) => {  
-          results[index].text = element.classtime + ' ว่าง ' + element.available + ' คน';  
-      }); 
-        res.json({ success: true, message: 'Get Class Time successful', results });
-      } else {
-        res.json({ success: true, message: 'No Class Time', results: [] });
-      }
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        if (results.length > 0) {
+          results.forEach((element, index) => {
+            results[index].text = element.classtime + ' ว่าง ' + element.available + ' คน';
+          });
+          res.json({ success: true, message: 'Get Class Time successful', results });
+        } else {
+          res.json({ success: true, message: 'No Class Time', results: [] });
+        }
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in getClassTime:', error);
     res.status(500).send(error, message);
@@ -1023,17 +1023,17 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
   const query = "select a.*, CONCAT(IFNULL( a.firstname, ''), ' ', IFNULL( a.middlename, ''), ' ', IFNULL( a.lastname, ''), ' (', a.nickname,')') fullname, c.username from jstudent a left join tfamily b on a.familyid = b.familyid left join tuser c on b.username = c.username";
   try {
     await queryPromise(query, null)
-    .then((results) => {
-      if(results.length > 0) {
-        res.json({ success: true, message: 'Get New Students successful', results });
-      } else {
-        res.json({ success: true, message: 'No New Students' , results});
-      }
-    })
-    .catch((error) => {
-      console.error('Error in queryPromise:', error);
-      res.json({ success: false, message: error.message });
-    })
+      .then((results) => {
+        if (results.length > 0) {
+          res.json({ success: true, message: 'Get New Students successful', results });
+        } else {
+          res.json({ success: true, message: 'No New Students', results });
+        }
+      })
+      .catch((error) => {
+        console.error('Error in queryPromise:', error);
+        res.json({ success: false, message: error.message });
+      })
   } catch (error) {
     console.error('Error in getNewStudentList:', error);
     res.status(500).send(error, message);
@@ -1043,33 +1043,33 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
 app.get("/courseLookup", verifyToken, async (req, res) => {
   const query = 'SELECT * FROM tcourseinfo';
   await queryPromise(query, null)
-  .then((results) => {
-    if(results.length > 0) {
-      res.json({ success: true, message: 'Get Course Lookup successful', results });
-    } else {
-      res.json({ success: true, message: 'No Course Lookup' });
-    }
-  })
-  .catch((error) => {
-    res.json({ success: false, message: error.message });
-    console.error('Error in queryPromise:', error);
-  })
+    .then((results) => {
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Course Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Course Lookup' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
 });
 
 app.get("/customerCourseLookup", verifyToken, async (req, res) => {
   const query = 'SELECT * FROM tcustomer_course';
   await queryPromise(query, null)
-  .then((results) => {
-    if(results.length > 0) {
-      res.json({ success: true, message: 'Get Customer Course Lookup successful', results });
-    } else {
-      res.json({ success: true, message: 'No Customer Course Lookup' });
-    }
-  })
-  .catch((error) => {
-    res.json({ success: false, message: error.message });
-    console.error('Error in queryPromise:', error);
-  })
+    .then((results) => {
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Customer Course Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Customer Course Lookup' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
 });
 
 app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
@@ -1077,12 +1077,12 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
   const query = 'SELECT * from tcustomer_course where courserefer = (select courserefer from tstudent where studentid = ?)';
   try {
     await queryPromise(query, [studentid])
-    .then((results) => {
-      return res.json({ success: true, results });
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
+      .then((results) => {
+        return res.json({ success: true, results });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
   } catch (error) {
     console.error('Error in getCustomerCourseInfo:', error);
     res.status(500).send(error);
@@ -1092,17 +1092,17 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
 app.get("/familyLookup", verifyToken, async (req, res) => {
   const query = 'SELECT * FROM tfamily';
   await queryPromise(query, null)
-  .then((results) => {
-    if(results.length > 0) {
-      res.json({ success: true, message: 'Get Family Lookup successful', results });
-    } else {
-      res.json({ success: true, message: 'No Family Lookup' });
-    }
-  })
-  .catch((error) => {
-    res.json({ success: false, message: error.message });
-    console.error('Error in queryPromise:', error);
-  })
+    .then((results) => {
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Family Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Family Lookup' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
   // if(results) {
   //   if(results.length > 0){
   //     res.json({ success: true, message: 'Get Family Lookup successful', results });
@@ -1117,37 +1117,37 @@ app.get("/familyLookup", verifyToken, async (req, res) => {
 app.post("/studentLookup", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = "SELECT *, CONCAT(IFNULL(nickname, ''), ' ', IFNULL(firstname, ''), ' ', IFNULL(middlename, ''), IF(middlename<>'', ' ', ''), IFNULL(lastname, '')) as name FROM tstudent"
-  if(familyid !== null && familyid !== undefined && familyid !== '') {
+  if (familyid !== null && familyid !== undefined && familyid !== '') {
     query = query + ' WHERE familyid = ?';
   }
 
   await queryPromise(query, [familyid])
-  .then((results) => {
-    if(results.length > 0) {
-      res.json({ success: true, message: 'Get Student Lookup successful', results });
-    } else {
-      res.json({ success: true, message: 'No Student Lookup' });
-    }
-  })
-  .catch((error) => {
-    res.json({ success: false, message: error.message });
-    console.error('Error in queryPromise:', error);
-  })
+    .then((results) => {
+      if (results.length > 0) {
+        res.json({ success: true, message: 'Get Student Lookup successful', results });
+      } else {
+        res.json({ success: true, message: 'No Student Lookup' });
+      }
+    })
+    .catch((error) => {
+      res.json({ success: false, message: error.message });
+      console.error('Error in queryPromise:', error);
+    })
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
     const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), \' \', IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
-                  ' b.startdate, b.remaining ,b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
-                  ' FROM tstudent a ' +
-                  ' LEFT JOIN tcustomer_course b ' +
-                  ' ON a.courserefer = b.courserefer ' +
-                  ' LEFT JOIN tcourseinfo t ' +
-                  ' ON b.courseid = t.courseid ' +
-                  ' LEFT JOIN tfamily c ' +
-                  ' ON a.familyid = c.familyid ' +
-                  ' LEFT JOIN tuser d ' +
-                  ' ON c.username = d.username';
+      ' b.startdate, b.remaining ,b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
+      ' FROM tstudent a ' +
+      ' LEFT JOIN tcustomer_course b ' +
+      ' ON a.courserefer = b.courserefer ' +
+      ' LEFT JOIN tcourseinfo t ' +
+      ' ON b.courseid = t.courseid ' +
+      ' LEFT JOIN tfamily c ' +
+      ' ON a.familyid = c.familyid ' +
+      ' LEFT JOIN tuser d ' +
+      ' ON c.username = d.username';
     const results = await queryPromise(query);
 
     // มันมีรูป base64 ที่เก็บในฐานข้อมูล ทำให้ข้อมูลมีขนาดใหญ่ ทำให้การปริ้น log มันเยอะมาก
@@ -1183,7 +1183,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Reservation list successful', results });
     } else {
-      res.json({ success: true, message: 'No Reservation list' , results });
+      res.json({ success: true, message: 'No Reservation list', results });
     }
   } catch (error) {
     console.error("API getReservationList error: " + JSON.stringify(error));
@@ -1252,7 +1252,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
     console.log("API datacard: " + JSON.stringify(datacard));
     res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
   } catch (error) {
-    
+
     console.error("API refreshCardDashboard error: " + JSON.stringify(error));
     res.status(500).send(error);
     throw error;
@@ -1264,47 +1264,47 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   try {
     const { classday, classdate } = req.body;
     const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
-    const results = await queryPromise(query, [ classday ]);
+    const results = await queryPromise(query, [classday]);
     console.log("results : " + JSON.stringify(results));
     let bookinglist = {};
     if (results.length > 0) {
-        for (let index = 0; index < results.length; index++) {
-            let this_class = [];
-            const element = results[index];
-            const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
-                'FROM treservation a ' +
-                'join tcourseinfo b on  a.courseid = b.courseid ' +
-                'left join tstudent c on a.studentid = c.studentid ' +
-                'WHERE a.classdate = ? ' +
-                'AND a.classid = ? ' +
-                'order by a.classtime asc';
+      for (let index = 0; index < results.length; index++) {
+        let this_class = [];
+        const element = results[index];
+        const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
+          'FROM treservation a ' +
+          'join tcourseinfo b on  a.courseid = b.courseid ' +
+          'left join tstudent c on a.studentid = c.studentid ' +
+          'WHERE a.classdate = ? ' +
+          'AND a.classid = ? ' +
+          'order by a.classtime asc';
 
-            const results2 = await queryPromise(query2, [ classdate, element.classid ]);
-            console.log("results2 : " + JSON.stringify(results2));
+        const results2 = await queryPromise(query2, [classdate, element.classid]);
+        console.log("results2 : " + JSON.stringify(results2));
 
-            if (results2.length > 0) {
-                let studentlist = [];
-                for (let index2 = 0; index2 < results2.length; index2++) {
-                    const element2 = results2[index2];
-                    if(element2.checkedin == 1) {
-                      studentlist.push(element2.nickname+"("+element2.checkedin+")");
-                    } else {
-                      studentlist.push(element2.nickname);
-                    }
-                }
-                bookinglist[element.class_label] = studentlist;
-                console.log("bookinglist : " + JSON.stringify(bookinglist));
+        if (results2.length > 0) {
+          let studentlist = [];
+          for (let index2 = 0; index2 < results2.length; index2++) {
+            const element2 = results2[index2];
+            if (element2.checkedin == 1) {
+              studentlist.push(element2.nickname + "(" + element2.checkedin + ")");
             } else {
-                bookinglist[element.class_label] = [];
+              studentlist.push(element2.nickname);
             }
+          }
+          bookinglist[element.class_label] = studentlist;
+          console.log("bookinglist : " + JSON.stringify(bookinglist));
+        } else {
+          bookinglist[element.class_label] = [];
         }
-        console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
-        res.json({ success: true, message: 'Get Booking list successful', bookinglist });
+      }
+      console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
+      res.json({ success: true, message: 'Get Booking list successful', bookinglist });
     } else {
-        res.json({ success: true, message: 'No Booking list' });
+      res.json({ success: true, message: 'No Booking list' });
     }
   } catch (err) {
-      res.status(500).send(err);
+    res.status(500).send(err);
   }
 });
 
@@ -1341,31 +1341,31 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    
+
     const { courseid, coursetype, course, remaining, startdate, expiredate } = req.body;
     const courserefer = await generateRefer(course.refercode);
-    if(startdate == null || startdate == undefined || startdate == '') {
+    if (startdate == null || startdate == undefined || startdate == '') {
       const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining) VALUES (?, ?, ?, ?)';
       const results = await queryPromise(query, [courserefer, courseid, coursetype, remaining]);
       if (results.affectedRows > 0) {
-        res.json({ success: true, message: 'Successfully Course No :'+courserefer });
+        res.json({ success: true, message: 'Successfully Course No :' + courserefer });
       } else {
         res.json({ success: false, message: 'Error adding Customer Course' });
       }
     } else {
-      if(expiredate == null || expiredate == undefined || expiredate == '') {
+      if (expiredate == null || expiredate == undefined || expiredate == '') {
         res.json({ success: false, message: 'Please enter expire date' });
       } else {
         const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
         const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
         if (results.affectedRows > 0) {
-          res.json({ success: true, message: 'Successfully Course No :'+courserefer });
+          res.json({ success: true, message: 'Successfully Course No :' + courserefer });
         } else {
           res.json({ success: false, message: 'Error adding Customer Course' });
         }
       }
     }
-    
+
   } catch (error) {
     console.error('Error in addCustomerCourse:', error);
     res.status(500).send
@@ -1419,6 +1419,26 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
+app.get('/getStudentUseCourse', verifyToken, async (req, res) => {
+  const { courserefer } = req.body;
+  try {
+    const query = "SELECT  cc.courserefer, COUNT(s.studentid) AS number_of_students, GROUP_CONCAT(CONCAT(s.firstname, ' ', s.lastname) SEPARATOR ', ') AS student_names " +
+                  " FROM tcustomer_course cc " +
+                  " LEFT JOIN tstudent s ON cc.courserefer = s.courserefer " +
+                  " WHERE cc.courserefer = ? " +
+                  " GROUP BY cc.courserefer";
+    const results = await queryPromise(query, courserefer);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Student Use Course successful', results });
+    } else {
+      res.json({ success: true, message: 'No Student Use Course' });
+    }
+  } catch (error) {
+    console.error('Error in getStudentUseCourse:', error);
+    res.status(500).send(error, message);
+  }
+}
+
 app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   const { studentid } = req.params;
   const { image } = req.body;
@@ -1449,7 +1469,7 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   console.log("get profile image for studentid : " + studentid)
   const query = 'SELECT profile_image FROM tstudent WHERE studentid = ?';
   const results = await queryPromise(query, [studentid]);
-  
+
   console.log("get profile image results : " + JSON.stringify(results));
   if (results.length > 0) {
     res.json({ success: true, image: results[0].profile_image });
@@ -1520,10 +1540,10 @@ async function generateRefer(refertype) {
       let referdate = results[0].referdate;
       referno = referno + 1;
       refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + pad(4, referno, "0");
-      const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()'; 
+      const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()';
       await queryPromise(query2, [referno, refertype]);
     } else {
-      
+
       const query3 = 'INSERT INTO trunning (refertype, referdate, running) VALUES (?, curdate(), 1)';
       await queryPromise(query3, [refertype]);
       let referno = 1;
@@ -1538,5 +1558,5 @@ async function generateRefer(refertype) {
 }
 
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server is running on port ${port}`);
-  });
+  console.log(`Server is running on port ${port}`);
+});
