@@ -1437,7 +1437,7 @@ app.get('/getStudentUseCourse', verifyToken, async (req, res) => {
     console.error('Error in getStudentUseCourse:', error);
     res.status(500).send(error, message);
   }
-}
+});
 
 app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   const { studentid } = req.params;
