@@ -175,7 +175,7 @@ app.post('/register', async (req, res) => {
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.profile_image, ' +
+  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
                   ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
                   ' b.coursetype, b.remaining, b.expiredate, ' + 
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
@@ -205,12 +205,12 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 
 app.post("/getFamilyList", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.profile_image, ' +
+  const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
                   ' from tstudent a ' +
                   ' where a.familyid = ? ' +
                 ' UNION ALL ' +
-                ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.profile_image, ' +
+                ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
                   ' CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
                   ' from jstudent a ' +
                   ' where a.familyid = ? ';
