@@ -1424,7 +1424,7 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
   const { courserefer } = req.params;
   try {
     let query = `
-    SELECT cc.courserefer, GROUP_CONCAT(CONCAT(IFNULL( s.firstname, ''), ' ', IFNULL( s.middlename, ''), ' ', IFNULL( s.lastname, ''), ' (', s.nickname,')') SEPARATOR ', ') AS userlist, 
+    SELECT cc.courserefer, GROUP_CONCAT(s.nickname SEPARATOR ', ') AS userlist, 
       COUNT(s.studentid) AS user, 
       CASE WHEN cc.coursetype = 'Monthly' THEN cc.coursetype ELSE cc.remaining END 'remaining', cc.expiredate 
     FROM tcustomer_course cc 
