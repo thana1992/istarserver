@@ -316,7 +316,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
                 ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
               await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
                 .then((results) => {
-                  res.json({ success: true, message: 'Family member added successfully' });
+                  res.json({ success: true, message: 'Family member added successfully', studentid });
                 })
                 .catch((error) => {
                   res.status(500).send(error);
@@ -329,7 +329,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
           await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
             .then((results) => {
-              res.json({ success: true, message: 'Family member added successfully' });
+              res.json({ success: true, message: 'Family member added successfully', studentid });
             })
             .catch((error) => {
               res.status(500).send(error);
@@ -342,7 +342,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
       await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote])
         .then((results) => {
-          res.json({ success: true, message: 'Family member added successfully' });
+          res.json({ success: true, message: 'Family member added successfully', studentid });
         })
         .catch((error) => {
           res.status(500).send(error);
