@@ -1423,14 +1423,25 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
   const { courserefer } = req.params;
   try {
-    const query = "SELECT  cc.courserefer, COUNT(s.studentid) AS number_of_students, GROUP_CONCAT(CONCAT(s.firstname, ' ', s.lastname) SEPARATOR ', ') AS student_names \n"
-    query += " FROM tcustomer_course cc \n"
-    query += " LEFT JOIN tstudent s ON cc.courserefer = s.courserefer \n"
-    if (courserefer !== null && courserefer !== undefined && courserefer !== '') {
-      query += " WHERE cc.courserefer = ? \n";
+    let query = `
+      SELECT cc.courserefer, 
+             COUNT(s.studentid) AS number_of_students, 
+             GROUP_CONCAT(CONCAT(s.firstname, ' ', s.lastname) SEPARATOR ', ') AS student_names 
+      FROM tcustomer_course cc 
+      LEFT JOIN tstudent s ON cc.courserefer = s.courserefer
+    `;
+    
+    let queryParams = [];
+
+    if (courserefer) {
+      query += " WHERE cc.courserefer = ? ";
+      queryParams.push(courserefer);
     }
+    
     query += " GROUP BY cc.courserefer ";
-    const results = await queryPromise(query, courserefer);
+
+    const results = await queryPromise(query, queryParams);
+    
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Student Use Course successful', results });
     } else {
@@ -1441,6 +1452,7 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
+
 
 app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   const { studentid } = req.params;
