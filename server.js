@@ -1419,8 +1419,8 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getStudentUseCourse', verifyToken, async (req, res) => {
-  const { courserefer } = req.body;
+app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
+  const { courserefer } = req.params;
   try {
     const query = "SELECT  cc.courserefer, COUNT(s.studentid) AS number_of_students, GROUP_CONCAT(CONCAT(s.firstname, ' ', s.lastname) SEPARATOR ', ') AS student_names " +
                   " FROM tcustomer_course cc " +
