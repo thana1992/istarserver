@@ -313,7 +313,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             } else {
               const studentid = await generateRefer('S');
               const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote) ' +
-                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
               await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
                 .then((results) => {
                   res.json({ success: true, message: 'Family member added successfully' });
@@ -326,7 +326,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
         } else {
           const studentid = await generateRefer('S');
           const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote) ' +
-            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
           await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
             .then((results) => {
               res.json({ success: true, message: 'Family member added successfully' });
@@ -339,8 +339,8 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
     } else {
       const studentid = await generateRefer('S');
       const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote) ' +
-        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(query, [studentid.firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote])
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote])
         .then((results) => {
           res.json({ success: true, message: 'Family member added successfully' });
         })
