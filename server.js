@@ -669,7 +669,7 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
     }
   } catch (error) {
     console.error('Error in getMemberInfo:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -820,7 +820,7 @@ app.post('/deleteReservation', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in deleteReservation:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -836,7 +836,7 @@ app.post('/checkDuplicateReservation', verifyToken, async (req, res) => {
     }
   } catch (error) {
     console.error('Error in checkDuplicateReservation:', error);
-    return res.status(500).send(error, message);
+    return res.status(500).send(error);
   }
 });
 
@@ -852,11 +852,11 @@ app.get('/getAllCourses', verifyToken, async (req, res) => {
         }
       })
       .catch((error) => {
-        return res.status(500).send(error, message);
+        return res.status(500).send(error);
       });
   } catch (error) {
     console.error('Error in getAllCourses:', error);
-    return res.status(500).send(error, message);
+    return res.status(500).send(error);
   }
 });
 
@@ -873,7 +873,7 @@ app.post('/addCourse', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in addCourse:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -886,11 +886,11 @@ app.post('/updateCourse', verifyToken, async (req, res) => {
         res.json({ success: true, message: 'Course updated successfully' });
       })
       .catch((error) => {
-        res.status(500).send(error, message);
+        res.status(500).send(error);
       });
   } catch (error) {
     console.error('Error in updateCourse:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -909,7 +909,7 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in deleteCourse:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -965,7 +965,7 @@ app.post('/updateClass', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in updateClass:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -984,7 +984,7 @@ app.post('/deleteClass', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in deleteClass:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -1015,7 +1015,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in getClassTime:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -1036,7 +1036,7 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
       })
   } catch (error) {
     console.error('Error in getNewStudentList:', error);
-    res.status(500).send(error, message);
+    res.status(500).send(error);
   }
 });
 
@@ -1205,7 +1205,7 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
   }
   catch (error) {
     console.error("API checkinByAdmin error: " + JSON.stringify(error));
-    res.status(500).send
+    res.status(500).send(error);
   }
 });
 
@@ -1303,8 +1303,9 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
     } else {
       res.json({ success: true, message: 'No Booking list' });
     }
-  } catch (err) {
-    res.status(500).send(err);
+  } catch (error) {
+    console.error('Error in getBookingList:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1319,8 +1320,8 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Customer Course List' });
     }
   } catch (error) {
-    console.error('Error in getCustomerCourseList:', error);
-    res.status(500).send(error, message);
+    console.error('Error in getCustomerCourseList:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1334,8 +1335,8 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Customer Course List' });
     }
   } catch (error) {
-    console.error('Error in getCustomerCourseLookup:', error);
-    res.status(500).send(error, message);
+    console.error('Error in getCustomerCourseLookup:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1367,8 +1368,8 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error in addCustomerCourse:', error);
-    res.status(500).send
+    console.error('Error in addCustomerCourse:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1383,8 +1384,8 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: false, message: 'Error updating Customer Course' });
     }
   } catch (error) {
-    console.error('Error in updateCustomerCourse:', error);
-    res.status(500).send
+    console.error('Error in updateCustomerCourse:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1399,8 +1400,8 @@ app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'This course is not currently in use.' });
     }
   } catch (error) {
-    console.error('Error in checkbeforeDeleteCustomerCourse:', error);
-    res.status(500).send
+    console.error('Error in checkbeforeDeleteCustomerCourse:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1414,8 +1415,8 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'Customer Course deleted successfully' });
     }
   } catch (error) {
-    console.error('Error in deleteCustomerCourse:', error);
-    res.status(500).send
+    console.error('Error in deleteCustomerCourse:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1436,8 +1437,8 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Student Use Course' });
     }
   } catch (error) {
-    console.error('Error in getStudentUseCourse:', error);
-    res.status(500).send(error, message);
+    console.error('Error in getStudentUseCourse:', JSON.stringify(error));
+    res.status(500).send(error);
   }
 });
 
@@ -1454,7 +1455,7 @@ app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   // Update the gymnast's profile with the image URL in your database
   try {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    const results = await queryPromise(query, [image, studentid]);
+    const results = await queryPromise(query, [image, studentid], false);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Profile image uploaded successfully' });
     } else {
@@ -1517,10 +1518,14 @@ const pool = mysql2.createPool({
 
 // Function to execute queries using the connection pool
 async function queryPromise(query, params) {
+  const result = await queryPromise(query, params, true);
+  return result;
+}
+async function queryPromise(query, params, showparams) {
   let connection;
   try {
     console.log("Query : " + query);
-    console.log("Params : " + params);
+    if(showparams) console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
