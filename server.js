@@ -1422,11 +1422,13 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
   const { courserefer } = req.params;
   try {
-    const query = "SELECT  cc.courserefer, COUNT(s.studentid) AS number_of_students, GROUP_CONCAT(CONCAT(s.firstname, ' ', s.lastname) SEPARATOR ', ') AS student_names " +
-                  " FROM tcustomer_course cc " +
-                  " LEFT JOIN tstudent s ON cc.courserefer = s.courserefer " +
-                  " WHERE cc.courserefer = ? " +
-                  " GROUP BY cc.courserefer";
+    const query = "SELECT  cc.courserefer, COUNT(s.studentid) AS number_of_students, GROUP_CONCAT(CONCAT(s.firstname, ' ', s.lastname) SEPARATOR ', ') AS student_names \n"
+    query += " FROM tcustomer_course cc \n"
+    query += " LEFT JOIN tstudent s ON cc.courserefer = s.courserefer \n"
+    if (courserefer !== null && courserefer !== undefined && courserefer !== '') {
+      query += " WHERE cc.courserefer = ? \n";
+    }
+    query += " GROUP BY cc.courserefer ";
     const results = await queryPromise(query, courserefer);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Student Use Course successful', results });
@@ -1446,7 +1448,7 @@ app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   if (!image) {
     return res.status(400).send('No image provided.');
   }
-  if (Buffer.byteLength(image, 'base64') > 5 * 1024 * 1024) {
+  if (Buffer.byteLength(image, 'base64') > 4 * 1024 * 1024) {
     return res.status(400).send('Image size exceeds 5MB.');
   }
   // Update the gymnast's profile with the image URL in your database
@@ -1454,13 +1456,13 @@ app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
     const results = await queryPromise(query, [image, studentid]);
     if (results.affectedRows > 0) {
-      res.json({ success: true, message: 'Profile image uploaded successfully', image: `data:image/jpeg;base64,${image}` });
+      res.json({ success: true, message: 'Profile image uploaded successfully' });
     } else {
       res.json({ success: false, message: 'Error uploading profile image' });
     }
   } catch (error) {
-    throw error;
     res.status(500).send('Error updating profile image URL.');
+    throw error;
   }
 });
 
