@@ -239,7 +239,7 @@ app.post('/addStudent', verifyToken, async (req, res) => {
     const query = 'INSERT INTO jstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
       ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-    await queryPromise(query, [studentid.familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school]);
+    await queryPromise(query, [studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school]);
 
     res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
