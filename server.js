@@ -104,8 +104,7 @@ app.post('/login', async (req, res) => {
         const user = results[0];
         const userdata = {
           username: results[0].username,
-          fullname: results[0].fullname,
-          address: results[0].address,
+          firstname: results[0].firstname,
           email: results[0].email,
           mobileno: results[0].mobileno,
           usertype: results[0].usertype,
