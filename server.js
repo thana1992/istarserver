@@ -1269,7 +1269,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
-    const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
+    const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on  a.courseid = b.courseid where a.classday = ? order by a.classtime'
     const results = await queryPromise(query, [classday]);
     console.log("results : " + JSON.stringify(results));
     let bookinglist = {};
@@ -1277,7 +1277,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       for (let index = 0; index < results.length; index++) {
         let this_class = [];
         const element = results[index];
-        const query2 = 'SELECT CONCAT(a.classtime,\'(\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
+        const query2 = 'SELECT CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
           'FROM treservation a ' +
           'join tcourseinfo b on  a.courseid = b.courseid ' +
           'left join tstudent c on a.studentid = c.studentid ' +
