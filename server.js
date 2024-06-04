@@ -259,9 +259,9 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 
       if (results.length > 0) {
         const studentid = await generateRefer('S');
-        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth) ' +
-          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-        await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth]);
+        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
+          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth, item.school]);
 
         const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
         console.log("delete jstudent studentid : " + item.studentid);
