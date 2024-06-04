@@ -112,7 +112,7 @@ app.post('/login', async (req, res) => {
         }
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
-        if (userdata.usertype == '1') {
+        if (userdata.usertype != '10') {
           const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         } else {
