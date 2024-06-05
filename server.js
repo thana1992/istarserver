@@ -157,10 +157,16 @@ app.post('/register', async (req, res) => {
       return res.json({ success: false, message: 'Username is already taken' });
     } else {
       let usertype = '10';
-      if(registercode && registercode != 'coach'){
-        usertype = '2';
-      } else if (registercode && registercode == 'admin'){
+      if(registercode && registercode != 'manager') {
+        usertype = '0';
+      } else if (registercode && registercode == 'admin') {
         usertype = '1';
+      } else if (registercode && registercode == 'coach') {
+        usertype = '2';
+      } else if (registercode && registercode == 'student') {
+        usertype = '10';
+      } else {
+        return res.json({ success: false, message: 'Invalid register code' });
       }
       // Insert new user
       const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
@@ -732,6 +738,10 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
           if (today > expiredate) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
+          }
+
+          if(classdate > expiredate) {
+            return res.json({ success: false, message: 'Sorry, your course has in '+expiredate });
           }
 
           if (coursetype != 'Monthly') {
