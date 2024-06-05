@@ -157,7 +157,7 @@ app.post('/register', async (req, res) => {
       return res.json({ success: false, message: 'Username is already taken' });
     } else {
       let usertype = '10';
-      if(registercode && registercode != 'manager') {
+      if(registercode && registercode == 'manager') {
         usertype = '0';
       } else if (registercode && registercode == 'admin') {
         usertype = '1';
