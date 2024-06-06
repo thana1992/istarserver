@@ -707,7 +707,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 app.post('/createReservation', verifyToken, async (req, res) => {
 
   try {
-    const { courseid, classid, classday, classdate, classtime, studentid, courserefer } = req.body;
+    const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
     const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
     const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
 
