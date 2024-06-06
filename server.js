@@ -704,7 +704,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 app.post('/createReservation', verifyToken, async (req, res) => {
 
   try {
-    const { courseid, classid, classday, classdate, classtime, studentid, coursename } = req.body;
+    const { courseid, classid, classday, classdate, classtime, studentid, courserefer } = req.body;
     const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
     const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
 
@@ -750,8 +750,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
             }
           }
 
-          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
-          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer) VALUES (?, ?, ?, ?, ?, ?)';
+          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer]);
 
           if (insertResult.affectedRows > 0) {
             const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
@@ -771,6 +771,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
               if (results.length > 0) {
                 const studentnickname = results[0].nickname;
                 const studentname = results[0].fullname;
+                const coursename = results[0].coursename;
                 var a = moment(classdate, "YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
