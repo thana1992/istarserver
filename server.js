@@ -460,7 +460,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           const cd = new Date(classdate);
           console.log("classdate : " + cd);
           if(cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY'); });
+            return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY') });
           }
 
           if (coursetype != 'Monthly') {
@@ -574,7 +574,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             const cd = new Date(classdate);
             console.log("classdate : " + cd);
             if(cd > expiredate) {
-              return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY'); });
+              return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY') });
             }
 
             const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where a.courserefer = ?';
@@ -770,7 +770,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           const cd = new Date(classdate);
           console.log("classdate : " + cd);
           if(cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY'); });
+            return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY') });
           }
 
           if (coursetype != 'Monthly') {
