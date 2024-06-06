@@ -459,8 +459,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           }
 
           console.log("======= addBookingByAdmin =======");
-          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
-          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer) VALUES (?, ?, ?, ?, ?, ?)';
+          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer]);
           console.log("insertResult : " + JSON.stringify(insertResult));
           if (insertResult.affectedRows > 0) {
             const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
