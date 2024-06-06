@@ -447,12 +447,12 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           const expiredate = results2[0].expiredate;
           const remaining = results2[0].remaining;
           const today = moment(new Date(), "YYYYMMDD");
-          const exp = moment(new Date(), "YYYYMMDD");
+          const exp = moment(expiredate, "YYYYMMDD");
           console.log("today : " + today);
           console.log("exp : " + exp);
           console.log(today > exp ? 'Expired' : 'Not Expired')
           
-          if (today > expiredate) {
+          if (today > exp) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
