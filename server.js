@@ -457,6 +457,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
+          console.log("classdate : " + classdate);
           if(classdate > expiredate) {
             return res.json({ success: false, message: 'Sorry, your course has in '+expiredate });
           }
