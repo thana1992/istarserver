@@ -473,31 +473,33 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
             try {
               // Format date for notification
-              var a = moment(classdate, "YYYYMMDD");
-              const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              });
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
+                ' c.coursename ' +
+                ' FROM tstudent a ' +
+                ' INNER JOIN tcustomer_course b ' +
+                ' ON a.courserefer = b.courserefer ' +
+                ' INNER JOIN tcourseinfo c ' +
+                ' ON b.courseid = c.courseid ' +
+                ' WHERE studentid = ?';
+              const results = await queryPromise(queryNotifyData, [studentid]);
+              if (results.length > 0) {
+                const studentnickname = results[0].nickname;
+                const studentname = results[0].fullname;
+                const coursename = results[0].coursename;
+                var a = moment(classdate, "YYYYMMDD");
+                const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                });
 
-              // Prepare notification data
-              const jsonData = {
-                message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
-              };
+                // Prepare notification data
+                const jsonData = {
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+                };
 
-              // Send notification
-              const requestOption = {
-                method: 'POST',
-                headers: {
-                  'content-type': 'application/x-www-form-urlencoded',
-                  Authorization: `Bearer ` + accessCode,
-                },
-                data: qs.stringify(jsonData),
-                url,
-              };
-
-              await axios(requestOption);
-              console.log('Notification Sent Successfully');
+                sendNotification(jsonData);
+              }
             } catch (error) {
               console.error('Error sending notification:', error);
             }
@@ -555,8 +557,12 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           if (results3.length > 0) {
             const expiredate = results3[0].expiredate;
             const today = new Date();
-
-            if (today > expiredate) {
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            console.log(todayDateOnly);
+            console.log("today : " + todayDateOnly);
+            console.log("expiredate : " + expiredate);
+            console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
+            if (todayDateOnly > expiredate) {
               return res.json({ success: false, message: 'Sorry, your course has expired' });
             }
 
@@ -580,31 +586,33 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
                 try {
                   // Format date for notification
-                  var a = moment(classdate, "YYYYMMDD");
-                  const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  });
-
-                  // Prepare notification data
-                  const jsonData = {
-                    message: coursename + '\n' + studentnickname + ' ' + studentname + '\nDate: ' + bookdate + ' ' + classtime,
-                  };
-
-                  // Send notification
-                  const requestOption = {
-                    method: 'POST',
-                    headers: {
-                      'content-type': 'application/x-www-form-urlencoded',
-                      Authorization: `Bearer ` + accessCode,
-                    },
-                    data: qs.stringify(jsonData),
-                    url,
-                  };
-
-                  await axios(requestOption);
-                  console.log('Notification Sent Successfully');
+                  const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL( a.firstname, \'\'), \' \', IFNULL( a.middlename, \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
+                    ' c.coursename ' +
+                    ' FROM tstudent a ' +
+                    ' INNER JOIN tcustomer_course b ' +
+                    ' ON a.courserefer = b.courserefer ' +
+                    ' INNER JOIN tcourseinfo c ' +
+                    ' ON b.courseid = c.courseid ' +
+                    ' WHERE studentid = ?';
+                  const results = await queryPromise(queryNotifyData, [studentid]);
+                  if (results.length > 0) {
+                    const studentnickname = results[0].nickname;
+                    const studentname = results[0].fullname;
+                    const coursename = results[0].coursename;
+                    var a = moment(classdate, "YYYYMMDD");
+                    const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    });
+    
+                    // Prepare notification data
+                    const jsonData = {
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+                    };
+    
+                    sendNotification(jsonData);
+                  }
                 } catch (error) {
                   console.error('Error sending notification:', error);
                 }
@@ -740,8 +748,12 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           const expiredate = results2[0].expiredate;
           const remaining = results2[0].remaining;
           const today = new Date();
-
-          if (today > expiredate) {
+          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          console.log(todayDateOnly);
+          console.log("today : " + todayDateOnly);
+          console.log("expiredate : " + expiredate);
+          console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
+          if (todayDateOnly > expiredate) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
