@@ -457,6 +457,10 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
+          if(classdate > expiredate) {
+            return res.json({ success: false, message: 'Sorry, your course has in '+expiredate });
+          }
+
           if (coursetype != 'Monthly') {
             if (remaining <= 0) {
               return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
@@ -558,12 +562,15 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             const expiredate = results3[0].expiredate;
             const today = new Date();
             const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            console.log(todayDateOnly);
             console.log("today : " + todayDateOnly);
             console.log("expiredate : " + expiredate);
             console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
             if (todayDateOnly > expiredate) {
               return res.json({ success: false, message: 'Sorry, your course has expired' });
+            }
+
+            if(classdate > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has in '+expiredate });
             }
 
             const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where a.courserefer = ?';
@@ -749,7 +756,6 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           const remaining = results2[0].remaining;
           const today = new Date();
           const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          console.log(todayDateOnly);
           console.log("today : " + todayDateOnly);
           console.log("expiredate : " + expiredate);
           console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
