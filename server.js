@@ -223,7 +223,6 @@ app.post('/register', async (req, res) => {
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  console.log("req : " + JSON.stringify(req))
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
     ' b.coursetype, b.remaining, b.expiredate, ' +
