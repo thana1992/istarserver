@@ -1681,6 +1681,7 @@ console.log = (msg) => {
   logger.info(msg);
 };
 
-console.error = (msg) => {
-  logger.error(msg);
+console.error = (msg, error) => {
+  logger.info(msg);
+  throw error;
 };
