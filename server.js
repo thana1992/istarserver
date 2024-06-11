@@ -13,12 +13,56 @@ const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = "your-secret-key";
-const db = mysql.createConnection(process.env.DATABASE_URL)
+const DATABASE_URL = process.env.DATABASE_URL;
 const activeSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const multer = require('multer');
+
+// for save file log
+const morgan = require('morgan');
+const winston = require('winston');
+const fs = require('fs');
 const path = require('path');
+
+// สร้าง timestamp สำหรับชื่อไฟล์ log
+const timestamp = new Date().toISOString().replace(/:/g, '-');
+const logFileName = `logs/server-${timestamp}.log`;
+
+// สร้าง stream สำหรับเขียน log ลงในไฟล์
+const logStream = fs.createWriteStream(path.join(__dirname, logFileName), { flags: 'a' });
+
+// สร้าง winston logger
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
+    
+  ),
+  transports: [
+    new winston.transports.File({ filename: logFileName })
+  ]
+});
+
+// ใช้ morgan เพื่อบันทึก log
+app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logFileName), { flags: 'a' }) }));
+
+// สร้าง middleware เพื่อ log response
+app.use((req, res, next) => {
+  // Log request
+  logger.info('================= start =================')
+  logger.info(`Request: ${req.method} ${req.url} ${JSON.stringify(req.headers)}`);
+
+  // Log response
+  const originalSend = res.send;
+  res.send = function (body) {
+    logger.info(`Response: ${body}`);
+    logger.info('================== end ==================')
+    originalSend.apply(res, arguments);
+  };
+  next();
+});
 
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
@@ -51,13 +95,13 @@ const verifyToken = (req, res, next) => {
   };
 };
 
-db.connect(err => {
-  if (err) {
-    console.error('Error connecting to the database:', err);
-  } else {
-    console.log('Connected to MySQL');
-  }
-});
+// db.connect(err => {
+//   if (err) {
+//     console.error('Error connecting to the database:', err);
+//   } else {
+//     console.log('Connected to MySQL');
+//   }
+// });
 
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use((req, res, next) => {
@@ -947,7 +991,7 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
     await queryPromise(deletetcourseinfoQuery, [courseid])
       .then((results) => {
         const deleteTclassinfoQuery = 'DELETE FROM tclassinfo WHERE courseid = ?';
-        db.query(deleteTclassinfoQuery, [courseid]);
+        queryPromise(deleteTclassinfoQuery, [courseid]);
         res.json({ success: true, message: 'Course deleted successfully' });
       })
       .catch((error) => {
@@ -1022,7 +1066,7 @@ app.post('/deleteClass', verifyToken, async (req, res) => {
     await queryPromise(query, [classid])
       .then((results) => {
         const query2 = 'DELETE FROM treservation WHERE classid = ?';
-        db.query(query2, [classid]);
+        queryPromise(query2, [classid]);
         res.json({ success: true, message: 'Class deleted successfully' });
       })
       .catch((error) => {
@@ -1559,20 +1603,23 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
 // }
 
 const mysql2 = require('mysql2/promise');
+const { log } = require('console');
 
 // Create a connection pool
+const DB_HOST = process.env.DB_HOST;
+const DB_PORT = process.env.DB_PORT;
+const DB_NAME = process.env.DB_NAME;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
 const pool = mysql2.createPool({
-  host: 'istardb-do-user-15700861-0.c.db.ondigitalocean.com',
-  port: 25060,
-  user: 'doadmin',
-  password: 'AVNS_WXj7F6yfu4VzF5b4St-',
-  database: 'istardb2',
+  host: DB_HOST,
+  port: DB_PORT,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
   waitForConnections: true,
-  connectionLimit: 0,
+  connectionLimit: 30,
   queueLimit: 0
-  // ssl: {
-  //   ca: fs.readFileSync('./ca-certificate.crt')
-  // }
 });
 
 // Function to execute queries using the connection pool
@@ -1587,6 +1634,7 @@ async function queryPromise(query, params, showparams) {
     if(showparams) console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
+    console.log("Results : " + JSON.stringify(results));
     return results;
   } catch (error) {
     console.error('Error in queryPromise:', error);
@@ -1626,3 +1674,12 @@ async function generateRefer(refertype) {
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
 });
+
+// ทำให้ console.log ใช้ winston logger
+console.log = (msg) => {
+  logger.info(msg);
+};
+
+console.error = (msg) => {
+  logger.error(msg);
+};
