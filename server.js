@@ -41,6 +41,7 @@ const logger = winston.createLogger({
     
   ),
   transports: [
+    new winston.transports.Console(),
     new winston.transports.File({ filename: logFileName })
   ]
 });
@@ -51,14 +52,13 @@ app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, l
 // สร้าง middleware เพื่อ log response
 app.use((req, res, next) => {
   // Log request
-  logger.info('================= start =================')
   logger.info(`Request: ${req.method} ${req.url} ${JSON.stringify(req.headers)}`);
 
   // Log response
   const originalSend = res.send;
   res.send = function (body) {
     logger.info(`Response: ${body}`);
-    logger.info('================== end ==================')
+    logger.info('### ================== end ================== ###')
     originalSend.apply(res, arguments);
   };
   next();
