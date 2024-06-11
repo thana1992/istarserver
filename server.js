@@ -65,6 +65,14 @@ app.use((req, res, next) => {
   
 });
 
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  // other headers...
+  next();
+});
+app.use(cors());
+
 // Middleware เพื่อทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
 app.use((req, res, next) => {
   if (req.method === 'POST' && req.path === '/logout') {
@@ -79,14 +87,6 @@ app.use((req, res, next) => {
     }
   }
 });
-
-app.use(bodyParser.json({ limit: '5mb' }));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  // other headers...
-  next();
-});
-app.use(cors());
 
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
