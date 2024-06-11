@@ -73,21 +73,6 @@ app.use((req, res, next) => {
 });
 app.use(cors());
 
-// Middleware เพื่อทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
-app.use((req, res, next) => {
-  if (req.method === 'POST' && req.path === '/logout') {
-    next(); // ให้ผ่านไปเพื่อไม่ทำการล้าง activeSessions ในกรณีที่เรียก /logout
-  } else {
-    next();
-    // ทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
-    if (req.method === 'POST') {
-      process.on('exit', () => {
-        activeSessions.length = 0;
-      });
-    }
-  }
-});
-
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
