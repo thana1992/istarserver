@@ -12,8 +12,7 @@ const crypto = require('crypto');
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = "your-secret-key";
-const DATABASE_URL = process.env.DATABASE_URL;
+const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
@@ -1671,7 +1670,15 @@ async function generateRefer(refertype) {
   return refer;
 }
 
+function clearActiveSessions() {
+  console.log("clearActiveSessions() : " + JSON.stringify(activeSessions));
+  while (activeSessions.length > 0) {
+    activeSessions.pop();
+  }
+}
+
 app.listen(port, '0.0.0.0', () => {
+  clearActiveSessions();
   console.log(`Server is running on port ${port}`);
 });
 
