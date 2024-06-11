@@ -61,7 +61,32 @@ app.use((req, res, next) => {
     originalSend.apply(res, arguments);
   };
   next();
+
+  
 });
+
+// Middleware เพื่อทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/logout') {
+    next(); // ให้ผ่านไปเพื่อไม่ทำการล้าง activeSessions ในกรณีที่เรียก /logout
+  } else {
+    next();
+    // ทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
+    if (req.method === 'POST') {
+      process.on('exit', () => {
+        activeSessions.length = 0;
+      });
+    }
+  }
+});
+
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  // other headers...
+  next();
+});
+app.use(cors());
 
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
@@ -93,22 +118,6 @@ const verifyToken = (req, res, next) => {
     res.status(500).json({ message: 'Internal server error' });
   };
 };
-
-// db.connect(err => {
-//   if (err) {
-//     console.error('Error connecting to the database:', err);
-//   } else {
-//     console.log('Connected to MySQL');
-//   }
-// });
-
-app.use(bodyParser.json({ limit: '5mb' }));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  // other headers...
-  next();
-});
-app.use(cors());
 
 app.get('/', function (req, res, next) {
   console.log("API called : " + req.path);
