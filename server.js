@@ -1220,9 +1220,9 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
     const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), \' \', IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
-      '   CASE WHEN b.coursetype = \'Monthly\' THEN b.coursetype ' +
+      '   CASE WHEN b.coursetype = \'รายเดือน\' THEN b.coursetype ' +
       '     WHEN b.coursetype IS NULL THEN \'ไม่มีคอร์ส\' ' +
-			'     ELSE b.remaining ' +
+			'     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
       '   END AS remaining, ' +
       ' b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
       ' FROM tstudent a ' +
