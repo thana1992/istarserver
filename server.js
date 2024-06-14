@@ -73,21 +73,6 @@ app.use((req, res, next) => {
 });
 app.use(cors());
 
-// Middleware เพื่อทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
-app.use((req, res, next) => {
-  if (req.method === 'POST' && req.path === '/logout') {
-    next(); // ให้ผ่านไปเพื่อไม่ทำการล้าง activeSessions ในกรณีที่เรียก /logout
-  } else {
-    next();
-    // ทำการล้าง activeSessions เมื่อเซิร์ฟเวอร์ถูก restart
-    if (req.method === 'POST') {
-      process.on('exit', () => {
-        activeSessions.length = 0;
-      });
-    }
-  }
-});
-
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
@@ -238,7 +223,6 @@ app.post('/register', async (req, res) => {
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  console.log("req : " + JSON.stringify(req))
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
     ' b.coursetype, b.remaining, b.expiredate, ' +
@@ -1700,6 +1684,7 @@ console.log = (msg) => {
   logger.info(msg);
 };
 
-console.error = (msg) => {
-  logger.error(msg);
+console.error = (msg, error) => {
+  logger.info(msg);
+  throw error;
 };
