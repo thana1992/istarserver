@@ -1556,7 +1556,7 @@ app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   // Update the gymnast's profile with the image URL in your database
   try {
     const query = 'UPDATE tstudent SET profile_image = ? WHERE studentid = ?';
-    const results = await queryPromise(query, [image, studentid], false);
+    const results = await queryPromise(query, [image, studentid]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Profile image uploaded successfully' });
     } else {
@@ -1620,16 +1620,11 @@ const pool = mysql2.createPool({
   queueLimit: 0
 });
 
-// Function to execute queries using the connection pool
-async function queryPromise(query, params) {
-  const result = await queryPromise(query, params, true);
-  return result;
-}
 async function queryPromise(query, params, showparams) {
   let connection;
   try {
     console.log("Query : " + query);
-    if(showparams) console.log("Params : " + params);
+    console.log("Params : " + params);
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     console.log("Results : " + JSON.stringify(results));
