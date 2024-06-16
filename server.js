@@ -25,8 +25,10 @@ const fs = require('fs');
 const path = require('path');
 
 // สร้าง timestamp สำหรับชื่อไฟล์ log
-const timestamp = new Date().toISOString().replace(/:/g, '-');
-const logFileName = `logs/server-${timestamp}.log`;
+const { format } = require('date-fns/format');
+const timeZone = 'Asia/Bangkok';
+const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
+const logFileName = `../layers/logs/server-${timestamp}.log`;
 
 // สร้าง stream สำหรับเขียน log ลงในไฟล์
 const logStream = fs.createWriteStream(path.join(__dirname, logFileName), { flags: 'a' });
@@ -194,13 +196,13 @@ app.post('/register', async (req, res) => {
       return res.json({ success: false, message: 'Username is already taken' });
     } else {
       let usertype = '10';
-      if(registercode && registercode == 'manager') {
+      if(registercode && registercode.toLowerCase() === 'manager') {
         usertype = '0';
-      } else if (registercode && registercode == 'admin') {
+      } else if (registercode && registercode.toLowerCase() === 'admin') {
         usertype = '1';
-      } else if (registercode && registercode == 'coach') {
+      } else if (registercode && registercode.toLowerCase() === 'coach') {
         usertype = '2';
-      } else if (registercode && registercode == 'student') {
+      } else if (registercode && registercode.toLowerCase() === 'student') {
         usertype = '10';
       } else {
         return res.json({ success: false, message: 'Invalid register code' });
@@ -1677,6 +1679,7 @@ function clearActiveSessions() {
 app.listen(port, '0.0.0.0', () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
+  console.log(" Start time : " + timestamp)
 });
 
 // ทำให้ console.log ใช้ winston logger
