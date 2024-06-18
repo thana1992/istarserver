@@ -499,7 +499,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           const cd = new Date(classdate);
           console.log("classdate : " + cd);
           if(cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY') });
+            return res.json({ success: false, message: 'Sorry, your course has expire in '+moment(expiredate).format('DD/MM/YYYY') });
           }
 
           if (coursetype != 'Monthly') {
@@ -570,8 +570,8 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
   // todo : check duplicate booking on same day
   try {
     const { studentid, classid, classdate, classtime, courseid, classday, reservationid } = req.body;
-    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
+    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? and reservationid <> ? ';
+    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate, reservationid]);
 
     if (resCheckDuplicateReservation.length > 0) {
       return res.json({ success: false, message: 'You have already booked on this day' });
@@ -613,7 +613,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             const cd = new Date(classdate);
             console.log("classdate : " + cd);
             if(cd > expiredate) {
-              return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY') });
+              return res.json({ success: false, message: 'Sorry, your course has expire in '+moment(expiredate).format('DD/MM/YYYY') });
             }
 
             const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where a.courserefer = ?';
@@ -626,13 +626,11 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                 return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
               }
 
-              console.log("======= addBookingByAdmin =======");
-              const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid) VALUES (?, ?, ?, ?, ?)';
-              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid]);
+              console.log("======= updateBookingByAdmin =======");
+              const query = 'UPDATE treservation SET studentid = ?, classid = ?, classdate = ?, classtime = ?, courseid = ? WHERE reservationid = ?';
+              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, reservationid]);
 
               if (insertResult.affectedRows > 0) {
-                const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-                const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
 
                 try {
                   // Format date for notification
@@ -809,7 +807,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           const cd = new Date(classdate);
           console.log("classdate : " + cd);
           if(cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has in '+moment(expiredate).format('DD/MM/YYYY') });
+            return res.json({ success: false, message: 'Sorry, your course has expire in '+moment(expiredate).format('DD/MM/YYYY') });
           }
 
           if (coursetype != 'Monthly') {
