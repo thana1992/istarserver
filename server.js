@@ -228,7 +228,7 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
     ' b.coursetype, b.remaining, b.expiredate, ' +
-    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
+    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
     ' from tstudent a ' +
     ' left join tcustomer_course b ' +
     ' on a.courserefer = b.courserefer ' +
@@ -256,12 +256,12 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 app.post("/getFamilyList", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
+    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
     ' from tstudent a ' +
     ' where a.familyid = ? ' +
     ' UNION ALL ' +
     ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), \' \', IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
+    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
     ' from jstudent a ' +
     ' where a.familyid = ? ';
 
@@ -518,7 +518,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
             try {
               // Format date for notification
-              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, ' +
                 ' c.coursename ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
@@ -827,7 +827,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
             try {
               // Format date for notification
-              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, ' +
                 ' c.coursename ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
@@ -1104,7 +1104,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
 });
 
 app.get("/getNewStudentList", verifyToken, async (req, res) => {
-  const query = "select a.*, CONCAT(IFNULL( a.firstname, ''), ' ', IFNULL( a.middlename, ''), ' ', IFNULL( a.lastname, ''), ' (', a.nickname,')') fullname, c.username from jstudent a left join tfamily b on a.familyid = b.familyid left join tuser c on b.username = c.username";
+  const query = "select a.*, CONCAT(IFNULL( a.firstname, ''), ' ', IFNULL( a.middlename, ''), IF(middlename<>'', ' '), IFNULL( a.lastname, ''), ' (', a.nickname,')') fullname, c.username from jstudent a left join tfamily b on a.familyid = b.familyid left join tuser c on b.username = c.username";
   try {
     await queryPromise(query, null)
       .then((results) => {
@@ -1221,7 +1221,7 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
-    const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), \' \', IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
+    const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
       '   CASE WHEN b.coursetype = \'Monthly\' THEN \'รายเดือน\' ' +
       '     WHEN b.coursetype IS NULL THEN \'ไม่มีคอร์ส\' ' +
 			'     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
@@ -1256,7 +1256,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
   try {
     const { classdate } = req.body;
     const query = `
-      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), ' ', IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname
+      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF(middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname
       FROM treservation a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN tstudent c ON a.studentid = c.studentid
