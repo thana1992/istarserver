@@ -623,7 +623,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
                 try {
                   // Format date for notification
-                  const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), \' \', IFNULL( a.lastname, \'\')) fullname, ' +
+                  const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(middlename, \'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, ' +
                     ' c.coursename ' +
                     ' FROM tstudent a ' +
                     ' INNER JOIN tcustomer_course b ' +
