@@ -39,7 +39,7 @@ const logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
-    
+
   ),
   transports: [
     new winston.transports.Console(),
@@ -64,7 +64,7 @@ app.use((req, res, next) => {
   };
   next();
 
-  
+
 });
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -196,7 +196,7 @@ app.post('/register', async (req, res) => {
       return res.json({ success: false, message: 'Username is already taken' });
     } else {
       let usertype = '10';
-      if(registercode && registercode.toLowerCase() === 'manager') {
+      if (registercode && registercode.toLowerCase() === 'manager') {
         usertype = '0';
       } else if (registercode && registercode.toLowerCase() === 'admin') {
         usertype = '1';
@@ -491,15 +491,15 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           console.log("today : " + todayDateOnly);
           console.log("expiredate : " + expiredate);
           console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
-          
+
           if (todayDateOnly > expiredate) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
           const cd = new Date(classdate);
           console.log("classdate : " + cd);
-          if(cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has expire in '+moment(expiredate).format('DD/MM/YYYY') });
+          if (cd > expiredate) {
+            return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
           }
 
           if (coursetype != 'Monthly') {
@@ -596,7 +596,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
         if (results2.length > 0) {
           const courserefer = results2[0].courserefer;
-          const checkCourseExpiredQuery = 'select expiredate from tcustomer_course where courserefer = ?';
+          const checkCourseExpiredQuery = 'select remaining, expiredate from tcustomer_course where courserefer = ?';
           const results3 = await queryPromise(checkCourseExpiredQuery, [courserefer]);
 
           if (results3.length > 0) {
@@ -612,20 +612,9 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
             const cd = new Date(classdate);
             console.log("classdate : " + cd);
-            if(cd > expiredate) {
-              return res.json({ success: false, message: 'Sorry, your course has expire in '+moment(expiredate).format('DD/MM/YYYY') });
-            }
-
-            const checkRemainingQuery = 'select a.remaining from tcustomer_course a inner join tstudent b on a.courserefer = b.courserefer where a.courserefer = ?';
-            const results4 = await queryPromise(checkRemainingQuery, [studentid]);
-
-            if (results4.length > 0) {
-              const remaining = results4[0].remaining;
-
-              if (remaining <= 0) {
-                return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
-              }
-
+            if (cd > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
+            } else {
               console.log("======= updateBookingByAdmin =======");
               const query = 'UPDATE treservation SET studentid = ?, classid = ?, classdate = ?, classtime = ?, courseid = ? WHERE reservationid = ?';
               const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, reservationid]);
@@ -653,27 +642,26 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                       month: 'long',
                       day: 'numeric',
                     });
-    
+
                     // Prepare notification data
                     const jsonData = {
                       message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
                     };
-    
+
                     sendNotification(jsonData);
                   }
                 } catch (error) {
                   console.error('Error sending notification:', error);
                 }
-
                 return res.json({ success: true, message: 'Booking added successfully' });
               }
             }
           }
         }
       }
+    } else {
+      return res.json({ success: false, message: 'No class found' });
     }
-
-    return res.json({ success: false, message: 'Error in processing booking' });
   } catch (error) {
     console.log("updateBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
@@ -806,8 +794,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
           const cd = new Date(classdate);
           console.log("classdate : " + cd);
-          if(cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has expire in '+moment(expiredate).format('DD/MM/YYYY') });
+          if (cd > expiredate) {
+            return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
           }
 
           if (coursetype != 'Monthly') {
@@ -1222,7 +1210,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
     const query = 'SELECT a.*, CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), IF(middlename<>\'\', \' \', \'\'), IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
       '   CASE WHEN b.coursetype = \'Monthly\' THEN \'รายเดือน\' ' +
       '     WHEN b.coursetype IS NULL THEN \'ไม่มีคอร์ส\' ' +
-			'     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
+      '     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
       '   END AS remaining, ' +
       ' b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
       ' FROM tstudent a ' +
@@ -1517,18 +1505,18 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
     LEFT JOIN tstudent s ON cc.courserefer = s.courserefer 
 
     `;
-    
+
     let queryParams = [];
 
     if (courserefer) {
       query += "WHERE cc.courserefer = ? ";
       queryParams.push(courserefer);
     }
-    
+
     query += "GROUP BY cc.courserefer, cc.expiredate ";
 
     const results = await queryPromise(query, queryParams);
-    
+
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Student Use Course successful', results });
     } else {
