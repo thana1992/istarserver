@@ -1242,7 +1242,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
   try {
     const { classdate } = req.body;
     const query = `
-      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF( a.middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname
+      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF( c.middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname
       FROM treservation a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN tstudent c ON a.studentid = c.studentid
