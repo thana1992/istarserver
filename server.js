@@ -1360,7 +1360,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       for (let index = 0; index < results.length; index++) {
         let this_class = [];
         const element = results[index];
-        const query2 = 'SELECT CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin  ' +
+        const query2 = 'SELECT CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin, c.dateofbirth, case when c.gender = \'ชาย\' then \'ช.\' else then \'ญ.\' end as gender ' +
           'FROM treservation a ' +
           'join tcourseinfo b on  a.courseid = b.courseid ' +
           'left join tstudent c on a.studentid = c.studentid ' +
@@ -1370,6 +1370,21 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
 
         const results2 = await queryPromise(query2, [classdate, element.classid]);
         console.log("results2 : " + JSON.stringify(results2));
+
+        // Function to calculate age in years and months
+        const calculateAge = (dateOfBirth) => {
+          const dob = new Date(dateOfBirth);
+          const diff = Date.now() - dob.getTime();
+          const ageDate = new Date(diff);
+          const ageYears = ageDate.getUTCFullYear() - 1970;
+          const ageMonths = ageDate.getUTCMonth();
+          return parseFloat(`${ageYears}.${ageMonths}`);
+        };
+
+        // Add age field to each result
+        results.forEach(result => {
+          result.nickname = result.nickname + " (" + result.gender + " " + calculateAge(result.dateofbirth) + ")";
+        });
 
         if (results2.length > 0) {
           let studentlist = [];
