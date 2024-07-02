@@ -1360,7 +1360,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       for (let index = 0; index < results.length; index++) {
         let this_class = [];
         const element = results[index];
-        const query2 = 'SELECT CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin, c.dateofbirth, case when c.gender = \'ชาย\' then \'ช.\' else then \'ญ.\' end as gender ' +
+        const query2 = 'SELECT CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin, c.dateofbirth, case when c.gender = \'ชาย\' then \'ช.\' else \'ญ.\' end as gender ' +
           'FROM treservation a ' +
           'join tcourseinfo b on  a.courseid = b.courseid ' +
           'left join tstudent c on a.studentid = c.studentid ' +
