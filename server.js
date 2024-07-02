@@ -549,7 +549,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth) + ' ปี',
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime,
                 };
 
                 sendNotification(jsonData);
@@ -662,7 +662,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth) + ' ปี',
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime,
                     };
 
                     sendNotification(jsonData);
@@ -860,7 +860,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth) + ' ปี',
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime,
                 };
 
                 sendNotification(jsonData);
