@@ -518,7 +518,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
             try {
               // Format date for notification
-              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth' +
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth, ' +
                 ' c.coursename ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
@@ -632,7 +632,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
                 try {
                   // Format date for notification
-                  const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, ' +
+                  const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth, ' +
                     ' c.coursename ' +
                     ' FROM tstudent a ' +
                     ' INNER JOIN tcustomer_course b ' +
@@ -652,9 +652,17 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                       day: 'numeric',
                     });
 
+                    const calculateAge = (dateOfBirth) => {
+                      const dob = new Date(dateOfBirth);
+                      const diff = Date.now() - dob.getTime();
+                      const ageDate = new Date(diff);
+                      const ageYears = ageDate.getUTCFullYear() - 1970;
+                      const ageMonths = ageDate.getUTCMonth();
+                      return parseFloat(`${ageYears}ปี ${ageMonths}เดือน`);
+                    };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth),
                     };
 
                     sendNotification(jsonData);
@@ -822,7 +830,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
             try {
               // Format date for notification
-              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, ' +
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth,' +
                 ' c.coursename ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
@@ -842,9 +850,17 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                   day: 'numeric',
                 });
 
+                const calculateAge = (dateOfBirth) => {
+                  const dob = new Date(dateOfBirth);
+                  const diff = Date.now() - dob.getTime();
+                  const ageDate = new Date(diff);
+                  const ageYears = ageDate.getUTCFullYear() - 1970;
+                  const ageMonths = ageDate.getUTCMonth();
+                  return parseFloat(`${ageYears}ปี ${ageMonths}เดือน`);
+                };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth),
                 };
 
                 sendNotification(jsonData);
