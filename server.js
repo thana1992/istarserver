@@ -518,7 +518,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
             try {
               // Format date for notification
-              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, ' +
+              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth' +
                 ' c.coursename ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
@@ -538,9 +538,18 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   day: 'numeric',
                 });
 
+                // Function to calculate age in years and months
+                const calculateAge = (dateOfBirth) => {
+                  const dob = new Date(dateOfBirth);
+                  const diff = Date.now() - dob.getTime();
+                  const ageDate = new Date(diff);
+                  const ageYears = ageDate.getUTCFullYear() - 1970;
+                  const ageMonths = ageDate.getUTCMonth();
+                  return parseFloat(`${ageYears}ปี ${ageMonths}เดือน`);
+                };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime,
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth),
                 };
 
                 sendNotification(jsonData);
@@ -1383,7 +1392,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
 
         // Add age field to each result
         results2.forEach(results2 => {
-          results2.nickname = results2.nickname + " (" + results2.gender + " " + calculateAge(results2.dateofbirth) + ")";
+          results2.nickname = results2.nickname + " (" + results2.gender + calculateAge(results2.dateofbirth) + ")";
         });
 
         if (results2.length > 0) {
