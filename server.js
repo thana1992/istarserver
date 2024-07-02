@@ -545,11 +545,11 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   const ageDate = new Date(diff);
                   const ageYears = ageDate.getUTCFullYear() - 1970;
                   const ageMonths = ageDate.getUTCMonth();
-                  return parseFloat(`${ageYears}ปี ${ageMonths}เดือน`);
+                  return parseFloat(`${ageYears}.${ageMonths}`);
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth),
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth) + ' ปี',
                 };
 
                 sendNotification(jsonData);
@@ -658,11 +658,11 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                       const ageDate = new Date(diff);
                       const ageYears = ageDate.getUTCFullYear() - 1970;
                       const ageMonths = ageDate.getUTCMonth();
-                      return parseFloat(`${ageYears}ปี ${ageMonths}เดือน`);
+                      return parseFloat(`${ageYears}.${ageMonths}`);
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth),
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth) + ' ปี',
                     };
 
                     sendNotification(jsonData);
@@ -856,11 +856,11 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                   const ageDate = new Date(diff);
                   const ageYears = ageDate.getUTCFullYear() - 1970;
                   const ageMonths = ageDate.getUTCMonth();
-                  return parseFloat(`${ageYears}ปี ${ageMonths}เดือน`);
+                  return parseFloat(`${ageYears}.${ageMonths}`);
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth),
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nวันที่ ' + bookdate + ' ' + classtime + '\nอายุ ' + calculateAge(results[0].dateofbirth) + ' ปี',
                 };
 
                 sendNotification(jsonData);
