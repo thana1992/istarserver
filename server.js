@@ -1242,7 +1242,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
   try {
     const { classdate } = req.body;
     const query = `
-      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF( c.middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname
+      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF( c.middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname, c.dateofbirth, case when c.gender = 'ชาย' then 'ช.' else 'ญ.' end as gender 
       FROM treservation a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN tstudent c ON a.studentid = c.studentid
@@ -1253,6 +1253,21 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [classdate]);
 
     console.log("API getReservationList result: " + JSON.stringify(results));
+
+    // Function to calculate age in years and months
+    const calculateAge = (dateOfBirth) => {
+      const dob = new Date(dateOfBirth);
+      const diff = Date.now() - dob.getTime();
+      const ageDate = new Date(diff);
+      const ageYears = ageDate.getUTCFullYear() - 1970;
+      const ageMonths = ageDate.getUTCMonth();
+      return parseFloat(`${ageYears}.${ageMonths}`);
+    };
+
+    // Add age field to each result
+    results.forEach(result => {
+      result.fullname = result.fullname + " (" + result.gender + " " + calculateAge(result.dateofbirth) + ")";
+    });
 
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Reservation list successful', results });
