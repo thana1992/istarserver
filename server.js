@@ -1382,8 +1382,8 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         };
 
         // Add age field to each result
-        results.forEach(result => {
-          result.nickname = result.nickname + " (" + result.gender + " " + calculateAge(result.dateofbirth) + ")";
+        results2.forEach(result => {
+          results2.nickname = results2.nickname + " (" + results2.gender + " " + calculateAge(results2.dateofbirth) + ")";
         });
 
         if (results2.length > 0) {
