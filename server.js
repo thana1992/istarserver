@@ -1716,6 +1716,8 @@ app.listen(port, '0.0.0.0', () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
   console.log(" Start time : " + timestamp)
+  const query = "SET time_zone = 'Asia/Bangkok'";
+  queryPromise(query, null);
 });
 
 // ทำให้ console.log ใช้ winston logger
