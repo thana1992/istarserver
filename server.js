@@ -1413,6 +1413,9 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
 
         // Function to calculate age in years and months
         const calculateAge = (dateOfBirth) => {
+          if(dateOfBirth == null || dateOfBirth == undefined || dateOfBirth == ''){
+            return '';
+          }
           const dob = new Date(dateOfBirth);
           const diff = Date.now() - dob.getTime();
           const ageDate = new Date(diff);
