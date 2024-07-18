@@ -286,8 +286,23 @@ app.post('/addStudent', verifyToken, async (req, res) => {
   try {
     const studentid = await generateRefer('TMP');
     const { familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school } = req.body;
-    const query = 'INSERT INTO jstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    let query = 'INSERT INTO jstudent (studentid, familyid, ';
+      if(firstname) query += 'firstname, ';
+      if(middlename) query += 'middlename, ';
+      if(lastname) query += 'lastname, ';
+      if(nickname) query += 'nickname, ';
+      if(gender) query += 'gender, ';
+      if(dateofbirth) query += 'dateofbirth, ';
+      if(school) query += 'school';
+    query += ') VALUES (?, ?, ';
+      if(firstname) query += '?, ';
+      if(middlename) query += '?, ';
+      if(lastname) query += '?, ';
+      if(nickname) query += '?, ';
+      if(gender) query += '?, ';
+      if(dateofbirth) query += '?, ';
+      if(school) query += '?';
+    query += ')';
 
     await queryPromise(query, [studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school]);
 
