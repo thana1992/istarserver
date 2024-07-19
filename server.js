@@ -304,7 +304,15 @@ app.post('/addStudent', verifyToken, async (req, res) => {
       if(school) query += ', ?';
     query += ')';
 
-    await queryPromise(query, [studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school]);
+    let params = [studentid, familyid];
+      if(firstname) params.push(firstname);
+      if(middlename) params.push(middlename); 
+      if(lastname) params.push(lastname); 
+      if(nickname) params.push(nickname); 
+      if(gender) params.push(gender);
+      if(dateofbirth) params.push(dateofbirth);
+      if(school) params.push(school);
+    await queryPromise(query, params);
 
     res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
