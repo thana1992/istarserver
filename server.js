@@ -1744,10 +1744,9 @@ app.listen(port, '0.0.0.0', () => {
 const cron = require('node-cron');
 const { google } = require('googleapis');
 const drive = google.drive('v3');
-const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 
 const auth = new google.auth.GoogleAuth({
-  credentials: serviceAccountKey,
+  keyFile: './googleapi.json',
   scopes: ['https://www.googleapis.com/auth/drive.file'],
 });
 
