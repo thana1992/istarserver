@@ -1784,7 +1784,7 @@ async function uploadOrUpdateLogFile() {
       if (err) {
         console.error(err);
       } else {
-        console.log('File Upload... ', file);
+        console.log('File Upload... '+logFileName);
       }
     });
   } else {
@@ -1797,14 +1797,14 @@ async function uploadOrUpdateLogFile() {
       if (err) {
         console.error(err);
       } else {
-        console.log('File Upload... ', file);
+        console.log('File Upload... '+logFileName);
       }
     });
   }
 }
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('*/30 * * * *', () => {
+cron.schedule('*/2 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
