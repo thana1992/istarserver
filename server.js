@@ -1744,19 +1744,7 @@ app.listen(port, '0.0.0.0', () => {
 const cron = require('node-cron');
 const { google } = require('googleapis');
 const drive = google.drive('v3');
-const serviceAccountKey = {
-  "type": "service_account",
-  "project_id": "quick-cogency-430016-i8",
-  "private_key_id": "4dc653fbbb0146fc9d7f7831b802b94340dc765d",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDnxfocG2vP10ig\ndATwb64PrhBiXAS48emAvuZBB0cZGsB+uBQn8KctSnJafGR/iDAOa2Ji814N/u3q\necO2FX9I7RP3jOyqbFvuKtQCbghBiP/ife3PYor9VcfGLG1fpdMHD20/o3dbvgzQ\nCGZJ7qnDw6uBCZLhITFwxZnGA8xiIXTHpKVDuSf5RhDXSqGR7GjUsUjN2YU7c4JJ\norAIycQdf5vp2AZkMNmnih4PXPCVDmzX0tfb7We+TWp/HdsWIsio+mjwYeOsCvGu\ntu1ovwKAl1eJjoYnsaayrE+XYqUSWP3XCJx87JD7SDdycQgAnBS/2FfPaRfwnaDs\nW0HUeePPAgMBAAECggEAFcXxeGZ9uv68dzuu+G9laK+vdliypjUuUcadQYqk0TpE\nJHi33AYC49b/OyTobq/6jmrkHpZCRbT8i28jmvLAtwxz4xOSwB0siF6ZoB4kxGin\nBpNR8zjiBGk55Ty94aMQWgocTJgsrv+sRcwkNS8oikLS1RfIe+xvBUBq8RaLmBmN\nZsGAJDbk7vBYK00FAww+XYJezoknhWZVfiWboOgmSHC4BHwzI/Lkp9LZVT1IBiUq\nFZA0jISWDIMksr7bK37tixjWwo/VzyiKaURx7sYhhXWkvjczraZkyjxVUT8tecSz\nN2QLtMPUZ9JfvplUgBl2jAepviBfs2G0KPzQzAdUIQKBgQD2Iz5FNo3DYyCxR+P4\ngfTQrSqCZrbMY4kqxSHu+utqdYJgN27RZyvmmNdNW4POJMFq1Sehpp3HMv1gVfNQ\n55DXDX2haJoFfQ0vsAA8wwpwmOYPUtTMOSbykNmzGU+nN/pGpMH2xnPqGPfOW6/U\nIs90WeyGnPZjjccSfuoUw0naZwKBgQDxD2RJXC+H7+93TcO7ty5lDD8aosrDGs+x\nZUV/KyaYnOorioonl9Zv02y3lX8Lnue8H8qICYVMZOXRwQK1cG4kFendtD9iQj4W\naYqCRoKTzpzCqWFbetxSlbQjHw4VLqIljGYQisZxV5+D9xSt3GMYT5jqCyKnlt3k\nxremnV2aWQKBgCgn78zS7aXm0jqaA/NTIGG7HqhPoZsO0h4MM1EN1sJzkWWpJYc8\nUck5Pkb8mzBShsurIuAYkr0g8H17CEs2vEaZiNmAe0BR+ojBKgi/uUBNcZsmZFk9\nKcGBKEMz6e7aDxbfYlWkYtzaXfNoufLeCwJseU4s5XWwd73ovr/MbIwZAoGBAIb8\nwoDeEXPC5Urejhvg8Sb+m5uzy21D50gEWM1kgYF2ZR8qvkB7o0YNk9Sd7323ZzcO\namCRTEbCPXue5IBrzBGC/+n5lIDWbWQph7l5+IcCbQAIz47lltjcIfqE2mL8MSpr\nm3/p5kPz+ExyoO7W+drUP+HXiHlmXy1MJe00NAVJAoGBANFC4h+qeFMfoLIinqIK\nSBpAulhUYZRHrq/A3Jb4PyxWsZslRAfH//XvbznhOnmvSicH6EDdu3lYsExvbts/\nWK9h2l5YE7d5kwN6RegMhKpKXYNOInqgMamHH8Zc5rgZF9w4CH/e0m/OviztXWyc\nT0dm4b9Eh6pJrfVSTqaNLz1h\n-----END PRIVATE KEY-----\n",
-  "client_email": "istar-699@quick-cogency-430016-i8.iam.gserviceaccount.com",
-  "client_id": "111535005734688914092",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/istar-699%40quick-cogency-430016-i8.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
+const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 
 const auth = new google.auth.GoogleAuth({
   credentials: serviceAccountKey,
