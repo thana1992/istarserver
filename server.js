@@ -1688,7 +1688,12 @@ async function queryPromise(query, params, showparams) {
   let connection;
   try {
     console.log("Query : " + query);
-    console.log("Params : " + params);
+    console.log("Parameters ");
+    Object.keys(params).forEach(key => {
+      if (key !== 'profile_image' && key !== 'image') {
+        console.log(`${key}: ${params[key]}`);
+      }
+    });
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     console.log("Results : " + JSON.stringify(results));
@@ -1804,7 +1809,7 @@ async function uploadOrUpdateLogFile() {
 }
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('*/2 * * * *', () => {
+cron.schedule('*/1 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
