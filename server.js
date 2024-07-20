@@ -1696,15 +1696,7 @@ async function queryPromise(query, params) {
     });
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-
-    // Filter out 'profile_image' key from results
-    const filteredResults = results.map(result => {
-      const { profile_image, ...rest } = result;
-      return rest;
-    });
-
-    console.log("Results : " + JSON.stringify(filteredResults));
-    return filteredResults;
+    return results;
   } catch (error) {
     console.error('Error in queryPromise:', error);
     throw error;
@@ -1712,7 +1704,6 @@ async function queryPromise(query, params) {
     if (connection) connection.release();
   }
 }
-
 
 async function generateRefer(refertype) {
   let refer = '';
