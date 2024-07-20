@@ -1684,39 +1684,13 @@ const pool = mysql2.createPool({
   queueLimit: 0
 });
 
-async function queryPromise(query, params) {
+async function queryPromise(query, params, showparams) {
   let connection;
   try {
     console.log("Query : " + query);
-    console.log("Parameters ");
-    Object.keys(params).forEach(key => {
-      if (key !== 'profile_image' && key !== 'image') {
-        console.log(`${key}: ${params[key]}`);
-      }
-    });
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-
-    // Check if results is an array (specific to certain libraries)
-    if (Array.isArray(results)) {
-      // Filter out 'profile_image' key from each object in the array
-      const filteredResults = results.map(result => {
-        const { profile_image, ...rest } = result;
-        return rest;
-      });
-
-      console.log("Results : " + JSON.stringify(filteredResults));
-      return filteredResults;
-    } else if (typeof results === 'object') {
-      // Handle if results is a single object
-      const { profile_image, ...rest } = results;
-      console.log("Results : " + JSON.stringify(rest));
-      return rest;
-    } else {
-      // Handle other cases accordingly
-      console.log("Results : " + JSON.stringify(results));
-      return results;
-    }
+    return results;
   } catch (error) {
     console.error('Error in queryPromise:', error);
     throw error;
@@ -1724,7 +1698,6 @@ async function queryPromise(query, params) {
     if (connection) connection.release();
   }
 }
-
 
 async function generateRefer(refertype) {
   let refer = '';
@@ -1829,7 +1802,7 @@ async function uploadOrUpdateLogFile() {
 }
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('*/1 * * * *', () => {
+cron.schedule('*/2 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
