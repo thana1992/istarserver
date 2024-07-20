@@ -28,11 +28,8 @@ const path = require('path');
 const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
-const logFileName = `../layers/logs/server-${timestamp}.log`;
-
-// สร้าง stream สำหรับเขียน log ลงในไฟล์
-const logStream = fs.createWriteStream(path.join(__dirname, logFileName), { flags: 'a' });
-
+const logFileName = `server-${timestamp}.log`;
+const logPath = './logs/';
 // สร้าง winston logger
 const logger = winston.createLogger({
   level: 'info',
@@ -43,12 +40,12 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: logFileName })
+    new winston.transports.File({ filename: logPath+logFileName })
   ]
 });
 
 // ใช้ morgan เพื่อบันทึก log
-app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logFileName), { flags: 'a' }) }));
+app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
 
 // สร้าง middleware เพื่อ log response
 app.use((req, res, next) => {
@@ -1743,6 +1740,74 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
   console.log(" Start time : " + timestamp)
 });
+
+const cron = require('node-cron');
+const { google } = require('googleapis');
+const drive = google.drive('v3');
+
+const auth = new google.auth.GoogleAuth({
+  keyFile: './googleapi.json',
+  scopes: ['https://www.googleapis.com/auth/drive.file'],
+});
+
+const folderId = '1G5VdaeIpN36EQgFvoEbIivXK9vCKtAdv'; // ไอดีของโฟลเดอร์ใน Google Drive
+
+async function uploadOrUpdateLogFile() {
+  const authClient = await auth.getClient();
+  google.options({ auth: authClient });
+
+  // ตรวจสอบว่าไฟล์มีอยู่หรือไม่
+  const res = await drive.files.list({
+    q: `name='${logFileName}' and '${folderId}' in parents`,
+    fields: 'files(id, name)',
+    spaces: 'drive',
+  });
+
+  const files = res.data.files;
+  const fileMetadata = {
+    name: logFileName,
+    parents: [folderId],
+  };
+  const media = {
+    mimeType: 'text/plain',
+    body: fs.createReadStream(logPath+logFileName),
+  };
+
+  if (files.length > 0) {
+    // ถ้าไฟล์มีอยู่แล้ว ให้ทำการอัพเดทไฟล์
+    const fileId = files[0].id;
+    drive.files.update({
+      fileId: fileId,
+      media: media,
+      fields: 'id',
+    }, (err, file) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log('File Upload... ', file);
+      }
+    });
+  } else {
+    // ถ้าไฟล์ไม่มี ให้ทำการสร้างไฟล์ใหม่
+    drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id',
+    }, (err, file) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log('File Upload... ', file);
+      }
+    });
+  }
+}
+uploadOrUpdateLogFile();
+// ตั้งเวลาให้รันทุกๆ 30 นาที
+cron.schedule('*/30 * * * *', () => {
+  uploadOrUpdateLogFile();
+});
+
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
