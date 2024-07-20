@@ -1696,7 +1696,27 @@ async function queryPromise(query, params) {
     });
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-    return results;
+
+    // Check if results is an array (specific to certain libraries)
+    if (Array.isArray(results)) {
+      // Filter out 'profile_image' key from each object in the array
+      const filteredResults = results.map(result => {
+        const { profile_image, ...rest } = result;
+        return rest;
+      });
+
+      console.log("Results : " + JSON.stringify(filteredResults));
+      return filteredResults;
+    } else if (typeof results === 'object') {
+      // Handle if results is a single object
+      const { profile_image, ...rest } = results;
+      console.log("Results : " + JSON.stringify(rest));
+      return rest;
+    } else {
+      // Handle other cases accordingly
+      console.log("Results : " + JSON.stringify(results));
+      return results;
+    }
   } catch (error) {
     console.error('Error in queryPromise:', error);
     throw error;
@@ -1704,6 +1724,7 @@ async function queryPromise(query, params) {
     if (connection) connection.release();
   }
 }
+
 
 async function generateRefer(refertype) {
   let refer = '';
