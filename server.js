@@ -1684,16 +1684,11 @@ const pool = mysql2.createPool({
   queueLimit: 0
 });
 
-async function queryPromise(query, params, showparams) {
+async function queryPromise(query, params) {
   let connection;
   try {
     console.log("Query : " + query);
     console.log("Parameters ");
-    Object.keys(params).forEach(key => {
-      if (key !== 'profile_image' && key !== 'image') {
-        console.log(`${key}: ${params[key]}`);
-      }
-    });
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     console.log("Results : " + JSON.stringify(results));
