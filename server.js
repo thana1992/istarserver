@@ -1689,10 +1689,22 @@ async function queryPromise(query, params) {
   try {
     console.log("Query : " + query);
     console.log("Parameters ");
+    Object.keys(params).forEach(key => {
+      if (key !== 'profile_image' && key !== 'image') {
+        console.log(`${key}: ${params[key]}`);
+      }
+    });
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-    console.log("Results : " + JSON.stringify(results));
-    return results;
+
+    // Filter out 'profile_image' key from results
+    const filteredResults = results.map(result => {
+      const { profile_image, ...rest } = result;
+      return rest;
+    });
+
+    console.log("Results : " + JSON.stringify(filteredResults));
+    return filteredResults;
   } catch (error) {
     console.error('Error in queryPromise:', error);
     throw error;
@@ -1700,6 +1712,7 @@ async function queryPromise(query, params) {
     if (connection) connection.release();
   }
 }
+
 
 async function generateRefer(refertype) {
   let refer = '';
