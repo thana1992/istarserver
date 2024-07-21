@@ -60,8 +60,6 @@ app.use((req, res, next) => {
     originalSend.apply(res, arguments);
   };
   next();
-
-
 });
 
 app.use(bodyParser.json({ limit: '5mb' }));
