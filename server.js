@@ -1231,7 +1231,7 @@ app.get("/familyLookup", verifyToken, async (req, res) => {
 
 app.post("/studentLookup", verifyToken, async (req, res) => {
   const { familyid } = req.body;
-  const query = "SELECT *, CONCAT(IFNULL(nickname, ''), ' ', IFNULL(firstname, ''), ' ', IFNULL(middlename, ''), IF( middlename<>'', ' ', ''), IFNULL(lastname, '')) as name FROM tstudent"
+  const query = "SELECT studentid, CONCAT(IFNULL(nickname, ''), ' ', IFNULL(firstname, ''), ' ', IFNULL(middlename, ''), IF( middlename<>'', ' ', ''), IFNULL(lastname, '')) as name FROM tstudent"
   if (familyid !== null && familyid !== undefined && familyid !== '') {
     query = query + ' WHERE familyid = ?';
   }
