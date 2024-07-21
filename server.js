@@ -1148,8 +1148,9 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
         res.json({ success: false, message: error.message });
       })
   } catch (error) {
-    console.error('Error in getNewStudentList:', error);
     res.status(500).send(error);
+    console.error('Error in getNewStudentList:', error);
+    
   }
 });
 
@@ -1738,6 +1739,89 @@ app.listen(port, '0.0.0.0', () => {
   console.log(" Start time : " + timestamp)
 });
 
+const twilio = require('twilio');
+const client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+//start 2
+async function createVerification(phoneNumber) {
+  const verification = await client.verify.v2
+    .services(process.env.TWILIO_SERVICE_SID)
+    .verifications.create({
+      channel: "sms",
+      to: phoneNumber,
+    });
+
+  console.log(verification.sid);
+  return verification;
+}
+
+async function createVerificationCheck(Sid,opt) {
+  const verificationCheck = await client.verify.v2
+    .services(process.env.TWILIO_SERVICE_SID)
+    .verificationChecks.create({
+      code: opt,
+      verificationSid: Sid,
+    });
+
+  console.log(verificationCheck.status);
+  return verificationCheck;
+}
+const { parsePhoneNumberFromString } = require('libphonenumber-js');
+function formatPhoneNumber(phoneNumber) {
+  const phoneNumberObj = parsePhoneNumberFromString(phoneNumber, 'TH'); // 'TH' คือตัวระบุประเทศ (ประเทศไทย)
+  if (phoneNumberObj && phoneNumberObj.isValid()) {
+      return phoneNumberObj.format('E.164');
+  } else {
+      throw new Error('Invalid phone number format');
+  }
+}
+// end 2
+
+// start 1
+const otpStorage = {}; // ใช้เก็บ OTP ชั่วคราว
+
+// ฟังก์ชันส่ง OTP
+function sendOTP(phoneNumber, otp) {
+    return client.messages.create({
+        body: `Your OTP code is ${otp}`,
+        from: '+14067976350', // แทนที่ด้วยเบอร์ Twilio ของคุณ
+        to: phoneNumber
+    });
+}
+// end 1
+
+// Endpoint ขอ OTP
+app.post('/request-otp', (req, res) => {
+    let phoneNumber = req.body.phoneNumber;
+    phoneNumber = formatPhoneNumber(phoneNumber);
+    console.log(phoneNumber);
+    const otp = Math.floor(100000 + Math.random() * 900000); // สร้าง OTP 6 หลัก
+
+    // เก็บ OTP ไว้ใน otpStorage
+    otpStorage[phoneNumber] = otp;
+
+    //sendOTP(phoneNumber, otp)
+    createVerification(phoneNumber)
+        .then(message => res.status(200).send({ success: true, message }))
+        .catch(error => res.status(500).send({ success: false, error }));
+});
+
+// Endpoint ยืนยัน OTP
+app.post('/verify-otp', (req, res) => {
+    const { sid, otp } = req.body;
+
+    createVerificationCheck(sid, otp)
+        .then(message => res.status(200).send({ success: message.valid, message }))
+        .catch(error => res.status(500).send({ success: false, error }));
+
+    // ตรวจสอบว่า OTP ตรงกับที่เก็บไว้หรือไม่
+    // if (otpStorage[phoneNumber] && otpStorage[phoneNumber] == otp) {
+    //     delete otpStorage[phoneNumber]; // ลบ OTP หลังการยืนยัน
+    //     res.status(200).send({ success: true, message: 'OTP verified successfully' });
+    // } else {
+    //     res.status(400).send({ success: false, message: 'Invalid OTP' });
+    // }
+});
+
 const cron = require('node-cron');
 const { google } = require('googleapis');
 const drive = google.drive('v3');
@@ -1801,7 +1885,7 @@ async function uploadOrUpdateLogFile() {
 }
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('*/2 * * * *', () => {
+cron.schedule('*/30 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
@@ -1813,5 +1897,5 @@ console.log = (msg) => {
 
 console.error = (msg, error) => {
   logger.info(msg);
-  throw error;
+  //throw error;
 };
