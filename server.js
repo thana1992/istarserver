@@ -137,12 +137,12 @@ app.post('/login', async (req, res) => {
         //res.status(200).json({ message: "Login successful" });
         const user = results[0];
         const userdata = {
-          username: results[0].username,
-          firstname: results[0].firstname,
-          email: results[0].email,
-          mobileno: results[0].mobileno,
-          usertype: results[0].usertype,
-          familyid: results[0].familyid,
+          username: user.username,
+          firstname: user.firstname,
+          email: user.email,
+          mobileno: user.mobileno,
+          usertype: user.usertype,
+          familyid: user.familyid,
         }
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
@@ -1664,7 +1664,7 @@ app.post('/checkmobileno', async (req, res) => {
 
 app.post('/change-password', async (req, res) => {
   const { username, password } = req.body;
-  const query = 'UPDATE tuser SET password = ? WHERE username = ?';
+  const query = 'UPDATE tuser SET userpassword = ? WHERE username = ?';
   try {
     const results = await queryPromise(query, [password, username]);
     if (results.affectedRows > 0) {
