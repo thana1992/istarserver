@@ -1824,10 +1824,10 @@ app.post('/request-otp', (req, res) => {
     let phoneNumber = req.body.phoneNumber;
     phoneNumber = formatPhoneNumber(phoneNumber);
     console.log(phoneNumber);
-    const otp = Math.floor(100000 + Math.random() * 900000); // สร้าง OTP 6 หลัก
+    //const otp = Math.floor(100000 + Math.random() * 900000); // สร้าง OTP 6 หลัก
 
     // เก็บ OTP ไว้ใน otpStorage
-    otpStorage[phoneNumber] = otp;
+    //otpStorage[phoneNumber] = otp;
 
     //sendOTP(phoneNumber, otp)
     createVerification(phoneNumber)
