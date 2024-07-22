@@ -1646,7 +1646,37 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
+app.post('/checkmobileno', async (req, res) => {
+  const { username, mobileno } = req.body;
+  const query = 'SELECT * FROM tuser WHERE username = ? and mobileno = ?';
+  try {
+    const results = await queryPromise(query, [username, mobileno]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Mobile number matched', results });
+    } else {
+      res.json({ success: false, message: 'Mobile number not matched' });
+    }
+  } catch (error) {
+    console.error('Error in checkmobileno:', error);
+    res.status(500).send(error);
+  }
+});
 
+app.post('/chenge-password', async (req, res) => {
+  const { username, password } = req.body;
+  const query = 'UPDATE tuser SET password = ? WHERE username = ?';
+  try {
+    const results = await queryPromise(query, [password, username]);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Password changed successfully' });
+    } else {
+      res.json({ success: false, message: 'Error changing password' });
+    }
+  } catch (error) {
+    console.error('Error in chenge-password:', error);
+    res.status(500).send(error);
+  }
+});
 // Utility function to promisify the database queries
 // async function queryPromise(query, params) {
 //   return new Promise((resolve, reject) => {
