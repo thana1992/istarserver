@@ -1694,40 +1694,7 @@ app.post('/chenge-password', async (req, res) => {
 //   });
 // }
 
-const mysql2 = require('mysql2/promise');
-const { log } = require('console');
 
-// Create a connection pool
-const DB_HOST = process.env.DB_HOST;
-const DB_PORT = process.env.DB_PORT;
-const DB_NAME = process.env.DB_NAME;
-const DB_USER = process.env.DB_USER;
-const DB_PASSWORD = process.env.DB_PASSWORD;
-const pool = mysql2.createPool({
-  host: DB_HOST,
-  port: DB_PORT,
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 30,
-  queueLimit: 0
-});
-
-async function queryPromise(query, params, showparams) {
-  let connection;
-  try {
-    console.log("Query : " + query);
-    connection = await pool.getConnection();
-    const [results] = await connection.query(query, params);
-    return results;
-  } catch (error) {
-    console.error('Error in queryPromise:', error);
-    throw error;
-  } finally {
-    if (connection) connection.release();
-  }
-}
 
 async function generateRefer(refertype) {
   let refer = '';
@@ -1762,12 +1729,6 @@ function clearActiveSessions() {
     activeSessions.pop();
   }
 }
-
-app.listen(port, '0.0.0.0', () => {
-  clearActiveSessions();
-  console.log(`Server is running on port ${port}`);
-  console.log(" Start time : " + timestamp)
-});
 
 const twilio = require('twilio');
 const client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -1913,12 +1874,53 @@ async function uploadOrUpdateLogFile() {
     });
   }
 }
+
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
 cron.schedule('*/30 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
+const mysql2 = require('mysql2/promise');
+const { log } = require('console');
+
+// Create a connection pool
+const DB_HOST = process.env.DB_HOST;
+const DB_PORT = process.env.DB_PORT;
+const DB_NAME = process.env.DB_NAME;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const pool = mysql2.createPool({
+  host: DB_HOST,
+  port: DB_PORT,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 30,
+  queueLimit: 0
+});
+
+async function queryPromise(query, params, showparams) {
+  let connection;
+  try {
+    console.log("Query : " + query);
+    connection = await pool.getConnection();
+    const [results] = await connection.query(query, params);
+    return results;
+  } catch (error) {
+    console.error('Error in queryPromise:', error);
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+}
+
+app.listen(port, '0.0.0.0', () => {
+  clearActiveSessions();
+  console.log(`Server is running on port ${port}`);
+  console.log(" Start time : " + timestamp)
+});
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
