@@ -1662,7 +1662,7 @@ app.post('/checkmobileno', async (req, res) => {
   }
 });
 
-app.post('/chenge-password', async (req, res) => {
+app.post('/change-password', async (req, res) => {
   const { username, password } = req.body;
   const query = 'UPDATE tuser SET password = ? WHERE username = ?';
   try {
