@@ -771,9 +771,9 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 });
 
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
-  const { studentid } = req.body;
-  const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate asc';
-  await queryPromise(query, [studentid])
+  const { studentid, courserefer } = req.body;
+  const query = 'SELECT * FROM treservation WHERE studentid = ? and courserefer = ? order by classdate asc';
+  await queryPromise(query, [studentid, courserefer])
     .then((results) => {
       if (results.length > 0) {
         res.json({ success: true, message: 'Get Reservation Detail successful', results });
