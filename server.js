@@ -129,7 +129,7 @@ app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
   try {
-    const results = await queryPromise(query, [username])
+    const results = await queryPromise(query, [username.toLowerCase()]);
     if (results.length > 0) {
       const storedPassword = results[0].userpassword;
       //console.log("storedPassword : " + storedPassword);
@@ -146,6 +146,8 @@ app.post('/login', async (req, res) => {
         }
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
+        console.log("user.id = " + user.id);
+
         if (userdata.usertype != '10') {
           const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
@@ -180,7 +182,7 @@ app.post('/logout', verifyToken, (req, res) => {
 
 app.post('/register', async (req, res) => {
   console.log("register : " + JSON.stringify(req.body));
-  const { username, password, firstname, middlename, lastname, address, email, mobileno, registercode } = req.body;
+  const { username, password, firstname, middlename, lastname, address, email, mobileno, registercode, acceptPrivacyPolicy } = req.body;
 
   try {
     // Check if the username is already taken
@@ -203,8 +205,8 @@ app.post('/register', async (req, res) => {
         return res.json({ success: false, message: 'Invalid register code' });
       }
       // Insert new user
-      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype]);
+      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy]);
 
       // Create associated family
       const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
@@ -1905,6 +1907,15 @@ async function queryPromise(query, params, showparams) {
   let connection;
   try {
     console.log("Query : " + query);
+    // Clone params and mask values of keys containing "image"
+    const maskedParams = { ...params };
+    for (const key in maskedParams) {
+      if (key.includes('image')) {
+        maskedParams[key] = '[HIDDEN]';
+      }
+    }
+    console.log("Params : " + JSON.stringify(maskedParams));
+    
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
