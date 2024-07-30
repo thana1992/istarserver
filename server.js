@@ -1601,7 +1601,7 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
                     LEFT JOIN tstudent b
                     ON a.studentid = b.studentid 
                     WHERE  a.courserefer = ?  
-                    order by a.classdate asc`;
+                    order by a.classdate desc`;
     const courseDetail = await queryPromise(query2, [courserefer]);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Student Use Course successful', results, courseDetail });
