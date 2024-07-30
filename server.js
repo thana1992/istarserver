@@ -1574,8 +1574,8 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
-  const { courserefer } = req.params;
+app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) => {
+  const { courserefer, studentid } = req.params;
   try {
     let query = `
     SELECT cc.courserefer, GROUP_CONCAT(s.nickname SEPARATOR ', ') AS userlist, 
@@ -1583,7 +1583,6 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
       CASE WHEN cc.coursetype = 'Monthly' THEN cc.coursetype ELSE cc.remaining END 'remaining', cc.expiredate 
     FROM tcustomer_course cc 
     LEFT JOIN tstudent s ON cc.courserefer = s.courserefer 
-
     `;
 
     let queryParams = [];
@@ -1597,8 +1596,15 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
 
     const results = await queryPromise(query, queryParams);
 
+    const query2 = `SELECT a.classdate, a.classtime, CONCAT(IFNULL( b.firstname, ''), ' ', IFNULL( b.middlename, ''), IF( b.middlename<>'', ' ',''), IFNULL( b.lastname, ''), ' (', b.nickname,')') fullname 
+                    FROM treservation a
+                    LEFT JOIN tstudent b
+                    ON a.studentid = b.studentid 
+                    WHERE  a.courserefer = 'GA-20240627-0002' 
+                    order by a.classdate asc`;
+    const courseDetail = await queryPromise(query2, [studentid, courserefer]);
     if (results.length > 0) {
-      res.json({ success: true, message: 'Get Student Use Course successful', results });
+      res.json({ success: true, message: 'Get Student Use Course successful', results, courseDetail });
     } else {
       res.json({ success: true, message: 'No Student Use Course' });
     }
