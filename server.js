@@ -1575,7 +1575,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 });
 
 app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) => {
-  const { courserefer, studentid } = req.params;
+  const { courserefer } = req.params;
   try {
     let query = `
     SELECT cc.courserefer, GROUP_CONCAT(s.nickname SEPARATOR ', ') AS userlist, 
@@ -1600,9 +1600,9 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
                     FROM treservation a
                     LEFT JOIN tstudent b
                     ON a.studentid = b.studentid 
-                    WHERE  a.courserefer = 'GA-20240627-0002' 
+                    WHERE  a.courserefer = ?  
                     order by a.classdate asc`;
-    const courseDetail = await queryPromise(query2, [studentid, courserefer]);
+    const courseDetail = await queryPromise(query2, [courserefer]);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Student Use Course successful', results, courseDetail });
     } else {
