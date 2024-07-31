@@ -570,7 +570,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nADMIN ' + req.user.username,
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nโดยแอดมิน ' + req.user.username,
                 };
 
                 sendNotification(jsonData);
@@ -698,7 +698,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก[' + oldClassdate + ' ' + oldClasstime + ']\nเป็น[' + bookdate + ' ' + classtime +]'\nADMIN ' + req.user.username,
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก[' + oldClassdate + ' ' + oldClasstime + ']\nเป็น[' + bookdate + ' ' + classtime +']\nโดยแอดมิน ' + req.user.username,
                     };
 
                     sendNotificationUpdate(jsonData);
@@ -896,7 +896,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nUsername ' + req.user.username,
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nโดยผู้ปกครอง ' + req.user.username,
                 };
 
                 sendNotification(jsonData);
