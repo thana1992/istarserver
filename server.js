@@ -150,10 +150,10 @@ app.post('/login', async (req, res) => {
         console.log("user.id = " + user.id);
 
         if (userdata.usertype != '10') {
-          const token = jwt.sign({ username: user.username, userpassword: user.userpassword }, SECRET_KEY, { expiresIn: '1h' });
+          const token = jwt.sign({ username: user.username }, SECRET_KEY, { expiresIn: '1h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         } else {
-          const token = jwt.sign({ username: user.username, userpassword: user.userpassword }, SECRET_KEY, { expiresIn: '10m' });
+          const token = jwt.sign({ username: user.username }, SECRET_KEY, { expiresIn: '10m' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         }
 
@@ -1964,7 +1964,7 @@ async function queryPromise(query, params, showparams) {
 app.listen(port, '0.0.0.0', () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
-  console.log(" Start time : " + timestamp)
+  console.log("Start time : " + timestamp)
 });
 
 // ทำให้ console.log ใช้ winston logger
