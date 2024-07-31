@@ -555,7 +555,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 var a = moment(classdate, "YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
-                  month: 'long',
+                  month: 'short',
                   day: 'numeric',
                 });
 
@@ -656,7 +656,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               var b = moment(oldClassdate, "YYYYMMDD");
               oldClassdate = new Date(b).toLocaleDateString('th-TH', {
                   year: 'numeric',
-                  month: 'long',
+                  month: 'short',
                   day: 'numeric',
               });
                 
@@ -684,7 +684,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     var a = moment(classdate, "YYYYMMDD");
                     const bookdate = new Date(a).toLocaleDateString('th-TH', {
                       year: 'numeric',
-                      month: 'long',
+                      month: 'short',
                       day: 'numeric',
                     });
 
@@ -698,7 +698,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก[' + oldClassdate + ' ' + oldClasstime + ']\nเป็น[' + bookdate + ' ' + classtime +']\nโดยแอดมิน ' + req.user.username,
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก [ ' + oldClassdate + ' ' + oldClasstime + ' ]\nเป็น [ ' + bookdate + ' ' + classtime +' ]\nโดยแอดมิน ' + req.user.username,
                     };
 
                     sendNotificationUpdate(jsonData);
@@ -882,7 +882,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 var a = moment(classdate, "YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
-                  month: 'long',
+                  month: 'short',
                   day: 'numeric',
                 });
 
