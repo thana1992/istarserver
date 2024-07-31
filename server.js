@@ -540,7 +540,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             try {
               // Format date for notification
               const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth, ' +
-                ' c.course_shortename ' +
+                ' c.course_shortname ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
                 ' ON a.courserefer = b.courserefer ' +
@@ -551,7 +551,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               if (results.length > 0) {
                 const studentnickname = results[0].nickname;
                 const studentname = results[0].fullname;
-                const coursename = results[0].course_shortename;
+                const coursename = results[0].course_shortname;
                 var a = moment(classdate, "YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
@@ -669,7 +669,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                 try {
                   // Format date for notification
                   const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth, ' +
-                    ' c.course_shortename ' +
+                    ' c.course_shortname ' +
                     ' FROM tstudent a ' +
                     ' INNER JOIN tcustomer_course b ' +
                     ' ON a.courserefer = b.courserefer ' +
@@ -680,7 +680,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   if (results.length > 0) {
                     const studentnickname = results[0].nickname;
                     const studentname = results[0].fullname;
-                    const coursename = results[0].course_shortename;
+                    const coursename = results[0].course_shortname;
                     var a = moment(classdate, "YYYYMMDD");
                     const bookdate = new Date(a).toLocaleDateString('th-TH', {
                       year: 'numeric',
@@ -867,7 +867,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
             try {
               // Format date for notification
               const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth,' +
-                ' c.course_shortename ' +
+                ' c.course_shortname ' +
                 ' FROM tstudent a ' +
                 ' INNER JOIN tcustomer_course b ' +
                 ' ON a.courserefer = b.courserefer ' +
@@ -878,7 +878,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
               if (results.length > 0) {
                 const studentnickname = results[0].nickname;
                 const studentname = results[0].fullname;
-                const coursename = results[0].course_shortename;
+                const coursename = results[0].course_shortname;
                 var a = moment(classdate, "YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
