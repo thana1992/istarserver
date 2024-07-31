@@ -1345,6 +1345,7 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
 
 app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
   const { today, tomorrow } = req.body;
+  console.log("API refreshCardDashboard: " + JSON.stringify(req.body) + " , " + req.user.username);
   var datacard = {
     totalStudents: 0,
     totalBookingToday: 0,
