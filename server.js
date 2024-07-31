@@ -16,6 +16,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
+const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
 const multer = require('multer');
 
 // for save file log
@@ -569,7 +570,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime,
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nADMIN ' + req.user.username,
                 };
 
                 sendNotification(jsonData);
@@ -601,7 +602,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
     const { studentid, classid, classdate, classtime, courseid, classday, reservationid } = req.body;
     const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? and reservationid <> ? ';
     const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate, reservationid]);
-
+    
     if (resCheckDuplicateReservation.length > 0) {
       return res.json({ success: false, message: 'You have already booked on this day' });
     }
@@ -644,6 +645,21 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             if (cd > expiredate) {
               return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
             } else {
+              let oldClassdate = '';
+              let oldClasstime = '';
+              const queryOldReservation = 'SELECT * FROM treservation WHERE reservationid = ?';
+              const results4 = await queryPromise(queryOldReservation, [reservationid]);
+              if (results4.length > 0) {
+                oldClassdate = results4[0].classdate;
+                oldClasstime = results4[0].classtime;
+              }
+              var b = moment(oldClassdate, "YYYYMMDD");
+              oldClassdate = new Date(b).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+              });
+                
               console.log("======= updateBookingByAdmin =======");
               const query = 'UPDATE treservation SET studentid = ?, classid = ?, classdate = ?, classtime = ?, courseid = ? WHERE reservationid = ?';
               const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, reservationid]);
@@ -682,10 +698,10 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime,
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nเปลี่ยนจาก ' + oldClassdate + ' ' + oldClassdate + ' \nเป็น ' + bookdate + ' ' + classtime + '\nADMIN ' + req.user.username,
                     };
 
-                    sendNotification(jsonData);
+                    sendNotificationUpdate(jsonData);
                   }
                 } catch (error) {
                   console.error('Error sending notification:', error);
@@ -880,7 +896,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 };
                 // Prepare notification data
                 const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime,
+                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nUsername ' + req.user.username,
                 };
 
                 sendNotification(jsonData);
@@ -922,6 +938,28 @@ async function sendNotification(jsonData) {
     throw error;
   }
 }
+
+async function sendNotificationUpdate(jsonData) {
+  try {
+    // Send notification
+    const requestOption = {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        Authorization: `Bearer ` + accessCode2,
+      },
+      data: qs.stringify(jsonData),
+      url,
+    };
+
+    await axios(requestOption);
+    console.log('Notification Sent Successfully');
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    throw error;
+  }
+}
+
 app.post('/deleteReservation', verifyToken, async (req, res) => {
   const { reservationid } = req.body;
   const query = 'DELETE FROM treservation WHERE reservationid = ?';
@@ -1347,7 +1385,6 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
 
 app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
   const { today, tomorrow } = req.body;
-  console.log("API refreshCardDashboard: " + JSON.stringify(req.body) + " , " + req.user.username);
   var datacard = {
     totalStudents: 0,
     totalBookingToday: 0,
