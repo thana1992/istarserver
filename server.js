@@ -698,7 +698,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nเปลี่ยนจาก ' + oldClassdate + ' ' + oldClassdate + ' \nเป็น ' + bookdate + ' ' + classtime + '\nADMIN ' + req.user.username,
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nเปลี่ยนจาก ' + oldClassdate + ' ' + oldClasstime + ' \nเป็น ' + bookdate + ' ' + classtime + '\nADMIN ' + req.user.username,
                     };
 
                     sendNotificationUpdate(jsonData);
