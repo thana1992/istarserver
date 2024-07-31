@@ -1488,7 +1488,17 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   try {
     const { username } = req.body;
-    const query = 'SELECT a.*, b.coursename FROM tcustomer_course a left join tcourseinfo b on a.courseid = b.courseid';
+    const query = `SELECT a.*, 
+       b.coursename, 
+       GROUP_CONCAT(s.nickname SEPARATOR ', ') AS userlist 
+        FROM tcustomer_course a 
+        LEFT JOIN tcourseinfo b 
+        ON a.courseid = b.courseid 
+        LEFT JOIN tstudent s 
+        ON a.courserefer = s.courserefer 
+        GROUP BY a.courseid, a.courserefer, b.coursename
+    `;
+
     const results = await queryPromise(query, null);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Customer Course List successful', results });
@@ -1605,6 +1615,7 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
       CASE WHEN cc.coursetype = 'Monthly' THEN cc.coursetype ELSE cc.remaining END 'remaining', cc.expiredate 
     FROM tcustomer_course cc 
     LEFT JOIN tstudent s ON cc.courserefer = s.courserefer 
+    GROUP BY cc.courserefer, cc.coursetype, cc.remaining, cc.expiredate;
     `;
 
     let queryParams = [];
