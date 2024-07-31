@@ -129,7 +129,7 @@ app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
   try {
-    const results = await queryPromise(query, [username])
+    const results = await queryPromise(query, [username.toLowerCase()]);
     if (results.length > 0) {
       const storedPassword = results[0].userpassword;
       //console.log("storedPassword : " + storedPassword);
@@ -146,11 +146,13 @@ app.post('/login', async (req, res) => {
         }
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
+        console.log("user.id = " + user.id);
+
         if (userdata.usertype != '10') {
-          const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+          const token = jwt.sign({ username: user.username, userpassword: user.userpassword }, SECRET_KEY, { expiresIn: '1h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         } else {
-          const token = jwt.sign({ userId: user.id, username: user.username }, SECRET_KEY, { expiresIn: '10m' });
+          const token = jwt.sign({ username: user.username, userpassword: user.userpassword }, SECRET_KEY, { expiresIn: '10m' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         }
 
@@ -180,7 +182,7 @@ app.post('/logout', verifyToken, (req, res) => {
 
 app.post('/register', async (req, res) => {
   console.log("register : " + JSON.stringify(req.body));
-  const { username, password, firstname, middlename, lastname, address, email, mobileno, registercode } = req.body;
+  const { username, password, firstname, middlename, lastname, address, email, mobileno, registercode, acceptPrivacyPolicy } = req.body;
 
   try {
     // Check if the username is already taken
@@ -203,8 +205,8 @@ app.post('/register', async (req, res) => {
         return res.json({ success: false, message: 'Invalid register code' });
       }
       // Insert new user
-      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype]);
+      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy]);
 
       // Create associated family
       const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
@@ -769,9 +771,9 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 });
 
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
-  const { studentid } = req.body;
-  const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate asc';
-  await queryPromise(query, [studentid])
+  const { studentid, courserefer } = req.body;
+  const query = 'SELECT * FROM treservation WHERE studentid = ? and courserefer = ? order by classdate asc';
+  await queryPromise(query, [studentid, courserefer])
     .then((results) => {
       if (results.length > 0) {
         res.json({ success: true, message: 'Get Reservation Detail successful', results });
@@ -1573,7 +1575,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
+app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) => {
   const { courserefer } = req.params;
   try {
     let query = `
@@ -1582,7 +1584,6 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
       CASE WHEN cc.coursetype = 'Monthly' THEN cc.coursetype ELSE cc.remaining END 'remaining', cc.expiredate 
     FROM tcustomer_course cc 
     LEFT JOIN tstudent s ON cc.courserefer = s.courserefer 
-
     `;
 
     let queryParams = [];
@@ -1596,8 +1597,15 @@ app.get('/getStudentUseCourse/:courserefer', verifyToken, async (req, res) => {
 
     const results = await queryPromise(query, queryParams);
 
+    const query2 = `SELECT a.classdate, a.classtime, CONCAT(IFNULL( b.firstname, ''), ' ', IFNULL( b.middlename, ''), IF( b.middlename<>'', ' ',''), IFNULL( b.lastname, ''), ' (', b.nickname,')') fullname 
+                    FROM treservation a
+                    LEFT JOIN tstudent b
+                    ON a.studentid = b.studentid 
+                    WHERE  a.courserefer = ?  
+                    order by a.classdate asc`;
+    const courseDetail = await queryPromise(query2, [courserefer]);
     if (results.length > 0) {
-      res.json({ success: true, message: 'Get Student Use Course successful', results });
+      res.json({ success: true, message: 'Get Student Use Course successful', results, courseDetail });
     } else {
       res.json({ success: true, message: 'No Student Use Course' });
     }
@@ -1639,63 +1647,13 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   const query = 'SELECT profile_image FROM tstudent WHERE studentid = ?';
   const results = await queryPromise(query, [studentid]);
 
-  console.log("get profile image results : " + JSON.stringify(results));
+  //console.log("get profile image results : " + JSON.stringify(results));
   if (results.length > 0) {
     res.json({ success: true, image: results[0].profile_image });
   } else {
     res.json({ success: false, message: 'No profile image found' });
   }
 });
-
-app.post('/checkmobileno', async (req, res) => {
-  const { username, mobileno } = req.body;
-  const query = 'SELECT * FROM tuser WHERE username = ? and mobileno = ?';
-  try {
-    const results = await queryPromise(query, [username, mobileno]);
-    if (results.length > 0) {
-      res.json({ success: true, message: 'Mobile number matched', results });
-    } else {
-      res.json({ success: false, message: 'Mobile number not matched' });
-    }
-  } catch (error) {
-    console.error('Error in checkmobileno:', error);
-    res.status(500).send(error);
-  }
-});
-
-app.post('/change-password', async (req, res) => {
-  const { username, password } = req.body;
-  const query = 'UPDATE tuser SET userpassword = ? WHERE username = ?';
-  try {
-    const results = await queryPromise(query, [password, username]);
-    if (results.affectedRows > 0) {
-      res.json({ success: true, message: 'Password changed successfully' });
-    } else {
-      res.json({ success: false, message: 'Error changing password' });
-    }
-  } catch (error) {
-    console.error('Error in chenge-password:', error);
-    res.status(500).send(error);
-  }
-});
-// Utility function to promisify the database queries
-// async function queryPromise(query, params) {
-//   return new Promise((resolve, reject) => {
-//     await db.query(query, params, (err, results) => {
-//       console.log("Query : " + query);
-//       console.log("Params : " + params);
-//       if (err) {
-//         console.log("Query error: " + JSON.stringify(err));
-//         reject(err);
-//       } else {
-//         console.log("Query results: " + JSON.stringify(results));
-//         resolve(results);
-//       }
-//     });
-//   });
-// }
-
-
 
 async function generateRefer(refertype) {
   let refer = '';
@@ -1782,7 +1740,7 @@ function sendOTP(phoneNumber, otp) {
 // end 1
 
 // Endpoint ขอ OTP
-app.post('/request-otp', (req, res) => {
+app.post('/request-otp', async (req, res) => {
     let phoneNumber = req.body.phoneNumber;
     phoneNumber = formatPhoneNumber(phoneNumber);
     console.log(phoneNumber);
@@ -1798,11 +1756,19 @@ app.post('/request-otp', (req, res) => {
 });
 
 // Endpoint ยืนยัน OTP
-app.post('/verify-otp', (req, res) => {
+app.post('/verify-otp', async (req, res) => {
     const { sid, otp } = req.body;
 
     createVerificationCheck(sid, otp)
-        .then(message => res.status(200).send({ success: message.valid, message }))
+        .then(message => {
+          
+          if(message.valid) {
+            const token = jwt.sign({ sid: sid, otp: otp }, SECRET_KEY, { expiresIn: '10m' });
+            res.status(200).send({ success: message.valid, token })
+          }else{
+            res.status(200).send({ success: message.valid, message })
+          }
+        })
         .catch(error => res.status(500).send({ success: false, error }));
 
     // ตรวจสอบว่า OTP ตรงกับที่เก็บไว้หรือไม่
@@ -1814,6 +1780,37 @@ app.post('/verify-otp', (req, res) => {
     // }
 });
 
+app.post('/checkmobileno', async (req, res) => {
+  const { username, mobileno } = req.body;
+  const query = 'SELECT * FROM tuser WHERE username = ? and mobileno = ?';
+  try {
+    const results = await queryPromise(query, [username, mobileno]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Mobile number matched' });
+    } else {
+      res.json({ success: false, message: 'Mobile number not matched' });
+    }
+  } catch (error) {
+    console.error('Error in checkmobileno:', error);
+    res.status(500).send(error);
+  }
+});
+
+app.post('/change-password', verifyToken, async (req, res) => {
+  const { username, password } = req.body;
+  const query = 'UPDATE tuser SET userpassword = ? WHERE username = ?';
+  try {
+    const results = await queryPromise(query, [password, username]);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Password changed successfully' });
+    } else {
+      res.json({ success: false, message: 'Error changing password' });
+    }
+  } catch (error) {
+    console.error('Error in chenge-password:', error);
+    res.status(500).send(error);
+  }
+});
 const cron = require('node-cron');
 const { google } = require('googleapis');
 const drive = google.drive('v3');
@@ -1906,6 +1903,15 @@ async function queryPromise(query, params, showparams) {
   let connection;
   try {
     console.log("Query : " + query);
+    // Clone params and mask values of keys containing "image"
+    const maskedParams = { ...params };
+    for (const key in maskedParams) {
+      if (key.includes('image')) {
+        maskedParams[key] = '[HIDDEN]';
+      }
+    }
+    console.log("Params : " + JSON.stringify(maskedParams));
+
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     return results;
