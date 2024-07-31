@@ -698,7 +698,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     };
                     // Prepare notification data
                     const jsonData = {
-                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก [ ' + oldClassdate + ' ' + oldClasstime + ' ]\nเป็น [ ' + bookdate + ' ' + classtime +' ]\nโดยแอดมิน ' + req.user.username,
+                      message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก [' + oldClassdate + ' ' + oldClasstime + ']\nเป็น [' + bookdate + ' ' + classtime +']\nโดยแอดมิน ' + req.user.username,
                     };
 
                     sendNotificationUpdate(jsonData);
@@ -734,6 +734,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ?';
         const results2 = await queryPromise(updateRemainingQuery, [courserefer]);
         if (results2.affectedRows > 0) {
+
           res.json({ success: true, message: 'Reservation deleted successfully' });
         }
       }
