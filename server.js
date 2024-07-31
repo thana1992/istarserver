@@ -347,23 +347,6 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/deleteNewStudent', verifyToken, async (req, res) => {
-  const { studentid } = req.body;
-  const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
-  try {
-    await queryPromise(deleteQuery, [studentid])
-      .then((results) => {
-        res.json({ success: true, message: 'New student deleted successfully' });
-      })
-      .catch((error) => {
-        res.status(500).send(error);
-      });
-  } catch (error) {
-    console.log("deleteNewStudent error : " + JSON.stringify(error));
-    res.status(500).send(error);
-  }
-});
-
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
   const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote } = req.body;
   try {
@@ -1553,7 +1536,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
         const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
         const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
         if (results.affectedRows > 0) {
-          res.json({ success: true, message: 'Successfully Course No :' + courserefer });
+          res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
         } else {
           res.json({ success: false, message: 'Error adding Customer Course' });
         }
