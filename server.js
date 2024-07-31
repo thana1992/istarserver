@@ -1615,7 +1615,6 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
       CASE WHEN cc.coursetype = 'Monthly' THEN cc.coursetype ELSE cc.remaining END 'remaining', cc.expiredate 
     FROM tcustomer_course cc 
     LEFT JOIN tstudent s ON cc.courserefer = s.courserefer 
-    GROUP BY cc.courserefer, cc.coursetype, cc.remaining, cc.expiredate;
     `;
 
     let queryParams = [];
