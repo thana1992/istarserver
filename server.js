@@ -75,7 +75,7 @@ app.use(cors());
 const verifyToken = (req, res, next) => {
   try {
     const token = req.headers.authorization; // Assuming the token is included in the Authorization header
-    console.log('Received token:', token);
+    console.log('Received token:'+ token);
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
