@@ -14,6 +14,7 @@ const port = 3000;
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
+const blacklistSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
@@ -74,13 +75,17 @@ app.use(cors());
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
   try {
-    const token = req.headers.authorization; // Assuming the token is included in the Authorization header
+    const token = req.headers.authorization.split(' ')[1];
     console.log('Received token:'+ token);
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
 
-    jwt.verify(token.replace('Bearer ', ''), SECRET_KEY, (err, decoded) => {
+    if (blacklistSessions.includes(token)) {
+      return res.status(401).json({ message: 'Token has been revoked' });
+    }
+
+    jwt.verify(token, SECRET_KEY, (err, decoded) => {
       if (err) {
         return res.status(401).json({ message: 'Session expried please login again' });
       }
@@ -177,6 +182,11 @@ app.post('/logout', verifyToken, (req, res) => {
   if (userIndex !== -1) {
     activeSessions.splice(userIndex, 1);
   }
+  
+  const token = req.headers.authorization.split(' ')[1];
+  console.log("token : " + token);
+  // เพิ่ม token เข้าไปใน blacklist
+  blacklistSessions.push(token);
 
   // Optionally, you can add more cleanup logic here
 
