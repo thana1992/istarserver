@@ -90,7 +90,7 @@ const verifyToken = (req, res, next) => {
         return res.status(401).json({ message: 'Session expried please login again' });
       }
       console.log(err);
-      console.dir("decoded",decoded);
+      console.dir(decoded);
 
       // Check if the user is already in activeSessions
       const existingUser = activeSessions.find((user) => user.username === decoded.username);
