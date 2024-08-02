@@ -814,7 +814,7 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
   const { studentid, courserefer } = req.body;
-  const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate asc limit 10';
+  const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate desc limit 10';
   await queryPromise(query, [studentid, courserefer])
     .then((results) => {
       if (results.length > 0) {
@@ -1964,7 +1964,7 @@ async function queryPromise(query, params, showparams) {
     // Clone params and mask values of keys containing "image"
     const maskedParams = { ...params };
     for (const key in maskedParams) {
-      if (key.includes('image')) {
+      if (key.includes('image') || key.includes('profile_image')) {
         maskedParams[key] = '[HIDDEN]';
       }
     }
@@ -1974,7 +1974,7 @@ async function queryPromise(query, params, showparams) {
     const [results] = await connection.query(query, params);
     const maskedResult = { ...results };
     for (const key in maskedResult) {
-      if (key.includes('image')) {
+      if (key.includes('image') || key.includes('profile_image')) {
         maskedResult[key] = '[HIDDEN]';
       }
     }
