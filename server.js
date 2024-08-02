@@ -1974,18 +1974,22 @@ async function queryPromise(query, params, showparams) {
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     
-    // Clone results and mask values of keys containing "image"
-    const maskedResults = results.map(result => {
-      const maskedResult = { ...result };
-      for (const key in maskedResult) {
-        if (key.includes('image')) {
-          maskedResult[key] = '[HIDDEN]';
+    if (Array.isArray(results)) {
+      // Clone results and mask values of keys containing "image"
+      const maskedResults = results.map(result => {
+        const maskedResult = { ...result };
+        for (const key in maskedResult) {
+          if (key.includes('image')) {
+            maskedResult[key] = '[HIDDEN]';
+          }
         }
-      }
-      return maskedResult;
-    });
-    
-    console.log("Results : " + JSON.stringify(maskedResults));
+        return maskedResult;
+      });
+      
+      console.log("Results : " + JSON.stringify(maskedResults));
+    } else {
+      console.log("Results is not an array: ", results);
+    }
 
     return results;
   } catch (error) {
@@ -1995,7 +1999,6 @@ async function queryPromise(query, params, showparams) {
     if (connection) connection.release();
   }
 }
-
 
 app.listen(port, '0.0.0.0', () => {
   clearActiveSessions();
