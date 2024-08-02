@@ -359,10 +359,21 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
           if(item.dateofbirth) query += ', ?';
           if(item.school) query += ', ?';
         query += ')';
-        await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth, item.school]);
 
-        const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
-        console.log("delete jstudent studentid : " + item.studentid);
+        let params = [studentid, familyid];
+        if(firstname) params.push(firstname);
+        if(middlename) params.push(middlename); 
+        if(lastname) params.push(lastname); 
+        if(nickname) params.push(nickname); 
+        if(gender) params.push(gender);
+        if(dateofbirth) params.push(dateofbirth);
+        if(school) params.push(school);
+        const results = await queryPromise(query, params);
+
+        if(results.affectedRows > 0) {
+          const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
+          await queryPromise(deleteQuery, [item.studentid]);
+        }
         await queryPromise(deleteQuery, [item.studentid]);
       }
     }
@@ -1972,6 +1983,7 @@ async function queryPromise(query, params, showparams) {
 
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
+    console.log("Results : " + JSON.stringify(results));
     return results;
   } catch (error) {
     console.error('Error in queryPromise:', error);
