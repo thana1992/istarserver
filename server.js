@@ -814,7 +814,7 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
   const { studentid, courserefer } = req.body;
-  const query = 'SELECT * FROM treservation WHERE studentid = ? and courserefer = ? order by classdate asc';
+  const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate asc limit 10';
   await queryPromise(query, [studentid, courserefer])
     .then((results) => {
       if (results.length > 0) {
@@ -1351,7 +1351,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
     `;
 
     const results = await queryPromise(query, [classdate]);
-    console.log("API getReservationList result: " + JSON.stringify(results));
+    //console.log("API getReservationList result: " + JSON.stringify(results));
 
     // Function to calculate age in years and months
     const calculateAge = (dateOfBirth) => {
@@ -1668,7 +1668,7 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
       res.json({ success: true, message: 'No Student Use Course' });
     }
   } catch (error) {
-    console.error('Error in getStudentUseCourse:', error.stack);
+    console.error('Error in getStudentCourseDetail:', error.stack);
     res.status(500).send(error);
   }
 });
