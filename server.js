@@ -571,7 +571,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 ' ON b.courseid = c.courseid ' +
                 ' WHERE studentid = ?';
               const results = await queryPromise(queryNotifyData, [studentid]);
-              if (results.length > 0) {
+              if (results.length > 0 && req.user.username != 'tnpl') {
                 const studentnickname = results[0].nickname;
                 const studentname = results[0].fullname;
                 const coursename = results[0].course_shortname;
