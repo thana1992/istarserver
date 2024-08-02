@@ -366,7 +366,7 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
         if(item.lastname) params.push(item.lastname); 
         if(item.nickname) params.push(item.nickname); 
         if(item.gender) params.push(item.gender);
-        if(item.dateofbirth) params.push(ditem.ateofbirth);
+        if(item.dateofbirth) params.push(item.ateofbirth);
         if(item.school) params.push(item.school);
         const results = await queryPromise(query, params);
 
@@ -381,7 +381,9 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
     res.json({ success: true, message: 'Family member approve successfully' });
   } catch (error) {
     console.error('Error in approveNewStudent:', error);
+    
     res.status(500).json({ success: false, message: 'Internal server error' });
+    throw error;
   }
 });
 
