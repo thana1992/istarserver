@@ -374,16 +374,14 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
           const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
           await queryPromise(deleteQuery, [item.studentid]);
         }
-        await queryPromise(deleteQuery, [item.studentid]);
       }
     }
 
     res.json({ success: true, message: 'Family member approve successfully' });
   } catch (error) {
     console.error('Error in approveNewStudent:', error);
-    
+    console.error('Stack trace:', error.stack);
     res.status(500).json({ success: false, message: 'Internal server error' });
-    throw error;
   }
 });
 
