@@ -538,10 +538,11 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           if (todayDateOnly > expiredate) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
-
+          
           const cd = new Date(classdate);
-          console.log("classdate : " + cd);
-          if (cd > expiredate) {
+          const classDate = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
+          console.log("classdate : " + classDate);
+          if (classDate > expiredate) {
             return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
           }
 
@@ -1964,7 +1965,7 @@ async function queryPromise(query, params, showparams) {
     // Clone params and mask values of keys containing "image"
     const maskedParams = { ...params };
     for (const key in maskedParams) {
-      if (key.includes('image') || key.includes('profile_image')) {
+      if (key.includes('image')) {
         maskedParams[key] = '[HIDDEN]';
       }
     }
@@ -1972,21 +1973,29 @@ async function queryPromise(query, params, showparams) {
 
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-    const maskedResult = { ...results };
-    for (const key in maskedResult) {
-      if (key.includes('image') || key.includes('profile_image')) {
-        maskedResult[key] = '[HIDDEN]';
+    
+    // Clone results and mask values of keys containing "image"
+    const maskedResults = results.map(result => {
+      const maskedResult = { ...result };
+      for (const key in maskedResult) {
+        if (key.includes('image')) {
+          maskedResult[key] = '[HIDDEN]';
+        }
       }
-    }
-    console.log("Results : " + JSON.stringify(maskedResult));
+      return maskedResult;
+    });
+    
+    console.log("Results : " + JSON.stringify(maskedResults));
+
     return results;
   } catch (error) {
-    console.error('Error in queryPromise', error.stack);
+    console.error('Error in queryPromise:', error);
     throw error;
   } finally {
     if (connection) connection.release();
   }
 }
+
 
 app.listen(port, '0.0.0.0', () => {
   clearActiveSessions();
