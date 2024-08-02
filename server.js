@@ -57,12 +57,47 @@ app.use((req, res, next) => {
   // Log response
   const originalSend = res.send;
   res.send = function (body) {
-    logger.info(`Response: ${body}`);
-    logger.info('### ================== end ================== ###')
-    originalSend.apply(res, arguments);
+    let maskedBody = body;
+
+    // Check if the body is JSON and can be parsed
+    try {
+      const jsonBody = JSON.parse(body);
+
+      // Function to mask image keys
+      const maskImageKeys = (obj) => {
+        if (typeof obj !== 'object' || obj === null) return obj;
+        if (Array.isArray(obj)) return obj.map(maskImageKeys);
+
+        return Object.keys(obj).reduce((acc, key) => {
+          if (key.includes('image')) {
+            // Mask the value: show first 10 characters followed by "...[HIDDEN]"
+            const value = obj[key];
+            acc[key] = typeof value === 'string' && value.length > 10 
+              ? value.substring(0, 10) + '...[HIDDEN]'
+              : value;
+          } else {
+            acc[key] = maskImageKeys(obj[key]);
+          }
+          return acc;
+        }, {});
+      };
+
+      // Mask the keys containing 'image'
+      const maskedJsonBody = maskImageKeys(jsonBody);
+      maskedBody = JSON.stringify(maskedJsonBody);
+    } catch (error) {
+      // If body is not JSON or parsing fails, log the error and use the original body
+      logger.warn('Unable to parse response body as JSON', error);
+    }
+
+    logger.info(`Response: ${maskedBody}`);
+    logger.info('### ================== end ================== ###');
+    originalSend.call(res, maskedBody);
   };
+
   next();
 });
+
 
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use((req, res, next) => {
@@ -1468,7 +1503,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
           'order by a.classtime asc';
 
         const results2 = await queryPromise(query2, [classdate, element.classid]);
-        console.log("results2 : " + JSON.stringify(results2));
+        //console.log("results2 : " + JSON.stringify(results2));
 
         // Function to calculate age in years and months
         const calculateAge = (dateOfBirth) => {
@@ -1499,7 +1534,6 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
             }
           }
           bookinglist[element.class_label] = studentlist;
-          console.log("bookinglist : " + JSON.stringify(bookinglist));
         } else {
           bookinglist[element.class_label] = [];
         }
