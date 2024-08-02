@@ -167,6 +167,7 @@ app.get('/checkToken', (req, res) => {
     let iat = new Date(item.iat * 1000)
     let exp = new Date(item.exp * 1000)
     console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString() + "\n")
+    uploadOrUpdateLogFile();
   });
   res.json({ activeSessions });
 });
