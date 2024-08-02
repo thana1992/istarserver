@@ -57,24 +57,24 @@ app.use((req, res, next) => {
   // Log response
   const originalSend = res.send;
   res.send = function (body) {
-    let maskedBody = body;
+    let logBody = body;
 
     // Check if the body is JSON and can be parsed
     try {
       const jsonBody = JSON.parse(body);
 
-      // Function to mask image keys
+      // Function to mask image keys for logging
       const maskImageKeys = (obj) => {
         if (typeof obj !== 'object' || obj === null) return obj;
         if (Array.isArray(obj)) return obj.map(maskImageKeys);
 
         return Object.keys(obj).reduce((acc, key) => {
           if (key.includes('image')) {
-            // Mask the value: show first 10 characters followed by "...[HIDDEN]"
+            // Mask the value for logging
             const value = obj[key];
             acc[key] = typeof value === 'string' && value.length > 10 
               ? value.substring(0, 10) + '...[HIDDEN]'
-              : value;
+              : '...[HIDDEN]';
           } else {
             acc[key] = maskImageKeys(obj[key]);
           }
@@ -82,21 +82,24 @@ app.use((req, res, next) => {
         }, {});
       };
 
-      // Mask the keys containing 'image'
+      // Mask the keys containing 'image' for logging
       const maskedJsonBody = maskImageKeys(jsonBody);
-      maskedBody = JSON.stringify(maskedJsonBody);
+      logBody = JSON.stringify(maskedJsonBody);
     } catch (error) {
-      // If body is not JSON or parsing fails, log the error and use the original body
+      // If body is not JSON or parsing fails, log the error and use the original body for logging
       logger.warn('Unable to parse response body as JSON', error);
     }
 
-    logger.info(`Response: ${maskedBody}`);
+    logger.info(`Response: ${logBody}`);
     logger.info('### ================== end ================== ###');
-    originalSend.call(res, maskedBody);
+    
+    // Send the original body to the client
+    originalSend.call(res, body);
   };
 
   next();
 });
+
 
 
 app.use(bodyParser.json({ limit: '5mb' }));
