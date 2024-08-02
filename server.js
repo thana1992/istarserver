@@ -52,7 +52,8 @@ app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, l
 // สร้าง middleware เพื่อ log response
 app.use((req, res, next) => {
   // Log request
-  logger.info(`Request: ${req.method} ${req.url} ${JSON.stringify(req.headers)}`);
+  logger.info(`---> Request: ${req.method} ${req.url} }`);
+  //logger.info(`Header: ${JSON.stringify(req.headers)}`);
 
   // Log response
   const originalSend = res.send;
@@ -90,7 +91,7 @@ app.use((req, res, next) => {
       logger.warn('Unable to parse response body as JSON', error);
     }
 
-    logger.info(`Response: ${logBody}`);
+    logger.info(`---> Response: ${req.method} ${req.url} : ---> ${logBody}`);
     logger.info('### ================== end ================== ###');
     
     // Send the original body to the client
