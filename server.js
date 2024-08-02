@@ -342,8 +342,23 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 
       if (results.length > 0) {
         const studentid = await generateRefer('S');
-        const query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
-          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        let query = 'INSERT INTO tstudent (studentid, familyid';
+          if(item.firstname) query += ', firstname';
+          if(item.middlename) query += ', middlename';
+          if(item.lastname) query += ', lastname';
+          if(item.nickname) query += ', nickname';
+          if(item.gender) query += ', gender';
+          if(item.dateofbirth) query += ', dateofbirth';
+          if(item.school) query += ', school';
+        query += ') VALUES (?, ?';
+          if(item.firstname) query += ', ?';
+          if(item.middlename) query += ', ?';
+          if(item.lastname) query += ', ?';
+          if(item.nickname) query += ', ?';
+          if(item.gender) query += ', ?';
+          if(item.dateofbirth) query += ', ?';
+          if(item.school) query += ', ?';
+        query += ')';
         await queryPromise(query, [studentid, item.familyid, item.firstname, item.middlename, item.lastname, item.nickname, item.gender, item.dateofbirth, item.school]);
 
         const deleteQuery = 'DELETE FROM jstudent WHERE studentid = ?';
