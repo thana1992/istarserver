@@ -360,14 +360,14 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
           if(item.school) query += ', ?';
         query += ')';
 
-        let params = [studentid, familyid];
-        if(firstname) params.push(firstname);
-        if(middlename) params.push(middlename); 
-        if(lastname) params.push(lastname); 
-        if(nickname) params.push(nickname); 
-        if(gender) params.push(gender);
-        if(dateofbirth) params.push(dateofbirth);
-        if(school) params.push(school);
+        let params = [studentid, item.familyid];
+        if(item.firstname) params.push(item.firstname);
+        if(item.middlename) params.push(item.middlename); 
+        if(item.lastname) params.push(item.lastname); 
+        if(item.nickname) params.push(item.nickname); 
+        if(item.gender) params.push(item.gender);
+        if(item.dateofbirth) params.push(ditem.ateofbirth);
+        if(item.school) params.push(item.school);
         const results = await queryPromise(query, params);
 
         if(results.affectedRows > 0) {
