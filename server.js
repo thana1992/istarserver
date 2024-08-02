@@ -104,7 +104,7 @@ const verifyToken = (req, res, next) => {
       next();
     });
   } catch (error) {
-    console.error('Error in verifyToken:', error);
+    console.error('Error in verifyToken', error.stack);
     res.status(500).json({ message: 'Internal server error' });
   };
 };
@@ -171,7 +171,7 @@ app.post('/login', async (req, res) => {
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
-    console.error("Error logging in:", error);
+    console.error("Error logging in", error.stack);
     return res.status(500).send(error);
   }
 });
@@ -228,7 +228,7 @@ app.post('/register', async (req, res) => {
       return res.json({ success: true, message: 'User registered successfully' });
     }
   } catch (error) {
-    console.error("Error registering user:", error);
+    console.error("Error registering user", error.stack);
     return res.status(500).send(error);
   }
 });
@@ -258,7 +258,7 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error("getFamilyMember error:", error);
+    console.error("Error in getFamilyMember", error.stack);
     res.status(500).send(error);
   }
 });
@@ -288,7 +288,7 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error("getStudent error:", error);
+    console.error("Error in getStudent", error.stack);
     res.status(500).send(error);
   }
 });
@@ -326,7 +326,7 @@ app.post('/addStudent', verifyToken, async (req, res) => {
 
     res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
-    console.error("addStudent error:", error);
+    console.error("Error in addStudent", error.stack);
     res.status(500).send(error);
   }
 });
@@ -379,8 +379,8 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 
     res.json({ success: true, message: 'Family member approve successfully' });
   } catch (error) {
-    console.error('Error in approveNewStudent:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('Error in approveNewStudent', error.stack);
+    
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
@@ -442,7 +442,8 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error in addStudentByAdmin:', error);
+    console.error('Error in addStudentByAdmin', error.stack);
+    
     res.status(500).send(error);
   }
 });
@@ -597,7 +598,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 sendNotification(jsonData);
               }
             } catch (error) {
-              console.error('Error sending notification:', error);
+              console.error('Error sending notification', error.stack);
+              
             }
 
             return res.json({ success: true, message: 'Booking added successfully' });
@@ -725,7 +727,8 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     sendNotificationUpdate(jsonData);
                   }
                 } catch (error) {
-                  console.error('Error sending notification:', error);
+                  console.error('Error sending notification', error.stack);
+                  
                 }
                 return res.json({ success: true, message: 'Booking added successfully' });
               }
@@ -763,7 +766,8 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       res.json({ success: false, message: 'No Booking data' });
     }
   } catch (error) {
-    console.error("API deleteReservationByAdmin error: " + JSON.stringify(error));
+    console.error("Error in deleteReservationByAdmin", error.stack);
+    
     res.json({ success: false, message: error.message });
   }
 });
@@ -787,7 +791,7 @@ app.post('/deleteStudent', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'No Family member data' });
     }
   } catch (error) {
-    console.error('Error in deleteStudent:', error);
+    console.error('Error in deleteStudent', error.stack);
     return res.status(500).send(error);
   }
 });
@@ -803,7 +807,7 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
       res.json({ success: false, message: 'No Member Info' });
     }
   } catch (error) {
-    console.error('Error in getMemberInfo:', error);
+    console.error('Error in getMemberInfo', error.stack);
     res.status(500).send(error);
   }
 });
@@ -821,7 +825,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
     })
     .catch((error) => {
       res.json({ success: false, message: error.message });
-      console.error('Error in queryPromise:', error);
+      console.error('Error in getMemberReservationDetail', error.stack);
     })
 });
 
@@ -924,9 +928,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 sendNotification(jsonData);
               }
             } catch (error) {
-              console.error('Error sending notification:', error);
+              console.error('Error sending notification', error.stack);
             }
-
             return res.json({ success: true, message: 'Booking added successfully' });
           }
         }
@@ -956,7 +959,7 @@ async function sendNotification(jsonData) {
     await axios(requestOption);
     console.log('Notification Sent Successfully');
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending notification', error.stack);
     throw error;
   }
 }
@@ -977,7 +980,7 @@ async function sendNotificationUpdate(jsonData) {
     await axios(requestOption);
     console.log('Notification Sent Successfully');
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending notification:', error.stack);
     throw error;
   }
 }
@@ -994,7 +997,7 @@ app.post('/deleteReservation', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in deleteReservation:', error);
+    console.error('Error in deleteReservation', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1010,7 +1013,7 @@ app.post('/checkDuplicateReservation', verifyToken, async (req, res) => {
       return res.json({ success: true, message: 'No Reservation on this day' });
     }
   } catch (error) {
-    console.error('Error in checkDuplicateReservation:', error);
+    console.error('Error in checkDuplicateReservation', error.stack);
     return res.status(500).send(error);
   }
 });
@@ -1030,7 +1033,7 @@ app.get('/getAllCourses', verifyToken, async (req, res) => {
         return res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in getAllCourses:', error);
+    console.error('Error in getAllCourses', error.stack);
     return res.status(500).send(error);
   }
 });
@@ -1047,7 +1050,7 @@ app.post('/addCourse', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in addCourse:', error);
+    console.error('Error in addCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1064,7 +1067,7 @@ app.post('/updateCourse', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in updateCourse:', error);
+    console.error('Error in updateCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1083,7 +1086,7 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in deleteCourse:', error);
+    console.error('Error in deleteCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1105,7 +1108,7 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
       });
   }
   catch (error) {
-    console.error('Error in getAllClasses:', error);
+    console.error('Error in getAllClasses', error.stack);
     return res.status(500).send(error);
   }
 });
@@ -1122,7 +1125,7 @@ app.post('/addClass', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in addClass:', error);
+    console.error('Error in addClass', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1139,7 +1142,7 @@ app.post('/updateClass', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in updateClass:', error);
+    console.error('Error in updateClass', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1158,7 +1161,7 @@ app.post('/deleteClass', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in deleteClass:', error);
+    console.error('Error in deleteClass', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1189,7 +1192,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in getClassTime:', error);
+    console.error('Error in getClassTime', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1206,13 +1209,11 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
         }
       })
       .catch((error) => {
-        console.error('Error in queryPromise:', error);
-        res.json({ success: false, message: error.message });
+        res.status(500).send(error);
       })
   } catch (error) {
     res.status(500).send(error);
-    console.error('Error in getNewStudentList:', error);
-    
+    console.error('Error in getNewStudentList', error.stack);
   }
 });
 
@@ -1228,7 +1229,7 @@ app.get("/courseLookup", verifyToken, async (req, res) => {
     })
     .catch((error) => {
       res.json({ success: false, message: error.message });
-      console.error('Error in queryPromise:', error);
+      console.error('Error in courseLookup', error.stack);
     })
 });
 
@@ -1244,7 +1245,8 @@ app.get("/customerCourseLookup", verifyToken, async (req, res) => {
     })
     .catch((error) => {
       res.json({ success: false, message: error.message });
-      console.error('Error in queryPromise:', error);
+      console.error('Error in customerCourseLookup', error.stack);
+      
     })
 });
 
@@ -1260,7 +1262,7 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) {
-    console.error('Error in getCustomerCourseInfo:', error);
+    console.error('Error in getCustomerCourseInfo', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1277,17 +1279,8 @@ app.get("/familyLookup", verifyToken, async (req, res) => {
     })
     .catch((error) => {
       res.json({ success: false, message: error.message });
-      console.error('Error in queryPromise:', error);
+      console.error('Error in familyLookup', error.stack);
     })
-  // if(results) {
-  //   if(results.length > 0){
-  //     res.json({ success: true, message: 'Get Family Lookup successful', results });
-  //   } else {
-  //     res.json({ success: true, message: 'No Family Lookup' });
-  //   }
-  // } else {
-  //   res.json({ success: true, message: 'No Family Lookup' });
-  // }
 });
 
 app.post("/studentLookup", verifyToken, async (req, res) => {
@@ -1307,7 +1300,7 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
     })
     .catch((error) => {
       res.json({ success: false, message: error.message });
-      console.error('Error in queryPromise:', error);
+      console.error('Error in queryPromise', error.stack);
     })
 });
 
@@ -1340,7 +1333,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Student list', results });
     }
   } catch (error) {
-    console.error("API getStudentlist error :" + JSON.stringify(error));
+    console.error("Error in getStudentList", error.stack);
     res.status(500).send(error);
   }
 });
@@ -1358,7 +1351,6 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
     `;
 
     const results = await queryPromise(query, [classdate]);
-
     console.log("API getReservationList result: " + JSON.stringify(results));
 
     // Function to calculate age in years and months
@@ -1382,7 +1374,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Reservation list', results });
     }
   } catch (error) {
-    console.error("API getReservationList error: " + JSON.stringify(error));
+    console.error("Error in getReservationList" + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
@@ -1400,7 +1392,7 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
     }
   }
   catch (error) {
-    console.error("API checkinByAdmin error: " + JSON.stringify(error));
+    console.error("Error in checkinByAdmin" + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
@@ -1448,8 +1440,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
     console.log("API datacard: " + JSON.stringify(datacard));
     res.json({ success: true, message: 'Refresh Card Dashboard successful', datacard });
   } catch (error) {
-
-    console.error("API refreshCardDashboard error: " + JSON.stringify(error));
+    console.error("Error in refreshCardDashboard", error.stack);
     res.status(500).send(error);
     throw error;
   }
@@ -1518,7 +1509,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Booking list' });
     }
   } catch (error) {
-    console.error('Error in getBookingList:', JSON.stringify(error));
+    console.error('Error in getBookingList', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1544,7 +1535,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Customer Course List' });
     }
   } catch (error) {
-    console.error('Error in getCustomerCourseList:', JSON.stringify(error));
+    console.error('Error in getCustomerCourseList', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1559,7 +1550,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Customer Course List' });
     }
   } catch (error) {
-    console.error('Error in getCustomerCourseLookup:', JSON.stringify(error));
+    console.error('Error in getCustomerCourseLookup', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1592,7 +1583,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error in addCustomerCourse:', JSON.stringify(error));
+    console.error('Error in addCustomerCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1608,7 +1599,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: false, message: 'Error updating Customer Course' });
     }
   } catch (error) {
-    console.error('Error in updateCustomerCourse:', JSON.stringify(error));
+    console.error('Error in updateCustomerCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1624,7 +1615,7 @@ app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'This course is not currently in use.' });
     }
   } catch (error) {
-    console.error('Error in checkbeforeDeleteCustomerCourse:', JSON.stringify(error));
+    console.error('Error in checkbeforeDeleteCustomerCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1639,7 +1630,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
       res.json({ success: true, message: 'Customer Course deleted successfully' });
     }
   } catch (error) {
-    console.error('Error in deleteCustomerCourse:', JSON.stringify(error));
+    console.error('Error in deleteCustomerCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1663,9 +1654,7 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
     }
 
     query += "GROUP BY cc.courserefer, cc.expiredate ";
-
     const results = await queryPromise(query, queryParams);
-
     const query2 = `SELECT a.classdate, a.classtime, CONCAT(IFNULL( b.firstname, ''), ' ', IFNULL( b.middlename, ''), IF( b.middlename<>'', ' ',''), IFNULL( b.lastname, ''), ' (', b.nickname,')') fullname 
                     FROM treservation a
                     LEFT JOIN tstudent b
@@ -1679,7 +1668,7 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
       res.json({ success: true, message: 'No Student Use Course' });
     }
   } catch (error) {
-    console.error('Error in getStudentUseCourse:', JSON.stringify(error));
+    console.error('Error in getStudentUseCourse:', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1744,7 +1733,7 @@ async function generateRefer(refertype) {
       refer = refertype + "-" + moment().format('YYYYMMDD') + "-" + pad(4, referno, "0");
     }
   } catch (error) {
-    console.error('Error in generateRefer:', error);
+    console.error('Error in generateRefer', error.stack);
     throw error;
   }
   console.log("generateRefer() Refer : " + refer);
@@ -1860,7 +1849,7 @@ app.post('/checkmobileno', async (req, res) => {
       res.json({ success: false, message: 'Mobile number not matched' });
     }
   } catch (error) {
-    console.error('Error in checkmobileno:', error);
+    console.error('Error in checkmobileno', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1876,7 +1865,7 @@ app.post('/change-password', verifyToken, async (req, res) => {
       res.json({ success: false, message: 'Error changing password' });
     }
   } catch (error) {
-    console.error('Error in chenge-password:', error);
+    console.error('Error in chenge-password', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1983,10 +1972,16 @@ async function queryPromise(query, params, showparams) {
 
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-    console.log("Results : " + JSON.stringify(results));
+    const maskedResult = { ...results };
+    for (const key in maskedResult) {
+      if (key.includes('image')) {
+        maskedResult[key] = '[HIDDEN]';
+      }
+    }
+    console.log("Results : " + JSON.stringify(maskedResult));
     return results;
   } catch (error) {
-    console.error('Error in queryPromise:', error);
+    console.error('Error in queryPromise', error.stack);
     throw error;
   } finally {
     if (connection) connection.release();
@@ -2005,6 +2000,5 @@ console.log = (msg) => {
 };
 
 console.error = (msg, error) => {
-  logger.info(msg);
-  //throw error;
+  logger.info(msg + " : " + error);
 };
