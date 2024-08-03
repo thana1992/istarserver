@@ -1238,7 +1238,7 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
 });
 
 app.get("/courseLookup", verifyToken, async (req, res) => {
-  const query = 'SELECT * FROM tcourseinfo enableflag = 1';
+  const query = 'SELECT * FROM tcourseinfo WHERE enableflag = 1';
   await queryPromise(query, null)
     .then((results) => {
       if (results.length > 0) {
