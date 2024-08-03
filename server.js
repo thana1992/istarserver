@@ -382,32 +382,12 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 
       if (results.length > 0) {
         const studentid = await generateRefer('S');
-        let query = 'INSERT INTO tstudent (studentid, familyid';
-          if(item.firstname) query += ', firstname';
-          if(item.middlename) query += ', middlename';
-          if(item.lastname) query += ', lastname';
-          if(item.nickname) query += ', nickname';
-          if(item.gender) query += ', gender';
-          if(item.dateofbirth) query += ', dateofbirth';
-          if(item.school) query += ', school';
-        query += ') VALUES (?, ?';
-          if(item.firstname) query += ', ?';
-          if(item.middlename) query += ', ?';
-          if(item.lastname) query += ', ?';
-          if(item.nickname) query += ', ?';
-          if(item.gender) query += ', ?';
-          if(item.dateofbirth) query += ', ?';
-          if(item.school) query += ', ?';
+        let query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
+          ' SELECT ?, familyid, firstname, middlename, lastname, nickname, middlename, lastname, nickname, gender, dateofbirth, school ' +
+          ' FROM jstudent WHERE studentid = ?';
         query += ')';
 
-        let params = [studentid, item.familyid];
-        if(item.firstname) params.push(item.firstname);
-        if(item.middlename) params.push(item.middlename); 
-        if(item.lastname) params.push(item.lastname); 
-        if(item.nickname) params.push(item.nickname); 
-        if(item.gender) params.push(item.gender);
-        if(item.dateofbirth) params.push(item.ateofbirth);
-        if(item.school) params.push(item.school);
+        let params = [studentid, item.studentid];
         const results = await queryPromise(query, params);
 
         if(results.affectedRows > 0) {
