@@ -383,7 +383,7 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
       if (results.length > 0) {
         const studentid = await generateRefer('S');
         let query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
-          ' SELECT ?, familyid, firstname, middlename, lastname, nickname, middlename, lastname, nickname, gender, dateofbirth, school ' +
+          ' SELECT ? as studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school ' +
           ' FROM jstudent WHERE studentid = ?';
 
         let params = [studentid, item.studentid];
