@@ -1094,13 +1094,13 @@ app.post('/updateCourse', verifyToken, async (req, res) => {
 
 app.post('/deleteCourse', verifyToken, async (req, res) => {
   const { courseid } = req.body;
-  const deletetcourseinfoQuery = 'DELETE FROM tcourseinfo WHERE courseid = ?';
+  const deletetcourseinfoQuery = 'UPDATE tcourseinfo SET enableflag = 0 WHERE courseid = ?';
   try {
     await queryPromise(deletetcourseinfoQuery, [courseid])
       .then((results) => {
-        const deleteTclassinfoQuery = 'DELETE FROM tclassinfo WHERE courseid = ?';
+        const deleteTclassinfoQuery = 'UPDATE tclassinfo SET enableflag = 0 WHERE courseid = ?';
         queryPromise(deleteTclassinfoQuery, [courseid]);
-        res.json({ success: true, message: 'Course deleted successfully' });
+        res.json({ success: true, message: 'Course disable successfully' });
       })
       .catch((error) => {
         res.status(500).send(error);
@@ -1238,7 +1238,7 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
 });
 
 app.get("/courseLookup", verifyToken, async (req, res) => {
-  const query = 'SELECT * FROM tcourseinfo';
+  const query = 'SELECT * FROM tcourseinfo enableflag = 1';
   await queryPromise(query, null)
     .then((results) => {
       if (results.length > 0) {
