@@ -385,7 +385,6 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
         let query = 'INSERT INTO tstudent (studentid, familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school) ' +
           ' SELECT ?, familyid, firstname, middlename, lastname, nickname, middlename, lastname, nickname, gender, dateofbirth, school ' +
           ' FROM jstudent WHERE studentid = ?';
-        query += ')';
 
         let params = [studentid, item.studentid];
         const results = await queryPromise(query, params);
