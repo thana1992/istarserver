@@ -33,16 +33,20 @@ const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })
 console.log('timestamp : ' + timestamp);
 const logFileName = `server-${timestamp}.log`;
 const logPath = './logs/';
+
 // สร้าง winston logger
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
     winston.format.timestamp({
       format: () => {
-        return new Date().toLocaleString('th-TH', {
+        const date = new Date();
+        const formattedDate = date.toLocaleString('th-TH', {
           timeZone: 'Asia/Bangkok',
           hour12: false
         });
+        const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+        return `${formattedDate}.${milliseconds}`;
       }
     }),
     winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
@@ -2029,7 +2033,7 @@ async function queryPromise(query, params, showparams) {
 app.listen(port, '0.0.0.0', () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
-  console.log("Start time : " + timestamp)
+  console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
 });
 
 // ทำให้ console.log ใช้ winston logger
