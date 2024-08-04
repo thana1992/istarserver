@@ -30,21 +30,29 @@ const path = require('path');
 const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
+console.log('timestamp : ' + timestamp);
 const logFileName = `server-${timestamp}.log`;
 const logPath = './logs/';
 // สร้าง winston logger
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
-    winston.format.timestamp(),
+    winston.format.timestamp({
+      format: () => {
+        return new Date().toLocaleString('th-TH', {
+          timeZone: 'Asia/Bangkok',
+          hour12: false
+        });
+      }
+    }),
     winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
-
   ),
   transports: [
     new winston.transports.Console(),
     new winston.transports.File({ filename: logPath+logFileName })
   ]
 });
+
 
 // ใช้ morgan เพื่อบันทึก log
 app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
