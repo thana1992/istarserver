@@ -175,7 +175,7 @@ app.get('/checkToken', (req, res) => {
 app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
-  const query = 'SELECT *, b.familyid FROM tuser a left join tfamily b on a.username = b.username WHERE a.username = ?';
+  const query = 'SELECT * FROM tuser WHERE username = ?';
   try {
     const results = await queryPromise(query, [username.toLowerCase()]);
     if (results.length > 0) {
