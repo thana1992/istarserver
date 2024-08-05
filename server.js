@@ -1230,7 +1230,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
 });
 
 app.get("/getNewStudentList", verifyToken, async (req, res) => {
-  const query = "select a.*, CONCAT(IFNULL( a.firstname, ''), ' ', IFNULL( a.middlename, ''), IF( a.middlename<>'', ' ',''), IFNULL( a.lastname, ''), ' (', a.nickname,')') fullname, c.username from jstudent a left join tfamily b on a.familyid = b.familyid left join tuser c on b.username = c.username";
+  const query = "select a.*, CONCAT(IFNULL( a.firstname, ''), ' ', IFNULL( a.middlename, ''), IF( a.middlename<>'', ' ',''), IFNULL( a.lastname, ''), ' (', a.nickname,')') fullname, c.username, c.mobileno from jstudent a left join tfamily b on a.familyid = b.familyid left join tuser c on b.username = c.username";
   try {
     await queryPromise(query, null)
       .then((results) => {
