@@ -1930,6 +1930,7 @@ const auth = new google.auth.GoogleAuth({
 const folderId = '1G5VdaeIpN36EQgFvoEbIivXK9vCKtAdv'; // ไอดีของโฟลเดอร์ใน Google Drive
 
 async function uploadOrUpdateLogFile() {
+  console.log('[Process] Log file upload... '+logFileName);
   const authClient = await auth.getClient();
   google.options({ auth: authClient });
 
@@ -1961,7 +1962,7 @@ async function uploadOrUpdateLogFile() {
       if (err) {
         console.error(err);
       } else {
-        console.log('File Upload... '+logFileName);
+        console.log('[Success] Log file upload '+logFileName);
       }
     });
   } else {
