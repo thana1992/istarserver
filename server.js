@@ -64,10 +64,7 @@ app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, l
 // สร้าง middleware เพื่อ log response
 app.use((req, res, next) => {
   // Log request
-  logger.info(`---> Request: ${req.method} ${req.url} ${req.body} }`);
-  //logger.info(`Header: ${JSON.stringify(req.headers)}`);
-
-  // Log response
+  logger.info(`-----> REQUEST : ${req.method} ${req.url}`);
   const originalSend = res.send;
   res.send = function (body) {
     let logBody = body;
@@ -82,7 +79,7 @@ app.use((req, res, next) => {
         if (Array.isArray(obj)) return obj.map(maskImageKeys);
 
         return Object.keys(obj).reduce((acc, key) => {
-          if (key.includes('image')) {
+          if (key.includes('image') || key.includes('password') || key.includes('token')) {
             // Mask the value for logging
             const value = obj[key];
             acc[key] = typeof value === 'string' && value.length > 10 
@@ -103,9 +100,7 @@ app.use((req, res, next) => {
       logger.warn('Unable to parse response body as JSON', error);
     }
 
-    logger.info(`---> Response: ${req.method} ${req.url} : ---> ${logBody}`);
-    logger.info('### ================== end ================== ###');
-    
+    logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
@@ -127,7 +122,7 @@ app.use(cors());
 const verifyToken = (req, res, next) => {
   try {
     const token = req.headers.authorization.split(' ')[1];
-    console.log('Received token:'+ token);
+    //console.log('Received token:'+ token);
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
@@ -1499,7 +1494,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
     const { classday, classdate } = req.body;
     const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on a.courseid = b.courseid and b.enableflag = 1 where a.classday = ? and a.enableflag = 1 order by a.classtime'
     const results = await queryPromise(query, [classday]);
-    console.log("results : " + JSON.stringify(results));
+    //console.log("results : " + JSON.stringify(results));
     let bookinglist = {};
     if (results.length > 0) {
       for (let index = 0; index < results.length; index++) {
@@ -1962,7 +1957,7 @@ async function uploadOrUpdateLogFile() {
       if (err) {
         console.error(err);
       } else {
-        console.log('[Success] Log file upload '+logFileName);
+        console.log('[Success] Update Log file and upload '+logFileName);
       }
     });
   } else {
@@ -1975,7 +1970,7 @@ async function uploadOrUpdateLogFile() {
       if (err) {
         console.error(err);
       } else {
-        console.log('File Upload... '+logFileName);
+        console.log('[Success] Create Log file and upload '+logFileName);
       }
     });
   }
@@ -2012,32 +2007,34 @@ async function queryPromise(query, params, showparams) {
   try {
     console.log("Query : " + query);
     // Clone params and mask values of keys containing "image"
-    const maskedParams = { ...params };
-    for (const key in maskedParams) {
-      if (key.includes('image')) {
-        maskedParams[key] = '[HIDDEN]';
-      }
-    }
-    console.log("Params : " + JSON.stringify(maskedParams));
-
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     
-    if (Array.isArray(results)) {
-      // Clone results and mask values of keys containing "image"
-      const maskedResults = results.map(result => {
-        const maskedResult = { ...result };
-        for (const key in maskedResult) {
-          if (key.includes('image')) {
-            maskedResult[key] = '[HIDDEN]';
-          }
+    if(showparams){
+      const maskedParams = { ...params };
+      for (const key in maskedParams) {
+        if (key.includes('image') || key.includes('password')) {
+          maskedParams[key] = '[HIDDEN]';
         }
-        return maskedResult;
-      });
-      
-      console.log("Results : " + JSON.stringify(maskedResults));
-    } else {
-      console.log("Results is not an array: ", results);
+      }
+      console.log("Params : " + JSON.stringify(maskedParams));
+      if (Array.isArray(results)) {
+        // Clone results and mask values of keys containing "image"
+        const maskedResults = results.map(result => {
+          const maskedResult = { ...result };
+          for (const key in maskedResult) {
+            if (key.includes('image') || key.includes('password')) {
+              maskedResult[key] = '[HIDDEN]';
+            }
+          }
+          return maskedResult;
+        });
+        
+        console.log("Results : " + JSON.stringify(maskedResults));
+      } else {
+        console.log("Results is not an array! ");
+        console.log("Results : " + JSON.stringify(results));
+      }
     }
 
     return results;
