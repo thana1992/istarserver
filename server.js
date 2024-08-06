@@ -31,7 +31,7 @@ const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
 console.log('timestamp : ' + timestamp);
-const logFileName = `server-${timestamp}.log`;
+const logFileName = `v1-server-${timestamp}.log`;
 const logPath = './logs/';
 
 // สร้าง winston logger
@@ -64,7 +64,7 @@ app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, l
 // สร้าง middleware เพื่อ log response
 app.use((req, res, next) => {
   // Log request
-  logger.info(`---> Request: ${req.method} ${req.url} }`);
+  logger.info(`---> Request: ${req.method} ${req.url} ${req.body} }`);
   //logger.info(`Header: ${JSON.stringify(req.headers)}`);
 
   // Log response
@@ -140,8 +140,6 @@ const verifyToken = (req, res, next) => {
       if (err) {
         return res.status(401).json({ message: 'Session expried please login again' });
       }
-      console.log(err);
-      console.dir(decoded);
 
       // Check if the user is already in activeSessions
       const existingUser = activeSessions.find((user) => user.username === decoded.username);
@@ -551,30 +549,37 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           return res.json({ success: false, message: 'Sorry, this class is full' });
         }
 
-        const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
+        const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate, b.period from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
         const results2 = await queryPromise(checkCourseQuery, [studentid]);
 
         if (results2.length > 0) {
           const courserefer = results2[0].courserefer;
           const coursetype = results2[0].coursetype;
-          const expiredate = results2[0].expiredate;
+          let expiredate = results2[0].expiredate;
           const remaining = results2[0].remaining;
-          const today = new Date();
-          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          console.log(todayDateOnly);
-          console.log("today : " + todayDateOnly);
-          console.log("expiredate : " + expiredate);
-          console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
+          if(expiredate == null) {
+            const period = results2[0].period;
+            expiredate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+            const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
+            await queryPromise(updateExpireDateQuery, [classdate, expiredate, courserefer]);
+          } else {
+            const today = new Date();
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            console.log(todayDateOnly);
+            console.log("today : " + todayDateOnly);
+            console.log("expiredate : " + expiredate);
+            console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
 
-          if (todayDateOnly > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has expired' });
-          }
-          
-          const cd = new Date(classdate);
-          const classDate = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
-          console.log("classdate : " + classDate);
-          if (classDate > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
+            if (todayDateOnly > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expired' });
+            }
+            
+            const cd = new Date(classdate);
+            const classDate = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
+            console.log("classdate : " + classDate);
+            if (classDate > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
+            }
           }
 
           if (coursetype != 'Monthly') {
@@ -886,27 +891,34 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           return res.json({ success: false, message: 'Sorry, this class is full' });
         }
 
-        const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
+        const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate, b.period from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
         const results2 = await queryPromise(checkCourseQuery, [studentid]);
 
         if (results2.length > 0) {
           const courserefer = results2[0].courserefer;
           const coursetype = results2[0].coursetype;
-          const expiredate = results2[0].expiredate;
+          let expiredate = results2[0].expiredate;
           const remaining = results2[0].remaining;
-          const today = new Date();
-          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          console.log("today : " + todayDateOnly);
-          console.log("expiredate : " + expiredate);
-          console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
-          if (todayDateOnly > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has expired' });
-          }
+          if(expiredate == null) {
+            const period = results2[0].period;
+            expiredate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+            const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
+            await queryPromise(updateExpireDateQuery, [classdate, expiredate, courserefer]);
+          } else {
+            const today = new Date();
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            console.log("today : " + todayDateOnly);
+            console.log("expiredate : " + expiredate);
+            console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
+            if (todayDateOnly > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expired' });
+            }
 
-          const cd = new Date(classdate);
-          console.log("classdate : " + cd);
-          if (cd > expiredate) {
-            return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
+            const cd = new Date(classdate);
+            console.log("classdate : " + cd);
+            if (cd > expiredate) {
+              return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
+            }
           }
 
           if (coursetype != 'Monthly') {
@@ -1387,6 +1399,9 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
 
     // Function to calculate age in years and months
     const calculateAge = (dateOfBirth) => {
+      if(dateOfBirth === null) {
+        return '';
+      }
       const dob = new Date(dateOfBirth);
       const diff = Date.now() - dob.getTime();
       const ageDate = new Date(diff);
@@ -1588,31 +1603,34 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-
-    const { coursetype, course, remaining, startdate, expiredate } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period } = req.body;
     const courserefer = await generateRefer(course.refercode);
-    if (startdate == null || startdate == undefined || startdate == '') {
-      const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining) VALUES (?, ?, ?, ?)';
-      const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining]);
-      if (results.affectedRows > 0) {
-        res.json({ success: true, message: 'Successfully Course No :' + courserefer });
-      } else {
-        res.json({ success: false, message: 'Error adding Customer Course' });
-      }
-    } else {
-      if (expiredate == null || expiredate == undefined || expiredate == '') {
-        res.json({ success: false, message: 'Please enter expire date' });
-      } else {
-        const query = 'INSERT INTO tcustomer_course (courserefer, courseid, coursetype, remaining, startdate, expiredate) VALUES (?, ?, ?, ?, ?, ?)';
-        const results = await queryPromise(query, [courserefer, course.courseid, coursetype, remaining, startdate, expiredate]);
-        if (results.affectedRows > 0) {
-          res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
-        } else {
-          res.json({ success: false, message: 'Error adding Customer Course' });
-        }
-      }
-    }
+    let query = 'INSERT INTO tcustomer_course (courserefer, courseid ';
+      if (coursetype) query += ', coursetype ';
+      if (remaining) query += ', remaining ';
+      if (startdate) query += ', startdate ';
+      if (expiredate) query += ', expiredate ';
+      if (period) query += ', period ';
+      query += ') VALUES (?, ?';
+      if (coursetype) query += ', ?';
+      if (remaining) query += ', ?';
+      if (startdate) query += ', ?';
+      if (expiredate) query += ', ?';
+      if (period) query += ', ?';
+      query += ')';
+      const params = [courserefer, course.courseid];
+      if (coursetype) params.push(coursetype);
+      if (remaining) params.push(remaining);
+      if (startdate) params.push(startdate);
+      if (expiredate) params.push(expiredate);
+      if (period) params.push(period);
 
+    const results = await queryPromise(query, params);
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
+    } else {
+      res.json({ success: false, message: 'Error adding Customer Course' });
+    }
   } catch (error) {
     console.error('Error in addCustomerCourse', error.stack);
     res.status(500).send(error);
