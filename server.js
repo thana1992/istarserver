@@ -281,12 +281,13 @@ app.post('/register', async (req, res) => {
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-    ' a.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
+    ' b.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
     ' b.coursetype, b.remaining, b.expiredate, ' +
     ' CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF( a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
     ' from tstudent a ' +
     ' left join tcustomer_course b ' +
     ' on a.courserefer = b.courserefer ' +
+    ' and b.finish = 0' +
     ' left join tcourseinfo c ' +
     ' on b.courseid = c.courseid ' +
     ' where a.familyid = ?';
