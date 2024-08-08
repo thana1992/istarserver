@@ -1757,6 +1757,26 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
+app.get('/getHolidays', verifyToken, async (req, res) => {
+  try {
+      const query = 'SELECT holiday_date FROM tholiday';
+      const results = await queryPromise(query);
+      // ดึงเฉพาะวันที่จากฐานข้อมูล
+      const holidays = results.map(row => row.holiday_date);
+
+      res.json({
+          success: true,
+          holidays: holidays
+      });
+  } catch (error) {
+      console.error('Error fetching holidays:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Failed to fetch holidays'
+      });
+  }
+});
+
 async function generateRefer(refertype) {
   let refer = '';
   const query = 'SELECT running, referdate  FROM trunning WHERE refertype = ? and referdate = curdate()';
