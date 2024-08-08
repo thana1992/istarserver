@@ -1273,7 +1273,7 @@ app.get("/courseLookup", verifyToken, async (req, res) => {
 });
 
 app.get("/customerCourseLookup", verifyToken, async (req, res) => {
-  const query = 'SELECT * FROM tcustomer_course';
+  const query = 'SELECT * FROM tcustomer_course where finish = 0';
   await queryPromise(query, null)
     .then((results) => {
       if (results.length > 0) {
@@ -1302,6 +1302,39 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
       });
   } catch (error) {
     console.error('Error in getCustomerCourseInfo', error.stack);
+    res.status(500).send(error);
+  }
+});
+
+app.post('/finishCourse', verifyToken, async (req, res) => {
+  const { courserefer } = req.body;
+  const query = 'UPDATE tcustomer_course SET finish = 1 WHERE courserefer = ?)';
+  try {
+    await queryPromise(query, [courserefer])
+      .then((results) => {
+        return res.json({ success: true, message: 'Course finished successfully' });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
+  } catch (error) { 
+    console.error('Error in finishCourse', error.stack);
+    res.status(500).send(error);
+  }
+});
+
+app.get("/getFinishedCourse", verifyToken, async (req, res) => {
+  const query = 'SELECT * FROM tcustomer_course WHERE finish = 1';
+  try {
+    await queryPromise(query, null)
+      .then((results) => {
+        return res.json({ success: true, results });
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
+  } catch (error) {
+    console.error('Error in getFinishedCourse', error.stack);
     res.status(500).send(error);
   }
 });
@@ -1566,6 +1599,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
         ON a.courseid = b.courseid 
         LEFT JOIN tstudent s 
         ON a.courserefer = s.courserefer 
+        WHERE a.finish = 0 
         GROUP BY a.courseid, a.courserefer, b.coursename
     `;
 
@@ -1583,7 +1617,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
 
 app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
   try {
-    const query = 'SELECT a.* FROM tcustomer_course a';
+    const query = 'SELECT a.* FROM tcustomer_course a WHERE a.finish = 0';
     const results = await queryPromise(query, null);
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Customer Course List successful', results });
