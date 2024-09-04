@@ -2033,7 +2033,7 @@ async function uploadOrUpdateLogFile() {
 
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('*/30 * * * *', () => {
+cron.schedule('0,30 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
