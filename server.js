@@ -1313,6 +1313,9 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
   try {
     await queryPromise(query, [courserefer])
       .then((results) => {
+        const query2 = 'UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?';
+        queryPromise(query2, [courserefer]);
+        
         return res.json({ success: true, message: 'Course finished successfully' });
       })
       .catch((error) => {
