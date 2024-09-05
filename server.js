@@ -1309,7 +1309,7 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
 
 app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
   const { courserefer } = req.body;
-  const query = 'UPDATE tcustomer_course SET finish = 1 WHERE courserefer = ?)';
+  const query = 'UPDATE tcustomer_course SET finish = 1 WHERE courserefer = ?';
   try {
     await queryPromise(query, [courserefer])
       .then((results) => {
