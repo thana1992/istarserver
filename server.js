@@ -1313,6 +1313,9 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
   try {
     await queryPromise(query, [courserefer])
       .then((results) => {
+        const query2 = 'UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?';
+        queryPromise(query2, [courserefer]);
+        
         return res.json({ success: true, message: 'Course finished successfully' });
       })
       .catch((error) => {
@@ -2033,7 +2036,7 @@ async function uploadOrUpdateLogFile() {
 
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('*/30 * * * *', () => {
+cron.schedule('0,30 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
