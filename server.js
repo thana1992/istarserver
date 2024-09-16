@@ -585,8 +585,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           }
 
           console.log("======= addBookingByAdmin =======");
-          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer) VALUES (?, ?, ?, ?, ?, ?)';
-          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer]);
+          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer, createby) VALUES (?, ?, ?, ?, ?, ?, ?)';
+          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
           console.log("insertResult : " + JSON.stringify(insertResult));
           if (insertResult.affectedRows > 0) {
             const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
@@ -717,8 +717,8 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               });
                 
               console.log("======= updateBookingByAdmin =======");
-              const query = 'UPDATE treservation SET studentid = ?, classid = ?, classdate = ?, classtime = ?, courseid = ? WHERE reservationid = ?';
-              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, reservationid]);
+              const query = 'UPDATE treservation SET studentid = ?, classid = ?, classdate = ?, classtime = ?, courseid = ?, updateby = ? WHERE reservationid = ?';
+              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, reservationid, req.user.username]);
 
               if (insertResult.affectedRows > 0) {
 
