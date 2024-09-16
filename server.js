@@ -718,7 +718,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                 
               console.log("======= updateBookingByAdmin =======");
               const query = 'UPDATE treservation SET studentid = ?, classid = ?, classdate = ?, classtime = ?, courseid = ?, updateby = ? WHERE reservationid = ?';
-              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, reservationid, req.user.username]);
+              const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, req.user.username, reservationid]);
 
               if (insertResult.affectedRows > 0) {
 
