@@ -923,8 +923,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
             }
           }
 
-          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer) VALUES (?, ?, ?, ?, ?, ?)';
-          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer]);
+          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer, createby) VALUES (?, ?, ?, ?, ?, ?, ?)';
+          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
 
           if (insertResult.affectedRows > 0) {
             const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
@@ -1319,7 +1319,7 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
         res.status(500).send(error);
       });
   } catch (error) { 
-    console.error('Error in finishCourse', error.stack);
+    console.error('Error in finishCustomerCourse', error.stack);
     res.status(500).send(error);
   }
 });
