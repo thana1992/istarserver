@@ -823,10 +823,9 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [reservationid]);
     if (results.affectedRows > 0) {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ?';
-        const results2 = await queryPromise(updateRemainingQuery, [courserefer]);
-        if (results2.affectedRows > 0) {
-          res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
-        }
+        await queryPromise(updateRemainingQuery, [courserefer]);
+        res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
+        
     } else {
       res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
