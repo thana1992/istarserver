@@ -818,23 +818,18 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
 app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
   try {
-    const { reservationid, studentid } = req.body;
+    const { reservationid, studentid, courserefer } = req.body;
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
     const results = await queryPromise(query, [reservationid]);
     if (results.affectedRows > 0) {
-      const getCourseReferQuery = 'SELECT courserefer FROM tstudent WHERE studentid = ?';
-      const results1 = await queryPromise(getCourseReferQuery, [studentid]);
-      if (results1.length > 0) {
         const courserefer = results1[0].courserefer;
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ?';
         const results2 = await queryPromise(updateRemainingQuery, [courserefer]);
         if (results2.affectedRows > 0) {
-
-          res.json({ success: true, message: 'Reservation deleted successfully' });
+          res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
         }
-      }
     } else {
-      res.json({ success: false, message: 'No Booking data' });
+      res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
   } catch (error) {
     console.error("Error in deleteReservationByAdmin", error.stack);
