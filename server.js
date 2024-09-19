@@ -821,6 +821,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     const { reservationid, studentid, courserefer } = req.body;
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
     const results = await queryPromise(query, [reservationid]);
+    console.log("parameters : " + reservationid + " " + studentid + " " + courserefer);
     if (results.affectedRows > 0) {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ?';
         await queryPromise(updateRemainingQuery, [courserefer]);
