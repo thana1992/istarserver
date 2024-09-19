@@ -496,7 +496,26 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
                 'familyid = ?, courserefer = ?, shortnote = ? ' +
                 ' WHERE studentid = ?';
               const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, studentid])
-              return res.json({ success: true, message: 'Update Student successfully' });
+
+              if (results.affectedRows > 0) {
+                const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
+                const resCheckCourseOwner = await queryPromise(queryCheckCourseOwner, [courserefer]);
+                if (resCheckCourseOwner.length > 0) {
+                  let owner = resCheckCourseOwner[0].owner;
+                  let ownerList = owner ? owner.split(',') : []; // แปลง owner ให้เป็น array
+                  if (!ownerList.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
+                    ownerList.push(studentid); // เพิ่ม studentid เข้าไปใน list
+                    let newOwner = ownerList.join(','); // แปลง array กลับเป็น string
+                    
+                    // ทำการอัปเดตค่า owner ในฐานข้อมูล
+                    const queryUpdateOwner = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
+                    await queryPromise(queryUpdateOwner, [newOwner, courserefer]);
+                  }
+                }
+                return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
+              } else {
+                return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
+              }
             }
           }
         } else {
@@ -504,7 +523,26 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
             'familyid = ?, courserefer = ?, shortnote = ? ' +
             ' WHERE studentid = ?';
           const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, studentid])
-          return res.json({ success: true, message: 'Update Student successfully' });
+
+          if (results.affectedRows > 0) {
+            const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
+            const resCheckCourseOwner = await queryPromise(queryCheckCourseOwner, [courserefer]);
+            if (resCheckCourseOwner.length > 0) {
+              let owner = resCheckCourseOwner[0].owner;
+              let ownerList = owner ? owner.split(',') : []; // แปลง owner ให้เป็น array
+              if (!ownerList.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
+                ownerList.push(studentid); // เพิ่ม studentid เข้าไปใน list
+                let newOwner = ownerList.join(','); // แปลง array กลับเป็น string
+                
+                // ทำการอัปเดตค่า owner ในฐานข้อมูล
+                const queryUpdateOwner = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
+                await queryPromise(queryUpdateOwner, [newOwner, courserefer]);
+              }
+            }
+            return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
+          } else {
+            return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
+          }
         }
       }
     } else {
@@ -512,7 +550,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
         'familyid = ?, shortnote = ?, courserefer = NULL' +
         ' WHERE studentid = ?';
       const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, studentid])
-      return res.json({ success: true, message: 'Update Student successfully' });
+      return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
     }
 
   } catch (error) {
