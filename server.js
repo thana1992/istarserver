@@ -847,7 +847,7 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
   const { studentid, courserefer } = req.body;
-  const query = 'SELECT * FROM treservation WHERE studentid = ? order by classdate desc limit 10';
+  const query = 'SELECT * FROM treservation WHERE studentid = ? and courserefer = ? order by classdate desc limit 10';
   await queryPromise(query, [studentid, courserefer])
     .then((results) => {
       if (results.length > 0) {
@@ -1741,7 +1741,7 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
                     FROM treservation a
                     LEFT JOIN tstudent b
                     ON a.studentid = b.studentid 
-                    WHERE  a.courserefer = ?  
+                    WHERE a.courserefer = ?  
                     order by a.classdate asc`;
     const courseDetail = await queryPromise(query2, [courserefer]);
     if (results.length > 0) {
