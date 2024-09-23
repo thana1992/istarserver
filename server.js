@@ -1466,7 +1466,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
       ' LEFT JOIN tfamily c ' +
       ' ON a.familyid = c.familyid ' +
       ' LEFT JOIN tuser d ' +
-      ' ON c.username = d.username';
+      ' ON c.username = d.username' +
       ' WHERE a.delflag = 0';
     const results = await queryPromise(query);
 
