@@ -877,7 +877,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
 app.post('/deleteStudent', verifyToken, async (req, res) => {
   const { familyid, studentid, journal } = req.body;
   console.log("deleteStudent : " + JSON.stringify(req.body));
-  let queryDeleteStudent = 'UPDATE tstudent SET delflag = 1, updateby = ? WHERE familyid = ? AND studentid = ?';
+  let queryDeleteStudent = 'UPDATE tstudent SET delflag = 1, courserefer = NULL, updateby = ? WHERE familyid = ? AND studentid = ?';
   if (journal === '1') {
     queryDeleteStudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
   }
