@@ -290,7 +290,8 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
     ' and b.finish = 0' +
     ' left join tcourseinfo c ' +
     ' on b.courseid = c.courseid ' +
-    ' where a.familyid = ?';
+    ' where a.familyid = ? ' +
+    ' and a.delflag = 0';
   try {
     const results = await queryPromise(query, [familyid])
       .then((results) => {
@@ -315,6 +316,7 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
     ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
     ' from tstudent a ' +
     ' where a.familyid = ? ' +
+    ' and delflag = 0 '+
     ' UNION ALL ' +
     ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
@@ -1562,7 +1564,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
 
   try {
     // Query 1
-    const query1 = 'select count(*) as total from tstudent';
+    const query1 = 'select count(*) as total from tstudent where delflag = 0';
     const results1 = await queryPromise(query1);
     if (results1.length > 0) {
       datacard.totalStudents = results1[0].total;
