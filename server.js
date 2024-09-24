@@ -464,7 +464,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
           const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, createby) ' +
             ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
           console.log("req : " + JSON.stringify(req.user));	
-          await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username]])
+          await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username])
             .then((results) => {
               const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
               const resCheckCourseOwner = queryPromise(queryCheckCourseOwner, [courserefer]);
