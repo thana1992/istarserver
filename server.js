@@ -431,9 +431,10 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const studentid = await generateRefer('S');
-              const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, createby) ' +
-                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-              await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username])
+              const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote) ' +
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                console.log("req : " + JSON.stringify(req.user));	
+              await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote])
                 .then((results) => {
                   const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
                   const resCheckCourseOwner = queryPromise(queryCheckCourseOwner, [courserefer]);
