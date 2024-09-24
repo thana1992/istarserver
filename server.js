@@ -433,7 +433,6 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
               const studentid = await generateRefer('S');
               const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, createby) ' +
                 ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-
                 console.log("req : " + JSON.stringify(req.user));	
               await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username])
                 .then((results) => {
