@@ -1673,7 +1673,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
           bookinglist[element.class_label] = studentlist;
         } else {
           console.log("element : " + JSON.stringify(element));
-          if(element.classtime != null && element.classtime == 'แข่ง'){
+          if(element.classtime == 'แข่ง'){
             delete bookinglist[element.class_label];
           }
         }
