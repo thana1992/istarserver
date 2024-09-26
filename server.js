@@ -1543,7 +1543,25 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Checkin successful' });
     } else {
-      res.json({ success: false, message: 'No Reservation data' });
+      res.json({ success: false, message: 'No Booking data' });
+    }
+  }
+  catch (error) {
+    console.error("Error in checkinByAdmin" + JSON.stringify(error));
+    res.status(500).send(error);
+  }
+});
+
+app.post("/undoCheckinByAdmin", verifyToken, async (req, res) => {
+  try {
+    const { reservationid, studentid } = req.body;
+    const query = 'UPDATE treservation SET checkedin = 0 WHERE reservationid = ? AND studentid = ?';
+    const results = await queryPromise(query, [reservationid, studentid]);
+
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Cancel Checkin successful' });
+    } else {
+      res.json({ success: false, message: 'No Booking data' });
     }
   }
   catch (error) {
