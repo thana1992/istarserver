@@ -1776,11 +1776,24 @@ app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
 app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer } = req.body;
-    const query = 'DELETE FROM tcustomer_course WHERE courserefer = ?';
-    const results = await queryPromise(query, [courserefer]);
-    if (results.affectedRows > 0) {
-      await queryPromise('UPDATE tstudent SET courserefer = NULL, updateby = ? WHERE courserefer = ?', [req.user.username, courserefer]);
-      res.json({ success: true, message: 'Customer Course deleted successfully' });
+    const queryUpdateDelete = 'UPDATE tcustomer_course SET deleteby = ? WHERE courserefer = ?';
+    const resultsUpdateDelete = await queryPromise(queryUpdateDelete, [req.user.username, courserefer]);
+    if (resultsUpdateDelete.affectedRows > 0) {
+      const queryMoveToHistory = 'INSERT INTO tcustomer_course_history SELECT * FROM tcustomer_course WHERE courserefer = ?';
+      const resultsMoveToHistory = await queryPromise(queryMoveToHistory, [courserefer]);
+      if (resultsMoveToHistory.affectedRows > 0) {
+
+        const query = 'DELETE FROM tcustomer_course WHERE courserefer = ?';
+        const results = await queryPromise(query, [courserefer]);
+        if (results.affectedRows > 0) {
+          await queryPromise('UPDATE tstudent SET courserefer = NULL, updateby = ? WHERE courserefer = ?', [req.user.username, courserefer]);
+          res.json({ success: true, message: 'Customer Course deleted successfully' });
+        }
+      } else {
+        res.json({ success: false, message: 'Error deleting Customer Course' });
+      }
+    } else {
+      res.json({ success: false, message: 'Error deleting Customer Course' });
     }
   } catch (error) {
     console.error('Error in deleteCustomerCourse', error.stack);
