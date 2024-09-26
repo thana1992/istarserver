@@ -290,7 +290,8 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
     ' and b.finish = 0' +
     ' left join tcourseinfo c ' +
     ' on b.courseid = c.courseid ' +
-    ' where a.familyid = ?';
+    ' where a.familyid = ? ' +
+    ' and a.delflag = 0';
   try {
     const results = await queryPromise(query, [familyid])
       .then((results) => {
@@ -315,6 +316,7 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
     ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
     ' from tstudent a ' +
     ' where a.familyid = ? ' +
+    ' and delflag = 0 '+
     ' UNION ALL ' +
     ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
@@ -433,6 +435,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
               const studentid = await generateRefer('S');
               const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, createby) ' +
                 ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                console.log("req : " + JSON.stringify(req.user));	
               await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username])
                 .then((results) => {
                   const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
@@ -461,7 +464,8 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
         } else {
           const studentid = await generateRefer('S');
           const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, createby) ' +
-            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+          console.log("req : " + JSON.stringify(req.user));	
           await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username])
             .then((results) => {
               const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
@@ -490,7 +494,8 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
     } else {
       const studentid = await generateRefer('S');
       const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, createby) ' +
-        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      console.log("req : " + JSON.stringify(req.user));
       await queryPromise(query, [studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, req.user.username])
         .then((results) => {
           res.json({ success: true, message: 'Family member added successfully', studentid });
@@ -1538,7 +1543,25 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Checkin successful' });
     } else {
-      res.json({ success: false, message: 'No Reservation data' });
+      res.json({ success: false, message: 'No Booking data' });
+    }
+  }
+  catch (error) {
+    console.error("Error in checkinByAdmin" + JSON.stringify(error));
+    res.status(500).send(error);
+  }
+});
+
+app.post("/undoCheckinByAdmin", verifyToken, async (req, res) => {
+  try {
+    const { reservationid, studentid } = req.body;
+    const query = 'UPDATE treservation SET checkedin = 0 WHERE reservationid = ? AND studentid = ?';
+    const results = await queryPromise(query, [reservationid, studentid]);
+
+    if (results.affectedRows > 0) {
+      res.json({ success: true, message: 'Cancel Checkin successful' });
+    } else {
+      res.json({ success: false, message: 'No Booking data' });
     }
   }
   catch (error) {
@@ -1559,7 +1582,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
 
   try {
     // Query 1
-    const query1 = 'select count(*) as total from tstudent';
+    const query1 = 'select count(*) as total from tstudent where delflag = 0';
     const results1 = await queryPromise(query1);
     if (results1.length > 0) {
       datacard.totalStudents = results1[0].total;
