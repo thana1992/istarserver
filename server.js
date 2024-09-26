@@ -1672,7 +1672,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
           }
           bookinglist[element.class_label] = studentlist;
         } else {
-          bookinglist[element.class_label] = [];
+          delete bookinglist[element.class_label];
         }
       }
       console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
