@@ -1623,7 +1623,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
-    const query = 'SELECT DISTINCT a.classtime, a.courseid, classtime, CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on a.courseid = b.courseid and b.enableflag = 1 where a.classday = ? and a.enableflag = 1 order by a.classtime'
+    const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on a.courseid = b.courseid and b.enableflag = 1 where a.classday = ? and a.enableflag = 1 order by a.classtime'
     const results = await queryPromise(query, [classday]);
     //console.log("results : " + JSON.stringify(results));
     let bookinglist = {};
@@ -1672,7 +1672,8 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
           }
           bookinglist[element.class_label] = studentlist;
         } else {
-          if(element.classtime != null && element.classtime === 'แข่ง'){
+          console.log("element : " + JSON.stringify(element));
+          if(element.classtime != null && element.classtime == 'แข่ง'){
             delete bookinglist[element.class_label];
           }
         }
