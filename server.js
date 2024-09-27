@@ -605,8 +605,8 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
 app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, classid, classdate, classtime, courseid, classday } = req.body;
-    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
+    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? and classtime = ?';
+    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate, classtime]);
 
     if (resCheckDuplicateReservation.length > 0) {
       return res.json({ success: false, message: 'You have already booked on this day' });
