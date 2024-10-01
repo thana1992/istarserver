@@ -1462,8 +1462,8 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
       '   CASE WHEN b.coursetype = \'Monthly\' THEN \'รายเดือน\' ' +
       '     WHEN b.coursetype IS NULL THEN \'ไม่มีคอร์ส\' ' +
       '     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
-      '   END AS remaining, ' +
-      ' b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
+      '   END AS remaining_label, ' +
+      ' b.remaining, b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
       ' FROM tstudent a ' +
       ' LEFT JOIN tcustomer_course b ' +
       ' ON a.courserefer = b.courserefer ' +
