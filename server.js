@@ -1695,7 +1695,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     const { username } = req.body;
     const query = `SELECT a.*, b.coursename, 
         CASE 
-         WHEN b.courseid LIKE '%ทดลองเรียน%' OR b.courseid LIKE '%รายครั้ง%' THEN ''
+         WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
          ELSE GROUP_CONCAT(s.nickname SEPARATOR ', ')
         END AS userlist
         FROM tcustomer_course a 
