@@ -1291,7 +1291,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     'WHERE a.classday = ? ' +
     'and a.courseid = ? ';
     if(req.user.adminflag != '1') {
-      query += 'and a.adminflag = 0 '
+      query += 'and a.adminflag = 0 ';
     }
     query += ' group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
   try {
