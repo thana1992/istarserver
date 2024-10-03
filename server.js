@@ -1929,10 +1929,10 @@ app.get('/collectHolidays', verifyToken, async (req, res) => {
 
 app.get('/holidaysList', verifyToken, async (req, res) => {
   try {
-      const query = 'SELECT holiday_date FROM tholiday';
+      const query = 'SELECT holidaydate FROM tholiday';
       const results = await queryPromise(query);
       // ดึงเฉพาะวันที่จากฐานข้อมูล
-      const holidays = results.map(row => row.holiday_date);
+      const holidays = results.map(row => row.holidaydate);
 
       res.json({
           success: true,
@@ -1950,7 +1950,7 @@ app.get('/holidaysList', verifyToken, async (req, res) => {
 app.post('/holidays', verifyToken, async (req, res) => {
   const { holidaydate, description } = req.body;
   try {
-    const query = 'INSERT INTO tholiday (holiday_date, description) VALUES (?, ?)';
+    const query = 'INSERT INTO tholiday (holidaydate, description) VALUES (?, ?)';
     const result = await queryPromise(query, [holidaydate, description]);
     if (result.affectedRows > 0) {
       res.json({ success: true, message: 'Holiday added successfully' });
@@ -1967,7 +1967,7 @@ app.put('/holidays/:id', async (req, res) => {
   const { holidaydate, description } = req.body;
   const { id } = req.params;
   try {
-    await queryPromise('UPDATE tholiday SET holiday_date = ?, description = ? WHERE id = ?', [holidaydate, description, id]);
+    await queryPromise('UPDATE tholiday SET holidaydate = ?, description = ? WHERE id = ?', [holidaydate, description, id]);
     res.json({ message: 'Holiday updated successfully' });
   } catch (error) {
     console.error(error);
