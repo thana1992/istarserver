@@ -1909,7 +1909,25 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/holidays', verifyToken, async (req, res) => {
+app.get('/collectHolidays', verifyToken, async (req, res) => {
+  try {
+      const query = 'SELECT * FROM tholiday';
+      const results = await queryPromise(query);
+
+      res.json({
+          success: true,
+          data: results
+      });
+  } catch (error) {
+      console.error('Error fetching holidays:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Failed to fetch holidays'
+      });
+  }
+});
+
+app.get('/holidaysList', verifyToken, async (req, res) => {
   try {
       const query = 'SELECT holiday_date FROM tholiday';
       const results = await queryPromise(query);
