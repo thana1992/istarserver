@@ -1289,11 +1289,13 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     'on a.classid = b.classid ' +
     'and b.classdate = ? ' +
     'WHERE a.classday = ? ' +
-    'and a.courseid = ? ' +
-    'and a.adminflag = ? ' +
-    'group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
+    'and a.courseid = ? ';
+    if(req.user.adminflag != '1') {
+      query += 'and a.adminflag = 0 '
+    }
+    query += ' group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
   try {
-    await queryPromise(query, [classdate, classday, courseid, req.user.adminflag])
+    await queryPromise(query, [classdate, classday, courseid])
       .then((results) => {
         if (results.length > 0) {
           results.forEach((element, index) => {
