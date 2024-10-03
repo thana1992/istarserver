@@ -202,10 +202,10 @@ app.post('/login', async (req, res) => {
         console.log("user.id = " + user.id);
 
         if (userdata.usertype != '10') {
-          const token = jwt.sign({ username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+          const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '1h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         } else {
-          const token = jwt.sign({ username: user.username }, SECRET_KEY, { expiresIn: '10m' });
+          const token = jwt.sign({ username: user.username ,adminflag: 0 }, SECRET_KEY, { expiresIn: '10m' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         }
 
@@ -1230,7 +1230,7 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
 
 app.post('/addClass', verifyToken, async (req, res) => {
   const { courseid, classday, classtime, maxperson } = req.body;
-  const query = 'INSERT INTO tclassinfo (courseid, classday, classtime, maxperson) VALUES (?, ?, ?, ?)';
+  const query = 'INSERT INTO tclassinfo (courseid, classday, classtime, maxperson, adminflag) VALUES (?, ?, ?, ?, ?)';
   try {
     await queryPromise(query, [courseid, classday, classtime, maxperson])
       .then((results) => {
@@ -1247,9 +1247,9 @@ app.post('/addClass', verifyToken, async (req, res) => {
 
 app.post('/updateClass', verifyToken, async (req, res) => {
   const { classid, courseid, classday, classtime, maxperson } = req.body;
-  const query = 'UPDATE tclassinfo SET courseid = ?, classday = ?, classtime = ?, maxperson = ? WHERE classid = ?';
+  const query = 'UPDATE tclassinfo SET courseid = ?, classday = ?, classtime = ?, maxperson = ?, adminflag = ? WHERE classid = ?';
   try {
-    await queryPromise(query, [courseid, classday, classtime, maxperson, classid])
+    await queryPromise(query, [courseid, classday, classtime, maxperson, adminflag, classid])
       .then((results) => {
         res.json({ success: true, message: 'Class updated successfully' });
       })
@@ -1290,9 +1290,10 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     'and b.classdate = ? ' +
     'WHERE a.classday = ? ' +
     'and a.courseid = ? ' +
+    'and a.adminflag = ? ' +
     'group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
   try {
-    await queryPromise(query, [classdate, classday, courseid])
+    await queryPromise(query, [classdate, classday, courseid, req.user.adminflag])
       .then((results) => {
         if (results.length > 0) {
           results.forEach((element, index) => {
