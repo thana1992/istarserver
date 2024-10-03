@@ -1283,7 +1283,7 @@ app.post('/deleteClass', verifyToken, async (req, res) => {
 
 app.post('/getClassTime', verifyToken, async (req, res) => {
   const { classdate, classday, courseid } = req.body;
-  const query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available ' +
+  let query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available ' +
     'FROM tclassinfo a ' +
     'left join treservation b ' +
     'on a.classid = b.classid ' +
