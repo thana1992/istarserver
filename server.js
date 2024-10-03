@@ -1246,7 +1246,7 @@ app.post('/addClass', verifyToken, async (req, res) => {
 });
 
 app.post('/updateClass', verifyToken, async (req, res) => {
-  const { classid, courseid, classday, classtime, maxperson } = req.body;
+  const { classid, courseid, classday, classtime, maxperson, adminflag } = req.body;
   const query = 'UPDATE tclassinfo SET courseid = ?, classday = ?, classtime = ?, maxperson = ?, adminflag = ? WHERE classid = ?';
   try {
     await queryPromise(query, [courseid, classday, classtime, maxperson, adminflag, classid])
