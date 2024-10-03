@@ -1909,7 +1909,7 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getHolidays', verifyToken, async (req, res) => {
+app.get('/holidays', verifyToken, async (req, res) => {
   try {
       const query = 'SELECT holiday_date FROM tholiday';
       const results = await queryPromise(query);
@@ -1926,6 +1926,46 @@ app.get('/getHolidays', verifyToken, async (req, res) => {
           success: false,
           message: 'Failed to fetch holidays'
       });
+  }
+});
+
+app.post('/holidays', verifyToken, async (req, res) => {
+  const { holidaydate, description } = req.body;
+  try {
+    const query = 'INSERT INTO tholiday (holiday_date, description) VALUES (?, ?)';
+    const result = await queryPromise(query, [holidaydate, description]);
+    if (result.affectedRows > 0) {
+      res.json({ success: true, message: 'Holiday added successfully' });
+    } else {
+      res.json({ success: false, message: 'Error adding holiday' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error adding holiday' });
+  }
+});
+
+app.put('/holidays/:id', async (req, res) => {
+  const { holidaydate, description } = req.body;
+  const { id } = req.params;
+  try {
+    await queryPromise('UPDATE tholiday SET holiday_date = ?, description = ? WHERE id = ?', [holidaydate, description, id]);
+    res.json({ message: 'Holiday updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating holiday' });
+  }
+});
+
+// DELETE holiday
+app.delete('/holidays/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await queryPromise('DELETE FROM tholiday WHERE id = ?', [id]);
+    res.json({ message: 'Holiday deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting holiday' });
   }
 });
 
