@@ -1229,10 +1229,10 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
 });
 
 app.post('/addClass', verifyToken, async (req, res) => {
-  const { courseid, classday, classtime, maxperson } = req.body;
+  const { courseid, classday, classtime, maxperson, adminflag } = req.body;
   const query = 'INSERT INTO tclassinfo (courseid, classday, classtime, maxperson, adminflag) VALUES (?, ?, ?, ?, ?)';
   try {
-    await queryPromise(query, [courseid, classday, classtime, maxperson])
+    await queryPromise(query, [courseid, classday, classtime, maxperson, adminflag])
       .then((results) => {
         return res.json({ success: true, message: 'Class added successfully' });
       })
