@@ -108,7 +108,24 @@ app.use((req, res, next) => {
   next();
 });
 
+const http = require('http');
+const socketIo = require('socket.io');
+const server = http.createServer(app);
+const io = socketIo(server);
 
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    // เมื่อมีการจองคลาส
+    socket.on('add_newstudent', (data) => {
+        // ส่งข้อมูลไปที่ admin
+        io.emit('update_admin_newstudent', data);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
 
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use((req, res, next) => {
