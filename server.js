@@ -901,11 +901,13 @@ app.post('/deleteStudent', verifyToken, async (req, res) => {
   const { familyid, studentid, journal } = req.body;
   console.log("deleteStudent : " + JSON.stringify(req.body));
   let queryDeleteStudent = 'UPDATE tstudent SET delflag = 1, courserefer = NULL, updateby = ? WHERE familyid = ? AND studentid = ?';
+  let params = [req.user.username, familyid, studentid];
   if (journal === '1') {
     queryDeleteStudent = 'DELETE FROM jstudent WHERE familyid = ? AND studentid = ?';
+    params = [familyid, studentid];
   }
   try {
-    const results = await queryPromise(queryDeleteStudent, [req.user.username, familyid, studentid]);
+    const results = await queryPromise(queryDeleteStudent, params);
     if (results.affectedRows > 0) {
       // if (journal != '1') {
       //   const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
