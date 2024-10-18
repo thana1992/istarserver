@@ -620,8 +620,9 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
       if (results1.length > 0) {
         const count = results1[0].count;
+        let fullflag = count >= maxperson ? 1 : 0;
         if (count >= maxperson) {
-          return res.json({ success: false, message: 'Sorry, this class is full' });
+          //return res.json({ success: false, message: 'Sorry, this class is full' });
         }
 
         const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate, b.period from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
@@ -713,8 +714,11 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               console.error('Error sending notification', error.stack);
               
             }
-
-            return res.json({ success: true, message: 'Booking added successfully' });
+            if(fullflag == 1) {
+              return res.json({ success: true, message: 'จองคลาสสำเร็จ (เป็นการจองคลาสเกิน Maximun)' });
+            } else {
+              return res.json({ success: true, message: 'จองคลาสสำเร็จ' });
+            }
           }
         } else {
           return res.json({ success: false, message: 'Not found customer\'s course' });
@@ -752,8 +756,9 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
       if (results1.length > 0) {
         const count = results1[0].count;
+        let fullflag = count >= maxperson ? 1 : 0;
         if (count >= maxperson) {
-          return res.json({ success: false, message: 'Sorry, this class is full' });
+          //return res.json({ success: false, message: 'Sorry, this class is full' });
         }
 
         const checkCourseQuery = 'select a.courserefer from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
@@ -842,7 +847,11 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   console.error('Error sending notification', error.stack);
                   
                 }
-                return res.json({ success: true, message: 'Booking added successfully' });
+                if(fullflag == 1) {
+                  return res.json({ success: true, message: 'จองคลาสสำเร็จ (เป็นการจองคลาสเกิน Maximun)' });
+                } else {
+                  return res.json({ success: true, message: 'จองคลาสสำเร็จ' });
+                }
               }
             }
           }
