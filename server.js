@@ -1292,23 +1292,47 @@ app.post('/deleteClass', verifyToken, async (req, res) => {
 
 app.post('/getClassTime', verifyToken, async (req, res) => {
   const { classdate, classday, courseid } = req.body;
-  let query = 'SELECT a.* , case when count(b.reservationid) > 0 then a.maxperson - count(b.reservationid) else a.maxperson end as available ' +
-    'FROM tclassinfo a ' +
-    'left join treservation b ' +
-    'on a.classid = b.classid ' +
-    'and b.classdate = ? ' +
-    'WHERE a.classday = ? ' +
-    'and a.courseid = ? ';
-    if(req.user.adminflag != '1') {
-      query += 'and a.adminflag = 0 ';
-    }
-    query += ' group by a.classid , a.classday , a.classtime , a.maxperson , a.courseid ';
+  let query = `
+    SELECT a.*, 
+      CASE 
+        WHEN count(b.reservationid) > 0 THEN a.maxperson - count(b.reservationid) 
+        ELSE a.maxperson 
+      END AS available,
+      CASE 
+        WHEN d.classid IS NOT NULL THEN 0 
+        ELSE CASE 
+          WHEN count(b.reservationid) > 0 THEN a.maxperson - count(b.reservationid) 
+          ELSE a.maxperson 
+        END 
+      END AS adjusted_available,
+      d.description
+    FROM tclassinfo a 
+    LEFT JOIN treservation b ON a.classid = b.classid 
+      AND b.classdate = ? 
+    LEFT JOIN tclassdisable d ON a.classid = d.classid 
+      AND d.classdate = ? 
+      AND d.courseid = ? 
+    WHERE a.classday = ? 
+      AND a.courseid = ? 
+  `;
+  
+  if (req.user.adminflag != '1') {
+    query += 'AND a.adminflag = 0 ';
+  }
+  
+  query += 'GROUP BY a.classid, a.classday, a.classtime, a.maxperson, a.courseid, d.description ';
+  
   try {
-    await queryPromise(query, [classdate, classday, courseid])
+    await queryPromise(query, [classdate, classdate, courseid, classday, courseid])
       .then((results) => {
         if (results.length > 0) {
           results.forEach((element, index) => {
-            results[index].text = element.classtime + ' ว่าง ' + element.available + ' คน';
+            // ใช้ adjusted_available แทน available 
+            results[index].text = element.classtime + ' ว่าง ' + element.adjusted_available + ' คน';
+            if (element.description) {
+              results[index].text += ' (' + element.description + ')'; // เพิ่ม description
+            }
+            results[index].available = element.adjusted_available; // อัปเดตค่า available
           });
           res.json({ success: true, message: 'Get Class Time successful', results });
         } else {
@@ -1323,6 +1347,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
+
 
 app.get("/getNewStudentList", verifyToken, async (req, res) => {
   const query = "select a.*, CONCAT(IFNULL( a.firstname, ''), ' ', IFNULL( a.middlename, ''), IF( a.middlename<>'', ' ',''), IFNULL( a.lastname, ''), ' (', a.nickname,')') fullname, c.username, c.mobileno from jstudent a left join tfamily b on a.familyid = b.familyid left join tuser c on b.username = c.username";
