@@ -2034,6 +2034,25 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
+app.get('/api/getHolidayInformation', (req, res) => {
+  const { selectdate } = req.body;
+  const month = new Date(selectdate).getMonth() + 1; // คำนวณเดือน (0-11)
+
+  // ค้นหาวันหยุดในเดือนที่กำหนด
+  const filteredHolidays = holidays.filter(holiday => {
+    const holidayMonth = new Date(holiday.holidaydate).getMonth() + 1;
+    return holidayMonth === month;
+  });
+
+  // จัดรูปแบบผลลัพธ์
+  const result = filteredHolidays.map(holiday => {
+    const day = new Date(holiday.holidaydate).getDate();
+    return `${day} ${holiday.description}`;
+  });
+
+  res.json(result);
+});
+
 app.get('/collectHolidays', verifyToken, async (req, res) => {
   try {
       const query = 'SELECT * FROM tholiday';
