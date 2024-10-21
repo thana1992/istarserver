@@ -2034,12 +2034,21 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getHolidayInformation', (req, res) => {
+app.get('/getHolidayInformation', verifyToken, async (req, res) => {
   const { selectdate } = req.body;
   const month = new Date(selectdate).getMonth() + 1; // คำนวณเดือน (0-11)
 
+  // คำสั่ง SQL เพื่อค้นหาวันหยุดในเดือนที่กำหนด
+  const sql = `
+    SELECT DAY(holidaydate) AS day, description 
+    FROM tholiday 
+    WHERE MONTH(holidaydate) = ? AND YEAR(holidaydate) = ?
+  `;
+  const year = new Date(inputDate).getFullYear();
+  const results = await queryPromise(sql, [month, year])
+  
   // ค้นหาวันหยุดในเดือนที่กำหนด
-  const filteredHolidays = holidays.filter(holiday => {
+  const filteredHolidays = results.filter(holiday => {
     const holidayMonth = new Date(holiday.holidaydate).getMonth() + 1;
     return holidayMonth === month;
   });
