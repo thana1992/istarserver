@@ -2044,7 +2044,7 @@ app.get('/getHolidayInformation', verifyToken, async (req, res) => {
     FROM tholiday 
     WHERE MONTH(holidaydate) = ? AND YEAR(holidaydate) = ?
   `;
-  const year = new Date(inputDate).getFullYear();
+  const year = new Date(selectdate).getFullYear();
   const results = await queryPromise(sql, [month, year])
   
   // ค้นหาวันหยุดในเดือนที่กำหนด
