@@ -2034,7 +2034,7 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/getHolidayInformation', (req, res) => {
+app.get('/getHolidayInformation', (req, res) => {
   const { selectdate } = req.body;
   const month = new Date(selectdate).getMonth() + 1; // คำนวณเดือน (0-11)
 
