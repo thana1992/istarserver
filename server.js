@@ -2050,17 +2050,9 @@ app.post('/getHolidayInformation', verifyToken, async (req, res) => {
   const year = new Date(formattedDate).getFullYear();
   console.log('month:'+ month + ' year:'+ year);
   const results = await queryPromise(sql, [month, year])
-  
-  // ค้นหาวันหยุดในเดือนที่กำหนด
-  const filteredHolidays = results.filter(holiday => {
-    const holidayMonth = new Date(holiday.holidaydate).getMonth() + 1;
-    return holidayMonth === month;
-  });
 
-  // จัดรูปแบบผลลัพธ์
-  const result = filteredHolidays.map(holiday => {
-    const day = new Date(holiday.holidaydate).getDate();
-    return `${day} ${holiday.description}`;
+  const result = results.map(holiday => {
+    return `${holiday.day} ${holiday.description}`;
   });
 
   res.json(result);
