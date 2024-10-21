@@ -413,7 +413,7 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 });
 
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
-  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote } = req.body;
+  const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, courserefer2, shortnote } = req.body;
   try {
     if (courserefer != null && courserefer != '') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
@@ -423,7 +423,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
         if (coursetype == 'Monthly') {
-          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? ';
+          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
           const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
           if (resCheckUserd.length > 0) {
             const count = resCheckUserd[0].count;
@@ -457,6 +457,35 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
                 .catch((error) => {
                   res.status(500).send(error);
                 });
+
+                if (courserefer2 != null && courserefer2 != '') {
+                  const queryCheckCustomerCourse2 = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+                  const resCheckCustomerCourse2 = await queryPromise(queryCheckCustomerCourse2, [courserefer2]);
+                  if (resCheckCustomerCourse2.length <= 0) {
+                    return res.json({ success: false, message: 'Course not found' });
+                  } else {
+                    const coursetype2 = resCheckCustomerCourse2[0].coursetype;
+                    if (coursetype2 == 'Monthly') {
+                      const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
+                      const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer2]);
+                      if (resCheckUserd.length > 0) {
+                        const count = resCheckUserd[0].count;
+                        if (count > 0) {
+                          return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
+                        } else {
+                          const query = 'UPDATE tstudent set courserefer2 = ? WHERE studentid = ?';
+                          await queryPromise(query, [courserefer2, studentid])
+                            .then((results) => {
+                              res.json({ success: true, message: 'Family member added successfully', studentid });
+                            })
+                            .catch((error) => {
+                              res.status(500).send(error);
+                            });
+                        }
+                      }
+                    }
+                  }
+                }
             }
           }
         } else {
@@ -487,8 +516,38 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             .catch((error) => {
               res.status(500).send(error);
             });
+
+            if (courserefer2 != null && courserefer2 != '') {
+              const queryCheckCustomerCourse2 = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+              const resCheckCustomerCourse2 = await queryPromise(queryCheckCustomerCourse2, [courserefer2]);
+              if (resCheckCustomerCourse2.length <= 0) {
+                return res.json({ success: false, message: 'Course not found' });
+              } else {
+                const coursetype2 = resCheckCustomerCourse2[0].coursetype;
+                if (coursetype2 == 'Monthly') {
+                  const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
+                  const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer2]);
+                  if (resCheckUserd.length > 0) {
+                    const count = resCheckUserd[0].count;
+                    if (count > 0) {
+                      return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
+                    } else {
+                      const query = 'UPDATE tstudent set courserefer2 = ? WHERE studentid = ?';
+                      await queryPromise(query, [courserefer2, studentid])
+                        .then((results) => {
+                          res.json({ success: true, message: 'Family member added successfully', studentid });
+                        })
+                        .catch((error) => {
+                          res.status(500).send(error);
+                        });
+                    }
+                  }
+                }
+              }
+            }
         }
       }
+
     } else {
       const studentid = await generateRefer('S');
       const query = 'INSERT INTO tstudent (studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, createby) ' +
@@ -512,7 +571,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
-    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote } = req.body;
+    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, courserefer2, shortnote } = req.body;
     if (courserefer != null && courserefer != '') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
       const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
@@ -521,8 +580,8 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
         if (coursetype == 'Monthly') {
-          const queryCheckUserd = 'SELECT count(*) count FROM tstudent WHERE courserefer = ? AND studentid <> ?';
-          const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, studentid]);
+          const queryCheckUserd = 'SELECT count(*) count FROM tstudent WHERE courserefer = ? OR courserefer2 = ? AND studentid <> ?';
+          const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer2, studentid]);
           if (resCheckUserd.length > 0) {
             const count = resCheckUserd[0].count;
             console.log("count : " + count);
@@ -530,9 +589,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
             } else {
               const query = 'UPDATE tstudent set firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?,  ' +
-                'familyid = ?, courserefer = ?, shortnote = ?, updateby = ? ' +
+                'familyid = ?, courserefer = ?, courserefer2 = ?, shortnote = ?, updateby = ? ' +
                 ' WHERE studentid = ?';
-              const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, shortnote, req.user.username, studentid])
+              const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, courserefer2, shortnote, req.user.username, studentid])
 
               if (results.affectedRows > 0) {
                 const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
@@ -583,6 +642,35 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
             return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
           } else {
             return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
+          }
+        }
+      }
+      
+      if (courserefer2 != null && courserefer2 != '') {
+        const queryCheckCustomerCourse2 = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+        const resCheckCustomerCourse2 = await queryPromise(queryCheckCustomerCourse2, [courserefer2]);
+        if (resCheckCustomerCourse2.length <= 0) {
+          return res.json({ success: false, message: 'Course not found' });
+        } else {
+          const coursetype2 = resCheckCustomerCourse2[0].coursetype;
+          if (coursetype2 == 'Monthly') {
+            const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
+            const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer2]);
+            if (resCheckUserd.length > 0) {
+              const count = resCheckUserd[0].count;
+              if (count > 0) {
+                return res.json({ success: false, message: 'Monthly course cannot share, Course already used!' });
+              } else {
+                const query = 'UPDATE tstudent set courserefer2 = ? WHERE studentid = ?';
+                await queryPromise(query, [courserefer2, studentid])
+                  .then((results) => {
+                    res.json({ success: true, message: 'Family member added successfully', studentid });
+                  })
+                  .catch((error) => {
+                    res.status(500).send(error);
+                  });
+              }
+            }
           }
         }
       }
