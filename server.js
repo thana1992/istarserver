@@ -2036,7 +2036,8 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
 
 app.post('/getHolidayInformation', verifyToken, async (req, res) => {
   const { selectdate } = req.body;
-  const month = new Date(selectdate).getMonth() + 1; // คำนวณเดือน (0-11)
+  const formattedDate = selectdate.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+  const month = new Date(formattedDate).getMonth() + 1; // คำนวณเดือน (0-11)
 
   // คำสั่ง SQL เพื่อค้นหาวันหยุดในเดือนที่กำหนด
   const sql = `
@@ -2044,7 +2045,7 @@ app.post('/getHolidayInformation', verifyToken, async (req, res) => {
     FROM tholiday 
     WHERE MONTH(holidaydate) = ? AND YEAR(holidaydate) = ?
   `;
-  const year = new Date(selectdate).getFullYear();
+  const year = new Date(formattedDate).getFullYear();
   const results = await queryPromise(sql, [month, year])
   
   // ค้นหาวันหยุดในเดือนที่กำหนด
