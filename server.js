@@ -659,7 +659,7 @@ async function checkCourseShare(courserefer, studentid) {
   const query = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
   const results = await queryPromise(query, [courserefer]);
   if (results.length > 0) {
-    if(results[0].coursetype == 'Monthly' && results[0].studentid != studentid) {
+    if(results[0].coursetype == 'Monthly' && results[0].owner != studentid) {
       return { results: false, message: 'Monthly course cannot share, Course already used!' };
     }else{
       return { results: true, message: '' };
@@ -1894,7 +1894,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
 app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer } = req.body;
-    const query = 'SELECT * FROM tstudent WHERE courserefer = ?';
+    const query = 'SELECT * FROM tstudent WHERE courserefer = ? or courserefer2 = ?';
     const results = await queryPromise(query, [courserefer]);
     if (results.length > 0) {
       res.json({ success: false, message: 'This course is currently being used.', results });
@@ -1921,6 +1921,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
         const results = await queryPromise(query, [courserefer]);
         if (results.affectedRows > 0) {
           await queryPromise('UPDATE tstudent SET courserefer = NULL, updateby = ? WHERE courserefer = ?', [req.user.username, courserefer]);
+          await queryPromise('UPDATE tstudent SET courserefer2 = NULL, updateby = ? WHERE courserefer2 = ?', [req.user.username, courserefer]);
           res.json({ success: true, message: 'Customer Course deleted successfully' });
         }
       } else {
