@@ -200,7 +200,7 @@ app.post('/login', async (req, res) => {
         console.log("user.id = " + user.id);
 
         if (userdata.usertype != '10') {
-          const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '1h' });
+          const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '5h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
         } else {
           const token = jwt.sign({ username: user.username ,adminflag: 0 }, SECRET_KEY, { expiresIn: '10m' });
@@ -655,7 +655,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   }
 });
 
-function checkCourseShare(courserefer, studentid) {
+async function checkCourseShare(courserefer, studentid) {
   const query = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
   const results = queryPromise(query, [courserefer]);
   if (results.length > 0) {
