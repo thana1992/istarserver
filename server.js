@@ -669,6 +669,9 @@ async function checkCourseShare(courserefer, studentid) {
         }else{
           return { results: true, message: '' };
         }
+      }else{
+        return { results: true, message: '' };
+      }
     }else{
       return { results: true, message: '' };
     }
