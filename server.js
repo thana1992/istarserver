@@ -2389,7 +2389,7 @@ async function queryPromise(query, params, showparams) {
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     
-    if(showparams){
+    //if(showparams){
       const maskedParams = { ...params };
       for (const key in maskedParams) {
         if (key.includes('image') || key.includes('password')) {
@@ -2414,7 +2414,7 @@ async function queryPromise(query, params, showparams) {
         console.log("Results is not an array! ");
         console.log("Results : " + JSON.stringify(results));
       }
-    }
+    //}
 
     return results;
   } catch (error) {
