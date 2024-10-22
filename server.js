@@ -423,7 +423,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
       } else {
         const coursetype = resCheckCustomerCourse[0].coursetype;
         if (coursetype == 'Monthly') {
-          const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
+          const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
           const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer]);
           if (resCheckUserd.length > 0) {
             const count = resCheckUserd[0].count;
@@ -466,7 +466,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
                   } else {
                     const coursetype2 = resCheckCustomerCourse2[0].coursetype;
                     if (coursetype2 == 'Monthly') {
-                      const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
+                      const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
                       const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer2]);
                       if (resCheckUserd.length > 0) {
                         const count = resCheckUserd[0].count;
@@ -525,7 +525,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
               } else {
                 const coursetype2 = resCheckCustomerCourse2[0].coursetype;
                 if (coursetype2 == 'Monthly') {
-                  const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
+                  const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE courserefer = ? OR courserefer2 = ?';
                   const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer2]);
                   if (resCheckUserd.length > 0) {
                     const count = resCheckUserd[0].count;
@@ -658,7 +658,7 @@ async function checkCourseShare(courserefer, studentid) {
   const results = await queryPromise(query, [courserefer]);
   if (results.length > 0) {
     if(results[0].coursetype == 'Monthly') {
-      const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?) AND studentid <> ?';
+      const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?) AND studentid <> ?';
       const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer, studentid]);
       if (resCheckUserd.length > 0) {
         const count = resCheckUserd[0].count;
