@@ -652,9 +652,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   }
 });
 
-function checkCourseShare(courseid, studentid) {
+function checkCourseShare(courserefer, studentid) {
   const query = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
-  const results = queryPromise(query, [courseid]);
+  const results = queryPromise(query, [courserefer]);
   if (results.length > 0) {
     if(results[0].coursetype == 'Monthly' && results[0].studentid != studentid) {
       return { results: false, message: 'Monthly course cannot share, Course already used!' };
