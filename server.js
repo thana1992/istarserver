@@ -604,7 +604,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
         if (resCheckCourseOwner1.length > 0) {
           let owner1 = resCheckCourseOwner1[0].owner;
           if(owner1 != 'trial') {
-            let ownerList1 = owner ? owner1.split(',') : []; // แปลง owner ให้เป็น array
+            let ownerList1 = owner1 ? owner1.split(',') : []; // แปลง owner ให้เป็น array
             if (!ownerList1.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
               ownerList1.push(studentid); // เพิ่ม studentid เข้าไปใน list
               let newOwner1 = ownerList.join(','); // แปลง array กลับเป็น string
