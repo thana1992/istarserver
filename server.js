@@ -415,6 +415,22 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
   const { firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, courserefer2, shortnote } = req.body;
   try {
+
+    if(courserefer != null && courserefer != '') {
+      const checkCourseUsing1 = await checkCourseShare(courserefer);
+      console.log("checkCourseUsing1 : " + JSON.stringify(checkCourseUsing1));
+      if (!checkCourseUsing1.results) {
+        return res.json({ success: false, message: checkCourseUsing1.message });
+      }
+    }
+    if(courserefer2 != null && courserefer2 != '') {
+      const checkCourseUsing2 = await checkCourseShare(courserefer);
+      console.log("checkCourseUsing2 : " + JSON.stringify(checkCourseUsing2));
+      if (!checkCourseUsing2.results) {
+        return res.json({ success: false, message: checkCourseUsing2.message });
+      }
+    }
+
     if (courserefer != null && courserefer != '') {
       const queryCheckCustomerCourse = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
       const resCheckCustomerCourse = await queryPromise(queryCheckCustomerCourse, [courserefer]);
@@ -658,12 +674,17 @@ async function checkCourseShare(courserefer, studentid) {
   const results = await queryPromise(query, [courserefer]);
   if (results.length > 0) {
     if(results[0].coursetype == 'Monthly') {
-      const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?) AND studentid <> ?';
-      const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer, studentid]);
+      let params = [courserefer, courserefer];
+      const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?)'
+      if(studentid!=null && studentid !='') {
+        queryCheckUserd += 'AND studentid <> ?';
+        params.push(studentid);
+      }
+      const resCheckUserd = await queryPromise(queryCheckUserd, params);
       if (resCheckUserd.length > 0) {
         const count = resCheckUserd[0].count;
         if (count > 0) {
-          return { results: false, message: 'Monthly course cannot share, Course already used!' };
+          return { results: false, message: 'คอร์สรายเดือนไม่สามารถแชร์ได้, '+courserefer+' มีผู้ใช้งานแล้ว!' };
         }else{
           return { results: true, message: '' };
         }
