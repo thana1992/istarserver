@@ -594,55 +594,53 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
     const results = await queryPromise(query, [firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, shortnote, req.user.username, studentid])
 
     if (results.affectedRows > 0) {
-      if(courserefer != null && courserefer != '') {
-        const queryUpdateCourse1 = 'UPDATE tstudent set courserefer = ? WHERE studentid = ?';
-        const updateRes1 = await queryPromise(queryUpdateCourse1, [courserefer, studentid]);
-
-        if (updateRes1.affectedRows > 0) {
-          const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
-          const resCheckCourseOwner = await queryPromise(queryCheckCourseOwner, [courserefer]);
-          if (resCheckCourseOwner.length > 0) {
-            let owner = resCheckCourseOwner[0].owner;
-            if(owner != 'trial') {
-              let ownerList = owner ? owner.split(',') : []; // แปลง owner ให้เป็น array
-              if (!ownerList.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
-                ownerList.push(studentid); // เพิ่ม studentid เข้าไปใน list
-                let newOwner = ownerList.join(','); // แปลง array กลับเป็น string
-                
-                // ทำการอัปเดตค่า owner ในฐานข้อมูล
-                const queryUpdateOwner = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
-                await queryPromise(queryUpdateOwner, [newOwner, courserefer]);
-              }
-            }
-          }
-        }
-      }
-
-      if(courserefer2 != null && courserefer2 != '') {
-        const queryUpdateCourse2 = 'UPDATE tstudent set courserefer2 = ? WHERE studentid = ?';
-        const updateRes2 = await queryPromise(queryUpdateCourse2, [courserefer2, studentid]);
-
-        if (updateRes2.affectedRows > 0) {
-          const queryCheckCourseOwner = 'select * from tcustomer_course where courserefer = ?';
-          const resCheckCourseOwner = await queryPromise(queryCheckCourseOwner, [courserefer2]);
-          if (resCheckCourseOwner.length > 0) {
-            let owner = resCheckCourseOwner[0].owner;
-            if(owner != 'trial') {
-              let ownerList = owner ? owner.split(',') : []; // แปลง owner ให้เป็น array
-              if (!ownerList.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
-                ownerList.push(studentid); // เพิ่ม studentid เข้าไปใน list
-                let newOwner = ownerList.join(','); // แปลง array กลับเป็น string
-                
-                // ทำการอัปเดตค่า owner ในฐานข้อมูล
-                const queryUpdateOwner = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
-                await queryPromise(queryUpdateOwner, [newOwner, courserefer2]);
-              }
-            }
-          }
-        }
-      }
-
       
+      const queryUpdateCourse1 = 'UPDATE tstudent set courserefer = ? WHERE studentid = ?';
+      const updateRes1 = await queryPromise(queryUpdateCourse1, [courserefer, studentid]);
+
+      if (updateRes1.affectedRows > 0) {
+        const queryCheckCourseOwner1 = 'select * from tcustomer_course where courserefer = ?';
+        const resCheckCourseOwner1 = await queryPromise(queryCheckCourseOwner1, [courserefer]);
+        if (resCheckCourseOwner1.length > 0) {
+          let owner1 = resCheckCourseOwner1[0].owner;
+          if(owner1 != 'trial') {
+            let ownerList1 = owner ? owner1.split(',') : []; // แปลง owner ให้เป็น array
+            if (!ownerList1.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
+              ownerList1.push(studentid); // เพิ่ม studentid เข้าไปใน list
+              let newOwner1 = ownerList.join(','); // แปลง array กลับเป็น string
+              
+              // ทำการอัปเดตค่า owner ในฐานข้อมูล
+              const queryUpdateOwner1 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
+              await queryPromise(queryUpdateOwner1, [newOwner1, courserefer]);
+            }
+          }
+        }
+      }
+    
+
+    
+      const queryUpdateCourse2 = 'UPDATE tstudent set courserefer2 = ? WHERE studentid = ?';
+      const updateRes2 = await queryPromise(queryUpdateCourse2, [courserefer2, studentid]);
+
+      if (updateRes2.affectedRows > 0) {
+        const queryCheckCourseOwner2 = 'select * from tcustomer_course where courserefer = ?';
+        const resCheckCourseOwner2 = await queryPromise(queryCheckCourseOwner2, [courserefer2]);
+        if (resCheckCourseOwner2.length > 0) {
+          let owner2 = resCheckCourseOwner2[0].owner;
+          if(owner2 != 'trial') {
+            let ownerList2 = owner2 ? owner2.split(',') : []; // แปลง owner ให้เป็น array
+            if (!ownerList.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
+              ownerList2.push(studentid); // เพิ่ม studentid เข้าไปใน list
+              let newOwner2 = ownerList2.join(','); // แปลง array กลับเป็น string
+              
+              // ทำการอัปเดตค่า owner ในฐานข้อมูล
+              const queryUpdateOwner2 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
+              await queryPromise(queryUpdateOwner2, [newOwner2, courserefer2]);
+            }
+          }
+        }
+      }
+
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
     } else {
       return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
@@ -660,7 +658,7 @@ async function checkCourseShare(courserefer, studentid) {
   const results = await queryPromise(query, [courserefer]);
   if (results.length > 0) {
     if(results[0].coursetype == 'Monthly') {
-      const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ? AND studentid <> ?';
+      const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?) AND studentid <> ?';
       const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer, studentid]);
       if (resCheckUserd.length > 0) {
         const count = resCheckUserd[0].count;
