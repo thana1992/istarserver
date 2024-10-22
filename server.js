@@ -659,8 +659,16 @@ async function checkCourseShare(courserefer, studentid) {
   const query = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
   const results = await queryPromise(query, [courserefer]);
   if (results.length > 0) {
-    if(results[0].coursetype == 'Monthly' && results[0].owner != studentid) {
-      return { results: false, message: 'Monthly course cannot share, Course already used!' };
+    if(results[0].coursetype == 'Monthly') {
+      const queryCheckUserd = 'SELECT count(*) FROM tstudent WHERE courserefer = ? OR courserefer2 = ? AND studentid <> ?';
+      const resCheckUserd = await queryPromise(queryCheckUserd, [courserefer, courserefer, studentid]);
+      if (resCheckUserd.length > 0) {
+        const count = resCheckUserd[0].count;
+        if (count > 0) {
+          return { results: false, message: 'Monthly course cannot share, Course already used!' };
+        }else{
+          return { results: true, message: '' };
+        }
     }else{
       return { results: true, message: '' };
     }
