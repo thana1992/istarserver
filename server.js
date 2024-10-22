@@ -607,7 +607,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
             let ownerList1 = owner1 ? owner1.split(',') : []; // แปลง owner ให้เป็น array
             if (!ownerList1.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
               ownerList1.push(studentid); // เพิ่ม studentid เข้าไปใน list
-              let newOwner1 = ownerList.join(','); // แปลง array กลับเป็น string
+              let newOwner1 = ownerList1.join(','); // แปลง array กลับเป็น string
               
               // ทำการอัปเดตค่า owner ในฐานข้อมูล
               const queryUpdateOwner1 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
@@ -629,7 +629,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
           let owner2 = resCheckCourseOwner2[0].owner;
           if(owner2 != 'trial') {
             let ownerList2 = owner2 ? owner2.split(',') : []; // แปลง owner ให้เป็น array
-            if (!ownerList.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
+            if (!ownerList2.includes(studentid)) { // ถ้า studentid ไม่อยู่ใน ownerList
               ownerList2.push(studentid); // เพิ่ม studentid เข้าไปใน list
               let newOwner2 = ownerList2.join(','); // แปลง array กลับเป็น string
               
