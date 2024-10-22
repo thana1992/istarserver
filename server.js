@@ -572,14 +572,17 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, familyid, courserefer, courserefer2, shortnote } = req.body;
+
     if(courserefer != null && courserefer != '') {
       const checkCourseUsing1 = await checkCourseShare(courserefer, studentid);
+      console.log("checkCourseUsing1 : " + JSON.stringify(checkCourseUsing1));
       if (!checkCourseUsing1.results) {
         return res.json({ success: false, message: checkCourseUsing1.message });
       }
     }
     if(courserefer2 != null && courserefer2 != '') {
       const checkCourseUsing2 = await checkCourseShare(courserefer2, studentid);
+      console.log("checkCourseUsing2 : " + JSON.stringify(checkCourseUsing2));
       if (!checkCourseUsing2.results) {
         return res.json({ success: false, message: checkCourseUsing2.message });
       }
