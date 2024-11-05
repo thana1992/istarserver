@@ -671,31 +671,36 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
 
 async function checkCourseShare(courserefer, studentid) {
   const query = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
-  const results = await queryPromise(query, [courserefer]);
-  if (results.length > 0) {
-    if(results[0].coursetype == 'Monthly') {
-      let params = [courserefer, courserefer];
-      const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?)'
-      if(studentid!=null && studentid !='') {
-        queryCheckUserd += 'AND studentid <> ?';
-        params.push(studentid);
-      }
-      const resCheckUserd = await queryPromise(queryCheckUserd, params);
-      if (resCheckUserd.length > 0) {
-        const count = resCheckUserd[0].count;
-        if (count > 0) {
-          return { results: false, message: 'คอร์สรายเดือนไม่สามารถแชร์ได้, '+courserefer+' มีผู้ใช้งานแล้ว!' };
+  try {
+    const results = await queryPromise(query, [courserefer]);
+    if (results.length > 0) {
+      if(results[0].coursetype == 'Monthly') {
+        let params = [courserefer, courserefer];
+        const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?)'
+        if(studentid!=null && studentid !='') {
+          queryCheckUserd += 'AND studentid <> ?';
+          params.push(studentid);
+        }
+        const resCheckUserd = await queryPromise(queryCheckUserd, params);
+        if (resCheckUserd.length > 0) {
+          const count = resCheckUserd[0].count;
+          if (count > 0) {
+            return { results: false, message: 'คอร์สรายเดือนไม่สามารถแชร์ได้, '+courserefer+' มีผู้ใช้งานแล้ว!' };
+          }else{
+            return { results: true, message: '' };
+          }
         }else{
           return { results: true, message: '' };
         }
       }else{
         return { results: true, message: '' };
       }
-    }else{
-      return { results: true, message: '' };
+    } else {
+      return { results: false, message: 'Course not found' };
     }
-  } else {
-    return { results: false, message: 'Course not found' };
+  } catch (error) {
+    console.error('Error in checkCourseShare', error.stack);
+    return { results: false, message: 'Internal server error' };
   }
 }
 app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
@@ -2374,6 +2379,7 @@ cron.schedule('0,30 * * * *', () => {
 
 const mysql2 = require('mysql2/promise');
 const { log } = require('console');
+const { tr } = require('date-fns/locale');
 
 // Create a connection pool
 const DB_HOST = process.env.DB_HOST;
