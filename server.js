@@ -676,7 +676,7 @@ async function checkCourseShare(courserefer, studentid) {
     if (results.length > 0) {
       if(results[0].coursetype == 'Monthly') {
         let params = [courserefer, courserefer];
-        const queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?)'
+        let queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?)'
         if(studentid!=null && studentid !='') {
           queryCheckUserd += 'AND studentid <> ?';
           params.push(studentid);
