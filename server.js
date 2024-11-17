@@ -2371,6 +2371,14 @@ async function uploadOrUpdateLogFile() {
   }
 }
 
+setInterval(() => {
+  console.log('Server restarting...');
+  server.close(() => {
+    process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
+  });
+}, 5 * 60 * 1000);
+
+
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
 cron.schedule('0,30 * * * *', () => {
@@ -2442,11 +2450,17 @@ async function queryPromise(query, params, showparams) {
   }
 }
 
-app.listen(port, '0.0.0.0', () => {
+const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
 });
+
+// app.listen(port, '0.0.0.0', () => {
+//   clearActiveSessions();
+//   console.log(`Server is running on port ${port}`);
+//   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
+// });
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
