@@ -2371,14 +2371,45 @@ async function uploadOrUpdateLogFile() {
   }
 }
 
-setInterval(() => {
-  console.log('Server restarting...');
-  server.close(() => {
-    process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
-  });
-}, 5 * 60 * 1000);
+function scheduleRestartAtSpecificTime(hour, minute) {
+  const now = new Date();
+  const nextRestart = new Date();
 
+  nextRestart.setHours(hour);
+  nextRestart.setMinutes(minute);
+  nextRestart.setSeconds(0);
+  
+  // ถ้าเวลาที่ตั้งน้อยกว่าเวลาปัจจุบัน ให้ตั้งเป็นวันถัดไป
+  if (nextRestart <= now) {
+    nextRestart.setDate(nextRestart.getDate() + 1);
+  }
 
+  const timeUntilNextRestart = nextRestart - now; // เวลาที่เหลือจนถึงการรีสตาร์ทในหน่วยมิลลิวินาที
+
+  console.log(`Scheduled server restart at ${nextRestart}`);
+
+  setTimeout(() => {
+    console.log("###################################################################");
+    console.log("###################################################################");
+    console.log('############## upload log file before restart server ##############');
+    uploadOrUpdateLogFile();
+    console.log("###################################################################");
+    console.log("###################################################################");
+    console.log('####################### Server restarting... ######################');
+    console.log("###################################################################");
+    console.log("###################################################################");
+
+    server.close(() => {
+      process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
+    });
+
+    // เรียกใช้ฟังก์ชันใหม่เพื่อวางแผนการรีสตาร์ทครั้งถัดไป
+    scheduleRestartAtSpecificTime(hour, minute);
+  }, timeUntilNextRestart);
+}
+
+// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 03:40 น.
+scheduleRestartAtSpecificTime(3, 40);
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
 cron.schedule('0,30 * * * *', () => {
