@@ -2371,7 +2371,7 @@ async function uploadOrUpdateLogFile() {
   }
 }
 
-function scheduleRestartAtSpecificTime(hour, minute) {
+async function scheduleRestartAtSpecificTime(hour, minute) {
   const now = new Date();
   const nextRestart = new Date();
 
@@ -2388,7 +2388,7 @@ function scheduleRestartAtSpecificTime(hour, minute) {
 
   console.log(`Scheduled server restart at ${nextRestart}`);
 
-  setTimeout(() => {
+  await setTimeout(() => {
     console.log("###################################################################");
     console.log("###################################################################");
     console.log('############## upload log file before restart server ##############');
@@ -2409,7 +2409,7 @@ function scheduleRestartAtSpecificTime(hour, minute) {
 }
 
 // เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 03:40 น.
-scheduleRestartAtSpecificTime(3, 40);
+scheduleRestartAtSpecificTime(4, 5);
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 30 นาที
 cron.schedule('0,30 * * * *', () => {
