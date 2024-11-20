@@ -2442,13 +2442,13 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log("###################################################################");
   console.log("###################################################################");
   console.log('############## upload log file before restart server ##############');
-  uploadOrUpdateLogFile();
+  await uploadOrUpdateLogFile();
   console.log("###################################################################");
   console.log("###################################################################");
   console.log('####################### Server restarting... ######################');
   console.log("###################################################################");
   console.log("###################################################################");
-  uploadOrUpdateLogFile();
+  await uploadOrUpdateLogFile();
   server.close(() => {
     process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
   });
@@ -2457,8 +2457,8 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   scheduleRestartAtSpecificTime(hour, minute);
 }
 
-// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 22:15 น.
-scheduleRestartAtSpecificTime(22, 15);
+// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 22:30 น.
+scheduleRestartAtSpecificTime(22, 30);
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 55 นาที
 cron.schedule('0,55 * * * *', () => {
