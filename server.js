@@ -2371,6 +2371,49 @@ async function uploadOrUpdateLogFile() {
   }
 }
 
+// async function scheduleRestartAtSpecificTime(hour, minute) {
+//   const now = new Date();
+//   const nextRestart = new Date();
+
+//   nextRestart.setHours(hour);
+//   nextRestart.setMinutes(minute);
+//   nextRestart.setSeconds(0);
+  
+//   // ถ้าเวลาที่ตั้งน้อยกว่าเวลาปัจจุบัน ให้ตั้งเป็นวันถัดไป
+//   if (nextRestart <= now) {
+//     nextRestart.setDate(nextRestart.getDate() + 1);
+//   }
+
+//   const timeUntilNextRestart = nextRestart - now; // เวลาที่เหลือจนถึงการรีสตาร์ทในหน่วยมิลลิวินาที
+
+//   console.log(`Scheduled server restart at ${nextRestart}`);
+
+//   await setTimeout(() => {
+//     const jsonData = {
+//       message: '[Auto] Server is restartiing...'
+//     };
+
+//     sendNotification(jsonData);
+
+//     console.log("###################################################################");
+//     console.log("###################################################################");
+//     console.log('############## upload log file before restart server ##############');
+//     uploadOrUpdateLogFile();
+//     console.log("###################################################################");
+//     console.log("###################################################################");
+//     console.log('####################### Server restarting... ######################');
+//     console.log("###################################################################");
+//     console.log("###################################################################");
+
+//     server.close(() => {
+//       process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
+//     });
+
+//     // เรียกใช้ฟังก์ชันใหม่เพื่อวางแผนการรีสตาร์ทครั้งถัดไป
+//     scheduleRestartAtSpecificTime(hour, minute);
+//   }, timeUntilNextRestart);
+// }
+
 async function scheduleRestartAtSpecificTime(hour, minute) {
   const now = new Date();
   const nextRestart = new Date();
@@ -2388,37 +2431,37 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
 
   console.log(`Scheduled server restart at ${nextRestart}`);
 
-  await setTimeout(() => {
-    const jsonData = {
-      message: '[Auto] Server is restartiing...'
-    };
+  await new Promise(resolve => setTimeout(resolve, timeUntilNextRestart));
 
-    sendNotification(jsonData);
+  const jsonData = {
+    message: '[Auto] Server is restarting...'
+  };
 
-    console.log("###################################################################");
-    console.log("###################################################################");
-    console.log('############## upload log file before restart server ##############');
-    uploadOrUpdateLogFile();
-    console.log("###################################################################");
-    console.log("###################################################################");
-    console.log('####################### Server restarting... ######################');
-    console.log("###################################################################");
-    console.log("###################################################################");
+  sendNotification(jsonData);
 
-    server.close(() => {
-      process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
-    });
+  console.log("###################################################################");
+  console.log("###################################################################");
+  console.log('############## upload log file before restart server ##############');
+  uploadOrUpdateLogFile();
+  console.log("###################################################################");
+  console.log("###################################################################");
+  console.log('####################### Server restarting... ######################');
+  console.log("###################################################################");
+  console.log("###################################################################");
 
-    // เรียกใช้ฟังก์ชันใหม่เพื่อวางแผนการรีสตาร์ทครั้งถัดไป
-    scheduleRestartAtSpecificTime(hour, minute);
-  }, timeUntilNextRestart);
+  server.close(() => {
+    process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
+  });
+
+  // เรียกใช้ฟังก์ชันใหม่เพื่อวางแผนการรีสตาร์ทครั้งถัดไป
+  scheduleRestartAtSpecificTime(hour, minute);
 }
 
-// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 03:40 น.
-scheduleRestartAtSpecificTime(4, 5);
+// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 22:15 น.
+scheduleRestartAtSpecificTime(22, 15);
 uploadOrUpdateLogFile();
-// ตั้งเวลาให้รันทุกๆ 30 นาที
-cron.schedule('0,30 * * * *', () => {
+// ตั้งเวลาให้รันทุกๆ 55 นาที
+cron.schedule('0,55 * * * *', () => {
   uploadOrUpdateLogFile();
 });
 
