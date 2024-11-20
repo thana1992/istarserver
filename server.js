@@ -2448,7 +2448,7 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log('####################### Server restarting... ######################');
   console.log("###################################################################");
   console.log("###################################################################");
-
+  uploadOrUpdateLogFile();
   server.close(() => {
     process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
   });
