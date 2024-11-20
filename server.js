@@ -1878,20 +1878,18 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid } = req.body;
     const courserefer = await generateRefer(course.refercode);
-    let query = 'INSERT INTO tcustomer_course (courserefer, courseid ';
+    let query = 'INSERT INTO tcustomer_course (courserefer, courseid, paid ';
       if (coursetype) query += ', coursetype ';
       if (remaining) query += ', remaining ';
       if (startdate) query += ', startdate ';
       if (expiredate) query += ', expiredate ';
       if (period) query += ', period ';
-      if (paid) query += ', paid ';
-      query += ') VALUES (?, ?';
+      query += ') VALUES (?, ?, ?';
       if (coursetype) query += ', ?';
       if (remaining) query += ', ?';
       if (startdate) query += ', ?';
       if (expiredate) query += ', ?';
-      if (period) query += ', ?';
-      if (paid) query += ', ?';
+      query += ', ?';
       query += ')';
       const params = [courserefer, course.courseid];
       if (coursetype) params.push(coursetype);
@@ -1899,7 +1897,6 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if (startdate) params.push(startdate);
       if (expiredate) params.push(expiredate);
       if (period) params.push(period);
-      if (paid) params.push(paid);
 
     const results = await queryPromise(query, params);
     if (results.affectedRows > 0) {
@@ -2446,7 +2443,7 @@ const pool = mysql2.createPool({
   queueLimit: 0
 });
 
-async function queryPromise(query, params, showparams) {
+async function queryPromise(query, params, showlog) {
   let connection;
   try {
     console.log("Query : " + query);
@@ -2454,7 +2451,7 @@ async function queryPromise(query, params, showparams) {
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
     
-    //if(showparams){
+    if(showlog){
       const maskedParams = { ...params };
       for (const key in maskedParams) {
         if (key.includes('image') || key.includes('password')) {
@@ -2462,6 +2459,7 @@ async function queryPromise(query, params, showparams) {
         }
       }
       console.log("Params : " + JSON.stringify(maskedParams));
+      
       if (Array.isArray(results)) {
         // Clone results and mask values of keys containing "image"
         const maskedResults = results.map(result => {
@@ -2473,13 +2471,12 @@ async function queryPromise(query, params, showparams) {
           }
           return maskedResult;
         });
-        
         console.log("Results : " + JSON.stringify(maskedResults));
       } else {
         console.log("Results is not an array! ");
         console.log("Results : " + JSON.stringify(results));
       }
-    //}
+    }
 
     return results;
   } catch (error) {
