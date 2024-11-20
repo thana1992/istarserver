@@ -1932,7 +1932,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
 app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer } = req.body;
-    const query = 'SELECT * FROM tstudent WHERE courserefer = ? or courserefer2 = ?';
+    const query = 'SELECT * FROM tstudent WHERE courserefer = ?';
     const results = await queryPromise(query, [courserefer]);
     if (results.length > 0) {
       res.json({ success: false, message: 'This course is currently being used.', results });
