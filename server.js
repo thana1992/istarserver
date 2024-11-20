@@ -1889,9 +1889,9 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if (remaining) query += ', ?';
       if (startdate) query += ', ?';
       if (expiredate) query += ', ?';
-      query += ', ?';
+      if (period) query += ', ?';
       query += ')';
-      const params = [courserefer, course.courseid];
+      const params = [courserefer, course.courseid, paid];
       if (coursetype) params.push(coursetype);
       if (remaining) params.push(remaining);
       if (startdate) params.push(startdate);
