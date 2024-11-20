@@ -1603,7 +1603,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
       '     WHEN b.coursetype IS NULL THEN \'ไม่มีคอร์ส\' ' +
       '     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
       '   END AS remaining_label, ' +
-      ' b.remaining, b.expiredate, t.coursename, d.mobileno, a.shortnote ' +
+      ' b.remaining, b.expiredate, t.coursename, d.mobileno, a.shortnote, a.level ' +
       ' FROM tstudent a ' +
       ' LEFT JOIN tcustomer_course b ' +
       ' ON a.courserefer = b.courserefer ' +
