@@ -1898,7 +1898,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if (expiredate) params.push(expiredate);
       if (period) params.push(period);
 
-    const results = await queryPromise(query, params);
+    const results = await queryPromise(query, params, true);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
