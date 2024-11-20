@@ -2389,6 +2389,12 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log(`Scheduled server restart at ${nextRestart}`);
 
   await setTimeout(() => {
+    const jsonData = {
+      message: 'Server is restartiing...",
+    };
+
+    sendNotification(jsonData);
+
     console.log("###################################################################");
     console.log("###################################################################");
     console.log('############## upload log file before restart server ##############');
