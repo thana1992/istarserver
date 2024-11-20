@@ -2390,7 +2390,7 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
 
   await setTimeout(() => {
     const jsonData = {
-      message: 'Server is restartiing...",
+      message: '[Auto] Server is restartiing...",
     };
 
     sendNotification(jsonData);
