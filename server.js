@@ -1876,7 +1876,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid } = req.body;
     const courserefer = await generateRefer(course.refercode);
     let query = 'INSERT INTO tcustomer_course (courserefer, courseid ';
       if (coursetype) query += ', coursetype ';
@@ -1884,12 +1884,14 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if (startdate) query += ', startdate ';
       if (expiredate) query += ', expiredate ';
       if (period) query += ', period ';
+      if (paid) query += ', paid ';
       query += ') VALUES (?, ?';
       if (coursetype) query += ', ?';
       if (remaining) query += ', ?';
       if (startdate) query += ', ?';
       if (expiredate) query += ', ?';
       if (period) query += ', ?';
+      if (paid) query += ', ?';
       query += ')';
       const params = [courserefer, course.courseid];
       if (coursetype) params.push(coursetype);
@@ -1897,6 +1899,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if (startdate) params.push(startdate);
       if (expiredate) params.push(expiredate);
       if (period) params.push(period);
+      if (paid) params.push(paid);
 
     const results = await queryPromise(query, params);
     if (results.affectedRows > 0) {
@@ -1912,9 +1915,9 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, remaining, startdate, expiredate, period } = req.body;
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, period, courserefer]);
+    const { courserefer, courseid, coursetype, remaining, startdate, expiredate, period, paid } = req.body;
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ?, paid = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, period, paid, courserefer]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
