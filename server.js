@@ -2307,16 +2307,14 @@ const s3 = new AWS.S3({
   accessKeyId: process.env.DO_SPACES_KEY,
   secretAccessKey: process.env.DO_SPACES_SECRET,
 });
-
 app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
   try {
-    const fileStream = fs.create
+    const fileStream = fs.createReadStream(req.file.path);
     let fileName = `slip_customer_course/${req.file.originalname}`;
     let params = {
       Bucket: 'istar', // ชื่อ Space ของคุณ
       Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
       Body: fileStream,
-      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
     };
 
     // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
@@ -2330,7 +2328,6 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
         fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
         params.Key = fileName;
-        params.ACL = 'public-read';
         fileIndex++;
       } catch (headErr) {
         if (headErr.code === 'NotFound') {
@@ -2343,19 +2340,27 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
       }
     }
 
-    const data = await s3.upload(params).promise();
+    // อัพโหลดไฟล์ใหม่
+    const data = await s3.putObject(params).promise();
+
+    // ตั้งค่า ACL แยกต่างหาก
+    await s3.putObjectAcl({
+      Bucket: 'istar',
+      Key: fileName,
+      ACL: 'public-read',
+    }).promise();
 
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
     fs.unlink(req.file.path, (err) => {
       if (err) console.error('Failed to delete temporary file:', err);
     });
 
-    const profileImageUrl = data.Location;
+    const profileImageUrl = `https://${spacesEndpoint.hostname}/${params.Bucket}/${params.Key}`;
     const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
     const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
     await queryPromise(query, [profileImageUrl, courserefer]);
 
-    res.json({ url: data.Location });
+    res.json({ url: profileImageUrl });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -2369,7 +2374,6 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
       Bucket: 'istar', // ชื่อ Space ของคุณ
       Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
       Body: fileStream,
-      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
     };
 
     // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
@@ -2383,7 +2387,6 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
         fileName = `profile_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
         params.Key = fileName;
-        params.ACL = 'public-read';
         fileIndex++;
       } catch (headErr) {
         if (headErr.code === 'NotFound') {
@@ -2396,7 +2399,15 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
       }
     }
 
-    const data = await s3.upload(params).promise();
+    // อัพโหลดไฟล์ใหม่
+    const data = await s3.putObject(params).promise();
+
+    // ตั้งค่า ACL แยกต่างหาก
+    await s3.putObjectAcl({
+      Bucket: 'istar',
+      Key: fileName,
+      ACL: 'public-read',
+    }).promise();
 
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
     fs.unlink(req.file.path, (err) => {
@@ -2404,7 +2415,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     });
 
     // อัพเดท URL ของรูปภาพในฐานข้อมูล
-    const profileImageUrl = data.Location;
+    const profileImageUrl = `https://${spacesEndpoint.hostname}/${params.Bucket}/${params.Key}`;
     const studentId = req.body.studentid; // สมมติว่า studentid ถูกส่งมาพร้อมกับ request
 
     const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
