@@ -18,7 +18,6 @@ const blacklistSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
-const multer = require('multer');
 
 // for save file log
 const morgan = require('morgan');
@@ -2308,6 +2307,40 @@ app.post('/change-password', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+const AWS = require('aws-sdk');
+
+// ตั้งค่า AWS SDK ให้เชื่อมต่อกับ DigitalOcean Spaces
+const spacesEndpoint = new AWS.Endpoint('sgp1.digitaloceanspaces.com');
+const s3 = new AWS.S3({
+  endpoint: spacesEndpoint,
+  accessKeyId: process.env.DO_SPACES_KEY,
+  secretAccessKey: process.env.DO_SPACES_SECRET,
+});
+
+const multer = require('multer');
+app.post('/upload', upload.single('file'), (req, res) => {
+  const fileContent = fs.readFileSync(req.file.path);
+  const params = {
+    Bucket: 'istar', // ชื่อ Space ของคุณ
+    Key: req.file.originalname, // ชื่อไฟล์ใน Space
+    Body: fileContent,
+    ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+  };
+
+  s3.upload(params, (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
+    fs.unlinkSync(req.file.path);
+
+    res.json({ url: data.Location });
+  });
+});
+
+
 const cron = require('node-cron');
 const { google } = require('googleapis');
 const drive = google.drive('v3');
