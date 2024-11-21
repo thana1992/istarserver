@@ -2023,6 +2023,20 @@ app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   }
 });
 
+app.get('/customer_course/:courserefer/slip-image', verifyToken, async (req, res) => {
+  const { courserefer } = req.params;
+  console.log("get slip image for customer_course : " + courserefer)
+  const query = 'SELECT slip_image_url FROM tcustomer_course WHERE courserefer = ?';
+  const results = await queryPromise(query, [courserefer]);
+
+  //console.log("get slip image results : " + JSON.stringify(results));
+  if (results.length > 0) {
+    res.json({ success: true, image: results[0].slip_image, imageUrl: results[0].slip_image_url });
+  } else {
+    res.json({ success: false, message: 'No slip image found' });
+  }
+});
+
 app.post('/getHolidayInformation', verifyToken, async (req, res) => {
   const { selectdate } = req.body;
   console.log("selectdate : " + selectdate);
@@ -2292,6 +2306,57 @@ const s3 = new AWS.S3({
   endpoint: spacesEndpoint,
   accessKeyId: process.env.DO_SPACES_KEY,
   secretAccessKey: process.env.DO_SPACES_SECRET,
+});
+
+app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
+  try {
+    const fileStream = fs.create
+    let fileName = `slip_customer_course/${req.file.originalname}`;
+    let params = {
+      Bucket: 'istar', // ชื่อ Space ของคุณ
+      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
+      Body: fileStream,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+    };
+
+    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
+    let fileExists = true;
+    let fileIndex = 1;
+    while (fileExists) {
+      try {
+        await s3.headObject(params).promise();
+        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
+        const fileExtension = req.file.originalname.split('.').pop();
+        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
+        fileName = `slip_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        params.Key = fileName;
+        fileIndex++;
+      } catch (headErr) {
+        if (headErr.code === 'NotFound') {
+          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
+          fileExists = false;
+        } else {
+          // ถ้าเกิดข้อผิดพลาดอื่นๆ
+          throw headErr;
+        }
+      }
+    }
+
+    const data = await s3.upload(params).promise();
+
+    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Failed to delete temporary file:', err);
+    });
+
+    const profileImageUrl = data.Location;
+    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courseid = ?';
+    await queryPromise(query, [profileImageUrl, courseid]);
+
+    res.json({ url: data.Location });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
