@@ -2330,6 +2330,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
         fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
         params.Key = fileName;
+        params.ACL = 'public-read';
         fileIndex++;
       } catch (headErr) {
         if (headErr.code === 'NotFound') {
@@ -2382,6 +2383,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
         fileName = `profile_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
         params.Key = fileName;
+        params.ACL = 'public-read';
         fileIndex++;
       } catch (headErr) {
         if (headErr.code === 'NotFound') {
