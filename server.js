@@ -63,7 +63,7 @@ app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, l
 // สร้าง middleware เพื่อ log response
 app.use((req, res, next) => {
   // Log request
-  logger.info(`[REQUEST] : ${req.method} ${req.url}`);
+  logger.info(`-----> REQUEST : ${req.method} ${req.url}`);
   const originalSend = res.send;
   res.send = function (body) {
     let logBody = body;
@@ -99,7 +99,7 @@ app.use((req, res, next) => {
       logger.warn('Unable to parse response body as JSON', error);
     }
 
-    //logger.info(`[RESPONSE] : ${req.url} : ---> ${logBody}`);
+    logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
@@ -2319,15 +2319,8 @@ const s3 = new AWS.S3({
 });
 
 const multer = require('multer');
-const upload = multer({ dest: 'profile_image/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-app.post('/upload', upload.single('file'), (req, res) => {
-  const fileContent = fs.readFileSync(req.file.path);
-  const params = {
-    Bucket: 'istar', // ชื่อ Space ของคุณ
-    Key: req.file.originalname, // ชื่อไฟล์ใน Space
-    Body: fileContent,
-    ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
-  };
+const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
+app.post('/uploadProfileImage', upload.single('profileImage'), (req, res) => {
 
   s3.upload(params, (err, data) => {
     if (err) {
