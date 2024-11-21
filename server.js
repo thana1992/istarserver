@@ -2283,6 +2283,9 @@ app.post('/change-password', verifyToken, async (req, res) => {
 });
 
 const AWS = require('aws-sdk');
+const fs = require('fs');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
 
 // ตั้งค่า AWS SDK ให้เชื่อมต่อกับ DigitalOcean Spaces
 const spacesEndpoint = new AWS.Endpoint('sgp1.digitaloceanspaces.com');
@@ -2292,29 +2295,53 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.DO_SPACES_SECRET,
 });
 
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
 app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
   try {
-    const fileContent = fs.readFileSync(req.file.path);
-    const params = {
+    const fileStream = fs.createReadStream(req.file.path);
+    let fileName = `profile_image/${req.file.originalname}`;
+    let params = {
       Bucket: 'istar', // ชื่อ Space ของคุณ
-      Key: `profile_image/${req.file.originalname}`, // ชื่อไฟล์ใน Space พร้อม path
-      Body: fileContent,
+      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
+      Body: fileStream,
       ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
     };
+
+    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
+    let fileExists = true;
+    let fileIndex = 1;
+    while (fileExists) {
+      try {
+        await s3.headObject(params).promise();
+        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
+        const fileExtension = req.file.originalname.split('.').pop();
+        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
+        fileName = `profile_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        params.Key = fileName;
+        fileIndex++;
+      } catch (headErr) {
+        if (headErr.code === 'NotFound') {
+          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
+          fileExists = false;
+        } else {
+          // ถ้าเกิดข้อผิดพลาดอื่นๆ
+          throw headErr;
+        }
+      }
+    }
 
     const data = await s3.upload(params).promise();
 
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
-    fs.unlinkSync(req.file.path);
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Failed to delete temporary file:', err);
+    });
 
     // อัพเดท URL ของรูปภาพในฐานข้อมูล
     const profileImageUrl = data.Location;
     const studentId = req.body.studentid; // สมมติว่า studentid ถูกส่งมาพร้อมกับ request
 
     const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
-    const results = await queryPromise(query, [profileImageUrl, studentId]);
+    await queryPromise(query, [profileImageUrl, studentId]);
 
     await deleteOldProfileImage(studentId);
 
@@ -2326,7 +2353,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
 
 async function deleteOldProfileImage(studentId) {
   const query = 'UPDATE tstudent SET profile_image = NULL WHERE studentid = ?';
-  const results = await queryPromise(query, [studentId]);
+  await queryPromise(query, [studentId]);
 }
 
 const cron = require('node-cron');
