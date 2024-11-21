@@ -2320,7 +2320,14 @@ const s3 = new AWS.S3({
 
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-app.post('/uploadProfileImage', upload.single('profileImage'), (req, res) => {
+app.post('/uploadProfileImage' , verifyToken, async, upload.single('profileImage'), (req, res) => {
+  const fileContent = fs.readFileSync(req.file.path);
+  const params = {
+    Bucket: 'istar', // ชื่อ Space ของคุณ
+    Key: `profile_image/${req.file.originalname}`, // ชื่อไฟล์ใน Space พร้อม path
+    Body: fileContent,
+    ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+  };
 
   s3.upload(params, (err, data) => {
     if (err) {
@@ -2329,6 +2336,9 @@ app.post('/uploadProfileImage', upload.single('profileImage'), (req, res) => {
 
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
     fs.unlinkSync(req.file.path);
+
+    const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
+    const results = await queryPromise(query, [data.Location, req.body.studentid]);
 
     res.json({ url: data.Location });
   });
