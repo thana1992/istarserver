@@ -2350,8 +2350,9 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
     });
 
     const profileImageUrl = data.Location;
-    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courseid = ?';
-    await queryPromise(query, [profileImageUrl, courseid]);
+    const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
+    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
+    await queryPromise(query, [profileImageUrl, courserefer]);
 
     res.json({ url: data.Location });
   } catch (err) {
