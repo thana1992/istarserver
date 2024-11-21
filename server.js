@@ -2299,8 +2299,6 @@ app.post('/change-password', verifyToken, async (req, res) => {
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-
-// ตั้งค่า AWS SDK ให้เชื่อมต่อกับ DigitalOcean Spaces
 const spacesEndpoint = new AWS.Endpoint('sgp1.digitaloceanspaces.com');
 const s3 = new AWS.S3({
   endpoint: spacesEndpoint,
@@ -2316,6 +2314,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
       Bucket: 'istar', // ชื่อ Space ของคุณ
       Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
       Body: fileStream,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
     };
 
     // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
@@ -2323,7 +2322,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
     let fileIndex = 1;
     while (fileExists) {
       try {
-        await s3.headObject(params).promise();
+        await s3.headObject({ Bucket: params.Bucket, Key: params.Key }).promise();
         // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
         const fileExtension = req.file.originalname.split('.').pop();
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
@@ -2344,13 +2343,6 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
     // อัพโหลดไฟล์ใหม่
     const data = await s3.upload(params).promise();
 
-    // ตั้งค่า ACL แยกต่างหาก
-    await s3.putObjectAcl({
-      Bucket: 'istar',
-      Key: fileName,
-      ACL: 'public-read',
-    }).promise();
-
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
     fs.unlink(req.file.path, (err) => {
       if (err) console.error('Failed to delete temporary file:', err);
@@ -2363,7 +2355,6 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
 
     res.json({ url: slipImageUrl });
   } catch (err) {
-    throw err;
     return res.status(500).json({ error: err.message });
   }
 });
@@ -2376,6 +2367,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
       Bucket: 'istar', // ชื่อ Space ของคุณ
       Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
       Body: fileStream,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
     };
 
     // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
@@ -2383,7 +2375,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     let fileIndex = 1;
     while (fileExists) {
       try {
-        await s3.headObject(params).promise();
+        await s3.headObject({ Bucket: params.Bucket, Key: params.Key }).promise();
         // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
         const fileExtension = req.file.originalname.split('.').pop();
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
@@ -2404,13 +2396,6 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     // อัพโหลดไฟล์ใหม่
     const data = await s3.upload(params).promise();
 
-    // ตั้งค่า ACL แยกต่างหาก
-    await s3.putObjectAcl({
-      Bucket: 'istar',
-      Key: fileName,
-      ACL: 'public-read',
-    }).promise();
-
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
     fs.unlink(req.file.path, (err) => {
       if (err) console.error('Failed to delete temporary file:', err);
@@ -2427,11 +2412,9 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
 
     res.json({ url: profileImageUrl });
   } catch (err) {
-    throw err;
     return res.status(500).json({ error: err.message });
   }
 });
-
 async function deleteOldProfileImage(studentId) {
   const query = 'UPDATE tstudent SET profile_image = NULL WHERE studentid = ?';
   await queryPromise(query, [studentId]);
