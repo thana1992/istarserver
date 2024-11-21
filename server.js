@@ -2363,6 +2363,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
 
     res.json({ url: slipImageUrl });
   } catch (err) {
+    throw err;
     return res.status(500).json({ error: err.message });
   }
 });
@@ -2426,6 +2427,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
 
     res.json({ url: profileImageUrl });
   } catch (err) {
+    throw err;
     return res.status(500).json({ error: err.message });
   }
 });
