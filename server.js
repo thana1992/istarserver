@@ -2307,6 +2307,8 @@ const s3 = new AWS.S3({
   accessKeyId: process.env.DO_SPACES_KEY,
   secretAccessKey: process.env.DO_SPACES_SECRET,
 });
+
+
 app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
   try {
     const fileStream = fs.createReadStream(req.file.path);
@@ -2341,7 +2343,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
     }
 
     // อัพโหลดไฟล์ใหม่
-    const data = await s3.putObject(params).promise();
+    const data = await s3.upload(params).promise();
 
     // ตั้งค่า ACL แยกต่างหาก
     await s3.putObjectAcl({
@@ -2355,7 +2357,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
       if (err) console.error('Failed to delete temporary file:', err);
     });
 
-    const profileImageUrl = `https://${spacesEndpoint.hostname}/${params.Bucket}/${params.Key}`;
+    const profileImageUrl = data.Location;
     const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
     const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
     await queryPromise(query, [profileImageUrl, courserefer]);
@@ -2400,7 +2402,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     }
 
     // อัพโหลดไฟล์ใหม่
-    const data = await s3.putObject(params).promise();
+    const data = await s3.upload(params).promise();
 
     // ตั้งค่า ACL แยกต่างหาก
     await s3.putObjectAcl({
@@ -2415,7 +2417,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     });
 
     // อัพเดท URL ของรูปภาพในฐานข้อมูล
-    const profileImageUrl = `https://${spacesEndpoint.hostname}/${params.Bucket}/${params.Key}`;
+    const profileImageUrl = data.Location;
     const studentId = req.body.studentid; // สมมติว่า studentid ถูกส่งมาพร้อมกับ request
 
     const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
