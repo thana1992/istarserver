@@ -2320,28 +2320,32 @@ const s3 = new AWS.S3({
 
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-app.post('/uploadProfileImage' , verifyToken, async, upload.single('profileImage'), (req, res) => {
-  const fileContent = fs.readFileSync(req.file.path);
-  const params = {
-    Bucket: 'istar', // ชื่อ Space ของคุณ
-    Key: `profile_image/${req.file.originalname}`, // ชื่อไฟล์ใน Space พร้อม path
-    Body: fileContent,
-    ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
-  };
+app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
+  try {
+    const fileContent = fs.readFileSync(req.file.path);
+    const params = {
+      Bucket: 'istar', // ชื่อ Space ของคุณ
+      Key: `profile_image/${req.file.originalname}`, // ชื่อไฟล์ใน Space พร้อม path
+      Body: fileContent,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+    };
 
-  s3.upload(params, (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+    const data = await s3.upload(params).promise();
 
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
     fs.unlinkSync(req.file.path);
 
-    const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
-    const results = await queryPromise(query, [data.Location, req.body.studentid]);
+    // อัพเดท URL ของรูปภาพในฐานข้อมูล
+    const profileImageUrl = data.Location;
+    const studentId = req.body.studentid; // สมมติว่า studentid ถูกส่งมาพร้อมกับ request
 
-    res.json({ url: data.Location });
-  });
+    const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
+    const results = await queryPromise(query, [profileImageUrl, studentId]);
+
+    res.json({ url: profileImageUrl });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 
