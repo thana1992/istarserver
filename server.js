@@ -1875,9 +1875,9 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate } = req.body;
     const courserefer = await generateRefer(course.refercode);
-    let query = 'INSERT INTO tcustomer_course (courserefer, courseid, paid ';
+    let query = 'INSERT INTO tcustomer_course (courserefer, courseid, paid, paydate ';
       if (coursetype) query += ', coursetype ';
       if (remaining) query += ', remaining ';
       if (startdate) query += ', startdate ';
@@ -1890,7 +1890,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if (expiredate) query += ', ?';
       if (period) query += ', ?';
       query += ')';
-      const params = [courserefer, course.courseid, paid];
+      const params = [courserefer, course.courseid, paid, paydate];
       if (coursetype) params.push(coursetype);
       if (remaining) params.push(remaining);
       if (startdate) params.push(startdate);
