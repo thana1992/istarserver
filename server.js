@@ -2308,7 +2308,6 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.DO_SPACES_SECRET,
 });
 
-
 app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
   try {
     const fileStream = fs.createReadStream(req.file.path);
@@ -2357,12 +2356,12 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
       if (err) console.error('Failed to delete temporary file:', err);
     });
 
-    const profileImageUrl = data.Location;
+    const slipImageUrl = data.Location;
     const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
     const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
-    await queryPromise(query, [profileImageUrl, courserefer]);
+    await queryPromise(query, [slipImageUrl, courserefer]);
 
-    res.json({ url: profileImageUrl });
+    res.json({ url: slipImageUrl });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -2595,7 +2594,7 @@ cron.schedule('0,55 * * * *', () => {
 
 const mysql2 = require('mysql2/promise');
 const { log } = require('console');
-const { tr } = require('date-fns/locale');
+const { tr, th } = require('date-fns/locale');
 
 // Create a connection pool
 const DB_HOST = process.env.DB_HOST;
