@@ -2415,6 +2415,7 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     return res.status(500).json({ error: err.message });
   }
 });
+
 async function deleteOldProfileImage(studentId) {
   const query = 'UPDATE tstudent SET profile_image = NULL WHERE studentid = ?';
   await queryPromise(query, [studentId]);
