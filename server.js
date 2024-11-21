@@ -2009,32 +2009,6 @@ app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) =>
   }
 });
 
-
-app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
-  const { studentid } = req.params;
-  const { image } = req.body;
-  console.log("upload image for studentid : " + studentid)
-  if (!image) {
-    return res.status(400).send('No image provided.');
-  }
-  if (Buffer.byteLength(image, 'base64') > 4 * 1024 * 1024) {
-    return res.status(400).send('Image size exceeds 5MB.');
-  }
-  // Update the gymnast's profile with the image URL in your database
-  try {
-    const query = 'UPDATE tstudent SET profile_image = ?, updateby = ? WHERE studentid = ?';
-    const results = await queryPromise(query, [image, req.user.username, studentid]);
-    if (results.affectedRows > 0) {
-      res.json({ success: true, message: 'Profile image uploaded successfully' });
-    } else {
-      res.json({ success: false, message: 'Error uploading profile image' });
-    }
-  } catch (error) {
-    res.status(500).send('Error updating profile image URL.');
-    throw error;
-  }
-});
-
 app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   const { studentid } = req.params;
   console.log("get profile image for studentid : " + studentid)
@@ -2342,12 +2316,18 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
     const results = await queryPromise(query, [profileImageUrl, studentId]);
 
+    await deleteOldProfileImage(studentId);
+
     res.json({ url: profileImageUrl });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
+async function deleteOldProfileImage(studentId) {
+  const query = 'UPDATE tstudent SET profile_image = NULL WHERE studentid = ?';
+  const results = await queryPromise(query, [studentId]);
+}
 
 const cron = require('node-cron');
 const { google } = require('googleapis');
