@@ -2038,12 +2038,12 @@ app.put('/student/:studentid/profile-image', verifyToken, async (req, res) => {
 app.get('/student/:studentid/profile-image', verifyToken, async (req, res) => {
   const { studentid } = req.params;
   console.log("get profile image for studentid : " + studentid)
-  const query = 'SELECT profile_image FROM tstudent WHERE studentid = ?';
+  const query = 'SELECT profile_image, profile_image_url FROM tstudent WHERE studentid = ?';
   const results = await queryPromise(query, [studentid]);
 
   //console.log("get profile image results : " + JSON.stringify(results));
   if (results.length > 0) {
-    res.json({ success: true, image: results[0].profile_image });
+    res.json({ success: true, image: results[0].profile_image, imageUrl: results[0].profile_image_url });
   } else {
     res.json({ success: false, message: 'No profile image found' });
   }
