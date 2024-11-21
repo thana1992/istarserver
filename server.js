@@ -2328,7 +2328,7 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
         // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
         const fileExtension = req.file.originalname.split('.').pop();
         const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
-        fileName = `slip_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
         params.Key = fileName;
         fileIndex++;
       } catch (headErr) {
