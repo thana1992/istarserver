@@ -2283,7 +2283,6 @@ app.post('/change-password', verifyToken, async (req, res) => {
 });
 
 const AWS = require('aws-sdk');
-const fs = require('fs');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
 
