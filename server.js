@@ -2319,6 +2319,7 @@ const s3 = new AWS.S3({
 });
 
 const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
 app.post('/upload', upload.single('file'), (req, res) => {
   const fileContent = fs.readFileSync(req.file.path);
   const params = {
