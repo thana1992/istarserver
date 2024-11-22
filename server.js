@@ -2621,7 +2621,7 @@ async function setTimeZone() {
 }
 
 // เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
-await setTimeZone();
+setTimeZone();
 
 async function queryPromise(query, params, showlog) {
   let connection;
