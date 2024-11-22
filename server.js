@@ -47,7 +47,7 @@ async function setTimeZone() {
     const checkTimeZone = await connection.query("SELECT @@time_zone;");
     console.log('Time zone is set to', stringify(checkTimeZone));
 
-    const checkVar1 = queryPromise("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()", [], true);
+    const checkVar1 = await queryPromise("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()", [], true);
     console.log('Check time zone : ', stringify(checkVar1));
     
   } catch (error) {
