@@ -1782,32 +1782,21 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
   };
 
   try {
-    // Query 1
-    const query1 = 'select count(*) as total from tstudent where delflag = 0';
-    const results1 = await queryPromise(query1);
-    if (results1.length > 0) {
-      datacard.totalStudents = results1[0].total;
-    }
+    // Combined query to get all necessary data in one go
+    const query = `
+      SELECT 
+        (SELECT count(*) FROM tstudent WHERE delflag = 0) AS totalStudents,
+        (SELECT count(*) FROM treservation WHERE classdate = ?) AS totalBookingToday,
+        (SELECT count(*) FROM treservation WHERE classdate = ?) AS totalBookingTomorrow,
+        (SELECT count(*) FROM jstudent) AS totalWaitingNewStudents
+    `;
+    const results = await queryPromise(query, [today, tomorrow]);
 
-    // Query 2
-    const query2 = 'select count(*) as total from treservation where classdate = ?';
-    const results2 = await queryPromise(query2, [today]);
-    if (results2.length > 0) {
-      datacard.totalBookingToday = results2[0].total;
-    }
-
-    // Query 3
-    const query3 = 'select count(*) as total from treservation where classdate = ?';
-    const results3 = await queryPromise(query3, [tomorrow]);
-    if (results3.length > 0) {
-      datacard.totalBookingTomorrow = results3[0].total;
-    }
-
-    // Query 4
-    const query4 = 'select count(*) as total from jstudent';
-    const results4 = await queryPromise(query4);
-    if (results4.length > 0) {
-      datacard.totalWaitingNewStudents = results4[0].total;
+    if (results.length > 0) {
+      datacard.totalStudents = results[0].totalStudents;
+      datacard.totalBookingToday = results[0].totalBookingToday;
+      datacard.totalBookingTomorrow = results[0].totalBookingTomorrow;
+      datacard.totalWaitingNewStudents = results[0].totalWaitingNewStudents;
     }
 
     // Send the response after all queries are completed
