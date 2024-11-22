@@ -1508,28 +1508,40 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
   try {
-    const query = 'SELECT a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, a.courserefer, a.courserefer2, a.shortnote, ' +
-      '   CONCAT(IFNULL(a.firstname,\'\'), \' \', IFNULL(a.middlename,\'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL(a.lastname,\'\'), \' (\', a.nickname,\')\') fullname, ' +
-      '   CASE WHEN b.coursetype = \'Monthly\' THEN \'รายเดือน\' ' +
-      '     WHEN b.coursetype IS NULL THEN \'ไม่มีคอร์ส\' ' +
-      '     ELSE CONCAT(b.remaining, \' ครั้ง\') ' +
-      '   END AS remaining_label, ' +
-      ' b.remaining, b.expiredate, t.coursename, d.mobileno, a.shortnote, a.level ' +
-      ' FROM tstudent a ' +
-      ' LEFT JOIN tcustomer_course b ' +
-      ' ON a.courserefer = b.courserefer ' +
-      ' LEFT JOIN tcourseinfo t ' +
-      ' ON b.courseid = t.courseid ' +
-      ' LEFT JOIN tfamily c ' +
-      ' ON a.familyid = c.familyid ' +
-      ' LEFT JOIN tuser d ' +
-      ' ON c.username = d.username' +
-      ' WHERE a.delflag = 0' +
-      ' ORDER BY a.createdate desc';
+    const query = `
+      SELECT 
+        a.studentid, 
+        a.familyid, 
+        a.firstname, 
+        a.middlename, 
+        a.lastname, 
+        a.nickname, 
+        a.gender, 
+        a.dateofbirth, 
+        a.courserefer, 
+        a.courserefer2, 
+        a.shortnote, 
+        CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,''), ' (', a.nickname,')') AS fullname, 
+        CASE 
+          WHEN b.coursetype = 'Monthly' THEN 'รายเดือน' 
+          WHEN b.coursetype IS NULL THEN 'ไม่มีคอร์ส' 
+          ELSE CONCAT(b.remaining, ' ครั้ง') 
+        END AS remaining_label, 
+        b.remaining, 
+        b.expiredate, 
+        t.coursename, 
+        d.mobileno, 
+        a.shortnote, 
+        a.level 
+      FROM tstudent a 
+      LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer 
+      LEFT JOIN tcourseinfo t ON b.courseid = t.courseid 
+      LEFT JOIN tfamily c ON a.familyid = c.familyid 
+      LEFT JOIN tuser d ON c.username = d.username 
+      WHERE a.delflag = 0 
+      ORDER BY a.createdate DESC
+    `;
     const results = await queryPromise(query);
-
-    // มันมีรูป base64 ที่เก็บในฐานข้อมูล ทำให้ข้อมูลมีขนาดใหญ่ ทำให้การปริ้น log มันเยอะมาก
-    //console.log("API getStudentlist result :" + JSON.stringify(results));
 
     if (results.length > 0) {
       res.json({ success: true, message: 'Get Student list successful', results });
