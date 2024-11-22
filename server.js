@@ -1913,9 +1913,9 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, remaining, startdate, expiredate, period, paid } = req.body;
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ?, paid = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, period, paid, courserefer]);
+    const { courserefer, courseid, coursetype, remaining, startdate, expiredate, period, paid, paydate } = req.body;
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ?, paid = ?, paydate WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, period, paid, paydate, courserefer]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
@@ -2607,6 +2607,11 @@ async function setTimeZone() {
   try {
     connection = await pool.getConnection();
     await connection.query("SET time_zone = 'Asia/Bangkok';");
+    const checkTimeZone = await connection.query("SELECT @@time_zone;");
+    console.log('Time zone is set to', checkTimeZone[0][0]['@@time_zone']);
+    const checkVar = await connection.query("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()");
+    console.log('checkVar : ', checkVar[0]);
+    
   } catch (error) {
     console.error('Error in setTimeZone', error.stack);
     throw error;
@@ -2616,7 +2621,8 @@ async function setTimeZone() {
 }
 
 // เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
-setTimeZone();
+await setTimeZone();
+
 async function queryPromise(query, params, showlog) {
   let connection;
   try {
