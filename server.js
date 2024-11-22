@@ -83,6 +83,7 @@ function maskSensitiveData(data) {
 
 // ฟังก์ชันตรวจสอบเขตเวลา
 async function checkTimeZone() {
+  await queryPromise("SET time_zone = 'Asia/Bangkok'", [], true);
   const query = 'SELECT NOW() as currentTime';
   await queryPromise(query, [], true);
 }
