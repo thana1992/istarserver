@@ -762,7 +762,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             const notifyResults = await queryPromise(queryNotifyData, [studentid]);
             if (notifyResults.length > 0 && req.user.username != 'tnpl') {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
+              var a = moment(classdate, "YYYYMMDD");
+              const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -897,11 +898,12 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                 const studentnickname = results[0].nickname;
                 const studentname = results[0].fullname;
                 const coursename = results[0].course_shortname;
-                const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                });
+                var a = moment(classdate, "YYYYMMDD");
+              const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              });
 
                 // Prepare notification data
                 const jsonData = {
