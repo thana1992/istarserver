@@ -37,7 +37,6 @@ const pool = mysql2.createPool({
   waitForConnections: true,
   connectionLimit: 30,
   queueLimit: 0,
-  timezone: 'Asia/Bangkok' 
 });
 
 async function queryPromise(query, params, showlog) {
@@ -45,7 +44,7 @@ async function queryPromise(query, params, showlog) {
   try {
     console.log("Query : " + query);
     connection = await pool.getConnection();
-    
+    await connection.query("SET time_zone = '+07:00';"); // ตั้งค่าเขตเวลาเป็นเวลาของไทย (UTC+7)
     const [results] = await connection.query(query, params);
     
     if (showlog) {
