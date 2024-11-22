@@ -632,25 +632,29 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
 });
 
 async function checkCourseShare(courserefer, studentid) {
-  const query = `
-    SELECT 
-      tcustomer_course.coursetype, 
-      COUNT(tstudent.studentid) AS count 
-    FROM tcustomer_course 
-    LEFT JOIN tstudent ON (tcustomer_course.courserefer = tstudent.courserefer OR tcustomer_course.courserefer = tstudent.courserefer2) 
-    WHERE tcustomer_course.courserefer = ? 
-    ${studentid ? 'AND tstudent.studentid <> ?' : ''}
-    GROUP BY tcustomer_course.coursetype
-  `;
-  const params = studentid ? [courserefer, studentid] : [courserefer];
-
+  const query = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
   try {
-    const results = await queryPromise(query, params);
+    const results = await queryPromise(query, [courserefer]);
     if (results.length > 0) {
-      const { coursetype, count } = results[0];
-      if (coursetype === 'Monthly' && count > 0) {
-        return { results: false, message: `คอร์สรายเดือนไม่สามารถแชร์ได้, ${courserefer} มีผู้ใช้งานแล้ว!` };
-      } else {
+      if(results[0].coursetype == 'Monthly') {
+        let params = [courserefer, courserefer];
+        let queryCheckUserd = 'SELECT count(*) as count FROM tstudent WHERE (courserefer = ? OR courserefer2 = ?)'
+        if(studentid!=null && studentid !='') {
+          queryCheckUserd += 'AND studentid <> ?';
+          params.push(studentid);
+        }
+        const resCheckUserd = await queryPromise(queryCheckUserd, params);
+        if (resCheckUserd.length > 0) {
+          const count = resCheckUserd[0].count;
+          if (count > 0) {
+            return { results: false, message: 'คอร์สรายเดือนไม่สามารถแชร์ได้, '+courserefer+' มีผู้ใช้งานแล้ว!' };
+          }else{
+            return { results: true, message: '' };
+          }
+        }else{
+          return { results: true, message: '' };
+        }
+      }else{
         return { results: true, message: '' };
       }
     } else {
@@ -899,11 +903,11 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                 const studentname = results[0].fullname;
                 const coursename = results[0].course_shortname;
                 var a = moment(classdate, "YYYYMMDD");
-              const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              });
+                const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                });
 
                 // Prepare notification data
                 const jsonData = {
