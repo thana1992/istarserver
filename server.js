@@ -1865,6 +1865,13 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       return acc;
     }, {});
 
+    // Remove classes with "แข่ง" in the class time only if there are no names
+    Object.keys(bookinglist).forEach(classLabel => {
+      if (classLabel.includes('แข่ง') && bookinglist[classLabel].length === 0) {
+        delete bookinglist[classLabel];
+      }
+    });
+
     console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
     res.json({ success: true, message: 'Get Booking list successful', bookinglist });
   } catch (error) {
