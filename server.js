@@ -18,9 +18,9 @@ const blacklistSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
-const { stringify } = require('querystring');
 
 const mysql2 = require('mysql2/promise');
+const { stringify } = require('querystring');
 
 // Create a connection pool
 const DB_HOST = process.env.DB_HOST;
@@ -28,7 +28,6 @@ const DB_PORT = process.env.DB_PORT;
 const DB_NAME = process.env.DB_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASSWORD = process.env.DB_PASSWORD;
-/*
 const pool = mysql2.createPool({
   host: DB_HOST,
   port: DB_PORT,
@@ -68,73 +67,6 @@ async function queryPromise(query, params, showlog) {
     throw error;
   } finally {
     if (connection) connection.release();
-  }
-}
-
-function maskSensitiveData(data) {
-  const maskedData = { ...data };
-  for (const key in maskedData) {
-    if (key.includes('image') || key.includes('password')) {
-      maskedData[key] = '[HIDDEN]';
-    }
-  }
-  return maskedData;
-}
-*/
-
-const { Sequelize } = require('sequelize');
-const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
-  host: DB_HOST,
-  dialect: 'mysql',
-  timezone: '+07:00', // ตั้งค่าเขตเวลาเป็นเวลาของไทย
-  pool: {
-    max: 30,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  },
-  dialectOptions: {
-    connectTimeout: 30000 // เพิ่มการตั้งค่า timeout เป็น 60 วินาที
-  }
-});
-
-const db = {};
-
-db.Sequelize = Sequelize;
-db.sequelize = sequelize;
-
-async function queryPromise(query, params, showlog) {
-  try {
-    console.log("Query : " + query);
-    const results = await db.sequelize.query(query, {
-      replacements: params
-    });
-
-    if (showlog) {
-      const maskedParams = maskSensitiveData(params);
-      console.log("Params : " + JSON.stringify(maskedParams));
-
-      if (Array.isArray(results)) {
-        const maskedResults = results.map(maskSensitiveData);
-        console.log("Results : " + JSON.stringify(maskedResults));
-      } else {
-        const maskedResult = maskSensitiveData(results);
-        console.log("Results is not an array!");
-        console.log("Results : " + JSON.stringify(maskedResult));
-      }
-    }
-
-    return results;
-  } catch (error) {
-    console.error('Error in queryPromise:', error);
-    if (error instanceof Sequelize.ConnectionError) {
-      console.error('Connection error:', error.message);
-    } else if (error instanceof Sequelize.TimeoutError) {
-      console.error('Timeout error:', error.message);
-    } else {
-      console.error('Unexpected error:', error.message);
-    }
-    throw error;
   }
 }
 
@@ -1892,72 +1824,67 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
-    const query = 'SELECT DISTINCT a.classtime, a.courseid, CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as class_label, a.classid FROM tclassinfo a join tcourseinfo b on a.courseid = b.courseid and b.enableflag = 1 where a.classday = ? and a.enableflag = 1 order by a.classtime'
-    const results = await queryPromise(query, [classday]);
-    //console.log("results : " + JSON.stringify(results));
-    let bookinglist = {};
-    if (results.length > 0) {
-      for (let index = 0; index < results.length; index++) {
-        let this_class = [];
-        const element = results[index];
-        const query2 = 'SELECT CONCAT(a.classtime,\' (\',b.course_shortname,\')\') as classtime, c.nickname, a.checkedin, c.dateofbirth, case when c.gender = \'ชาย\' then \'ช.\' else \'ญ.\' end as gender ' +
-          'FROM treservation a ' +
-          'join tcourseinfo b on  a.courseid = b.courseid ' +
-          'left join tstudent c on a.studentid = c.studentid ' +
-          'WHERE a.classdate = ? ' +
-          'AND a.classid = ? ' +
-          'order by a.classtime asc';
 
-        const results2 = await queryPromise(query2, [classdate, element.classid]);
-        //console.log("results2 : " + JSON.stringify(results2));
+    // Query to get all necessary data in one go
+    const query = `
+      SELECT 
+        a.classtime, 
+        a.courseid, 
+        CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
+        a.classid,
+        c.nickname,
+        a.checkedin,
+        c.dateofbirth,
+        CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender
+      FROM tclassinfo a
+      JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
+      LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
+      LEFT JOIN tstudent c ON r.studentid = c.studentid
+      WHERE a.classday = ? AND a.enableflag = 1
+      ORDER BY a.classtime, r.classtime ASC
+    `;
+    const results = await queryPromise(query, [classdate, classday]);
 
-        // Function to calculate age in years and months
-        const calculateAge = (dateOfBirth) => {
-          if(dateOfBirth == null || dateOfBirth == undefined || dateOfBirth == ''){
-            return '';
-          }
-          const dob = new Date(dateOfBirth);
-          const diff = Date.now() - dob.getTime();
-          const ageDate = new Date(diff);
-          const ageYears = ageDate.getUTCFullYear() - 1970;
-          const ageMonths = ageDate.getUTCMonth();
-          return parseFloat(`${ageYears}.${ageMonths}`);
-        };
+    // Process results to create booking list
+    const bookinglist = results.reduce((acc, row) => {
+      const classLabel = row.class_label;
+      const nickname = row.nickname ? `${row.nickname} (${row.gender}${calculateAge(row.dateofbirth)})` : null;
 
-        // Add age field to each result
-        results2.forEach(results2 => {
-          results2.nickname = results2.nickname + " (" + results2.gender + calculateAge(results2.dateofbirth) + ")";
-        });
+      if (!acc[classLabel]) {
+        acc[classLabel] = [];
+      }
 
-        if (results2.length > 0) {
-          let studentlist = [];
-          for (let index2 = 0; index2 < results2.length; index2++) {
-            const element2 = results2[index2];
-            if (element2.checkedin == 1) {
-              studentlist.push(element2.nickname + "(" + element2.checkedin + ")");
-            } else {
-              studentlist.push(element2.nickname);
-            }
-          }
-          bookinglist[element.class_label] = studentlist;
+      if (nickname) {
+        if (row.checkedin == 1) {
+          acc[classLabel].push(`${nickname}(${row.checkedin})`);
         } else {
-          if(element.classtime.includes('แข่ง')) {
-            delete bookinglist[element.class_label];
-          } else {
-            bookinglist[element.class_label] = [];
-          }
+          acc[classLabel].push(nickname);
         }
       }
-      console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
-      res.json({ success: true, message: 'Get Booking list successful', bookinglist });
-    } else {
-      res.json({ success: true, message: 'No Booking list' });
-    }
+
+      return acc;
+    }, {});
+
+    console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
+    res.json({ success: true, message: 'Get Booking list successful', bookinglist });
   } catch (error) {
     console.error('Error in getBookingList', error.stack);
     res.status(500).send(error);
   }
 });
+
+// Function to calculate age in years and months
+function calculateAge(dateOfBirth) {
+  if (!dateOfBirth) {
+    return '';
+  }
+  const dob = new Date(dateOfBirth);
+  const diff = Date.now() - dob.getTime();
+  const ageDate = new Date(diff);
+  const ageYears = ageDate.getUTCFullYear() - 1970;
+  const ageMonths = ageDate.getUTCMonth();
+  return parseFloat(`${ageYears}.${ageMonths}`);
+}
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   try {
@@ -2686,8 +2613,6 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log("###################################################################");
   console.log("###################################################################");
   console.log('############## upload log file before restart server ##############');
-  await uploadOrUpdateLogFile();
-  console.log("###################################################################");
   console.log("###################################################################");
   console.log('####################### Server restarting... ######################');
   console.log("###################################################################");
@@ -2714,12 +2639,6 @@ const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
 });
-
-// app.listen(port, '0.0.0.0', () => {
-//   clearActiveSessions();
-//   console.log(`Server is running on port ${port}`);
-//   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
-// });
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
