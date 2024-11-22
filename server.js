@@ -45,8 +45,10 @@ async function queryPromise(query, params, showlog) {
   try {
     console.log("Query : " + query);
     connection = await pool.getConnection();
+    connection.timeZone = 'Asia/Bangkok';
+    
     const [results] = await connection.query(query, params);
-
+    
     if (showlog) {
       const maskedParams = maskSensitiveData(params);
       console.log("Params : " + JSON.stringify(maskedParams));
@@ -83,7 +85,7 @@ function maskSensitiveData(data) {
 
 // ฟังก์ชันตรวจสอบเขตเวลา
 async function checkTimeZone() {
-  await queryPromise("SET time_zone = 'Asia/Bangkok'", [], true);
+  
   const query = 'SELECT NOW() as currentTime';
   await queryPromise(query, [], true);
 }
