@@ -37,29 +37,22 @@ const pool = mysql2.createPool({
   waitForConnections: true,
   connectionLimit: 30,
   queueLimit: 0,
+  timezone: 'Asia/Bangkok'
 });
 
-async function setTimeZone() {
-  let connection;
+async function checkTimeZone() {
   try {
-    connection = await pool.getConnection();
-    await connection.query("SET time_zone = 'Asia/Bangkok';");
-    const checkTimeZone = await connection.query("SELECT @@time_zone;");
-    console.log('Time zone is set to', stringify(checkTimeZone));
-
     const checkVar1 = await queryPromise("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()", [], true);
-    console.log('Check time zone : ', stringify(checkVar1));
+    console.log('Check time zone : ', stringify(checkVar1[0]));
     
   } catch (error) {
     console.error('Error in setTimeZone', error.stack);
     throw error;
-  } finally {
-    if (connection) connection.release();
   }
 }
 
 // เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
-setTimeZone();
+checkTimeZone();
 
 async function queryPromise(query, params, showlog) {
   let connection;
