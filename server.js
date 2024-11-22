@@ -94,7 +94,7 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
     idle: 10000
   },
   dialectOptions: {
-    connectTimeout: 60000 // เพิ่มการตั้งค่า timeout เป็น 60 วินาที
+    connectTimeout: 30000 // เพิ่มการตั้งค่า timeout เป็น 60 วินาที
   }
 });
 
@@ -127,6 +127,13 @@ async function queryPromise(query, params, showlog) {
     return results;
   } catch (error) {
     console.error('Error in queryPromise:', error);
+    if (error instanceof Sequelize.ConnectionError) {
+      console.error('Connection error:', error.message);
+    } else if (error instanceof Sequelize.TimeoutError) {
+      console.error('Timeout error:', error.message);
+    } else {
+      console.error('Unexpected error:', error.message);
+    }
     throw error;
   }
 }
