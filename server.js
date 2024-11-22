@@ -1093,107 +1093,120 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 });
 
 app.post('/createReservation', verifyToken, async (req, res) => {
-
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
-    const checkDuplicateReservationQuery = 'select * from treservation where studentid = ? and classdate = ? ';
+
+    // ตรวจสอบการจองซ้ำในวันเดียวกัน
+    const checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
     const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
 
     if (resCheckDuplicateReservation.length > 0) {
       return res.json({ success: false, message: 'You have already booked on this day' });
     }
 
-    const checkClassFullQuery = 'select maxperson from tclassinfo where classid = ? and classday = ? and classtime = ?';
-    const resCheck = await queryPromise(checkClassFullQuery, [classid, classday, classtime]);
+    // ตรวจสอบว่าคลาสเต็มหรือไม่
+    const checkClassFullQuery = `
+      SELECT 
+        tclassinfo.maxperson, 
+        COUNT(treservation.classid) AS currentCount 
+      FROM tclassinfo 
+      LEFT JOIN treservation ON tclassinfo.classid = treservation.classid AND treservation.classdate = ? 
+      WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
+      GROUP BY tclassinfo.maxperson
+    `;
+    const resCheckClassFull = await queryPromise(checkClassFullQuery, [classdate, classid, classday, classtime]);
 
-    if (resCheck.length > 0) {
-      const maxperson = resCheck[0].maxperson;
-      const checkClassFullQueryCount = 'select count(*) as count from treservation where classid = ? and classdate = ? and classtime = ?';
-      const results1 = await queryPromise(checkClassFullQueryCount, [classid, classdate, classtime]);
+    if (resCheckClassFull.length > 0) {
+      const { maxperson, currentCount } = resCheckClassFull[0];
+      if (currentCount >= maxperson) {
+        return res.json({ success: false, message: 'Sorry, this class is full' });
+      }
 
-      if (results1.length > 0) {
-        const count = results1[0].count;
-        if (count >= maxperson) {
-          return res.json({ success: false, message: 'Sorry, this class is full' });
+      // ตรวจสอบข้อมูลคอร์สของนักเรียน
+      const checkCourseQuery = `
+        SELECT 
+          tstudent.courserefer, 
+          tcustomer_course.coursetype, 
+          tcustomer_course.remaining, 
+          tcustomer_course.expiredate, 
+          tcustomer_course.period 
+        FROM tstudent 
+        INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
+        WHERE tstudent.studentid = ?
+      `;
+      const resCheckCourse = await queryPromise(checkCourseQuery, [studentid]);
+
+      if (resCheckCourse.length > 0) {
+        const { courserefer, coursetype, remaining, expiredate, period } = resCheckCourse[0];
+        let newExpireDate = expiredate;
+
+        // ตรวจสอบวันหมดอายุของคอร์ส
+        if (!expiredate) {
+          newExpireDate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+          const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
+          await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
+        } else {
+          const today = new Date();
+          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          if (todayDateOnly > newExpireDate) {
+            return res.json({ success: false, message: 'Sorry, your course has expired' });
+          }
+
+          const classDate = new Date(classdate);
+          if (classDate > newExpireDate) {
+            return res.json({ success: false, message: `Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}` });
+          }
         }
 
-        const checkCourseQuery = 'select a.courserefer , b.coursetype, b.remaining, b.expiredate, b.period from tstudent a inner join tcustomer_course b on a.courserefer = b.courserefer where studentid = ?';
-        const results2 = await queryPromise(checkCourseQuery, [studentid]);
+        // ตรวจสอบจำนวนคลาสที่เหลือ
+        if (coursetype !== 'Monthly' && remaining <= 0) {
+          return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+        }
 
-        if (results2.length > 0) {
-          const courserefer = results2[0].courserefer;
-          const coursetype = results2[0].coursetype;
-          let expiredate = results2[0].expiredate;
-          const remaining = results2[0].remaining;
-          if(expiredate == null) {
-            const period = results2[0].period;
-            expiredate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
-            const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
-            await queryPromise(updateExpireDateQuery, [classdate, expiredate, courserefer]);
-          } else {
-            const today = new Date();
-            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            console.log("today : " + todayDateOnly);
-            console.log("expiredate : " + expiredate);
-            console.log(todayDateOnly > expiredate ? 'Expired' : 'Not Expired')
-            if (todayDateOnly > expiredate) {
-              return res.json({ success: false, message: 'Sorry, your course has expired' });
-            }
+        // เพิ่มการจองคลาส
+        const insertReservationQuery = `
+          INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer, createby) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const insertResult = await queryPromise(insertReservationQuery, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
 
-            const cd = new Date(classdate);
-            console.log("classdate : " + cd);
-            if (cd > expiredate) {
-              return res.json({ success: false, message: 'Sorry, your course has expire in ' + moment(expiredate).format('DD/MM/YYYY') });
+        if (insertResult.affectedRows > 0) {
+          // อัปเดตจำนวนคลาสที่เหลือ
+          const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
+          await queryPromise(updateRemainingQuery, [courserefer]);
+
+          // ส่งการแจ้งเตือน
+          try {
+            const queryNotifyData = `
+              SELECT 
+                tstudent.nickname, 
+                CONCAT(IFNULL(tstudent.firstname, ''), ' ', IFNULL(tstudent.middlename, ''), IF(tstudent.middlename<>'', ' ', ''), IFNULL(tstudent.lastname, '')) AS fullname, 
+                tstudent.dateofbirth, 
+                tcourseinfo.course_shortname 
+              FROM tstudent 
+              INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
+              INNER JOIN tcourseinfo ON tcustomer_course.courseid = tcourseinfo.courseid 
+              WHERE tstudent.studentid = ?
+            `;
+            const notifyResults = await queryPromise(queryNotifyData, [studentid]);
+            if (notifyResults.length > 0) {
+              const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
+              const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              });
+
+              const jsonData = {
+                message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`,
+              };
+
+              sendNotification(jsonData);
             }
+          } catch (error) {
+            console.error('Error sending notification', error.stack);
           }
-
-          if (coursetype != 'Monthly') {
-            if (remaining <= 0) {
-              return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
-            }
-          }
-
-          const query = 'INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer, createby) VALUES (?, ?, ?, ?, ?, ?, ?)';
-          const insertResult = await queryPromise(query, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
-
-          if (insertResult.affectedRows > 0) {
-            const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-            const updateResult = await queryPromise(updateRemainingQuery, [courserefer]);
-
-            try {
-              // Format date for notification
-              const queryNotifyData = 'SELECT a.nickname, CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\')) fullname, a.dateofbirth,' +
-                ' c.course_shortname ' +
-                ' FROM tstudent a ' +
-                ' INNER JOIN tcustomer_course b ' +
-                ' ON a.courserefer = b.courserefer ' +
-                ' INNER JOIN tcourseinfo c ' +
-                ' ON b.courseid = c.courseid ' +
-                ' WHERE studentid = ?';
-              const results = await queryPromise(queryNotifyData, [studentid]);
-              if (results.length > 0) {
-                const studentnickname = results[0].nickname;
-                const studentname = results[0].fullname;
-                const coursename = results[0].course_shortname;
-                var a = moment(classdate, "YYYYMMDD");
-                const bookdate = new Date(a).toLocaleDateString('th-TH', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                });
-
-                // Prepare notification data
-                const jsonData = {
-                  message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nโดยผู้ปกครอง ' + req.user.username,
-                };
-
-                sendNotification(jsonData);
-              }
-            } catch (error) {
-              console.error('Error sending notification', error.stack);
-            }
-            return res.json({ success: true, message: 'Booking added successfully' });
-          }
+          return res.json({ success: true, message: 'Booking added successfully' });
         }
       }
     }
