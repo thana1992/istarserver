@@ -2598,9 +2598,25 @@ const pool = mysql2.createPool({
   database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 30,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: 'Z' // ตั้งค่าเขตเวลาเป็น UTC
 });
 
+async function setTimeZone() {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.query("SET time_zone = 'Asia/Bangkok';");
+  } catch (error) {
+    console.error('Error in setTimeZone', error.stack);
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+}
+
+// เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
+setTimeZone();
 async function queryPromise(query, params, showlog) {
   let connection;
   try {
