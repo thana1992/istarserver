@@ -18,9 +18,9 @@ const blacklistSessions = [];
 const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
-
-const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
+
+/*const mysql2 = require('mysql2/promise');
 
 // Create a connection pool
 const DB_HOST = process.env.DB_HOST;
@@ -67,6 +67,65 @@ async function queryPromise(query, params, showlog) {
     throw error;
   } finally {
     if (connection) connection.release();
+  }
+}
+
+function maskSensitiveData(data) {
+  const maskedData = { ...data };
+  for (const key in maskedData) {
+    if (key.includes('image') || key.includes('password')) {
+      maskedData[key] = '[HIDDEN]';
+    }
+  }
+  return maskedData;
+}
+*/
+
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  dialect: 'mysql',
+  timezone: '+07:00', // ตั้งค่าเขตเวลาเป็นเวลาของไทย
+  pool: {
+    max: 30,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
+});
+
+const db = {};
+
+db.Sequelize = Sequelize;
+db.sequelize = sequelize;
+
+async function queryPromise(query, params, showlog) {
+  try {
+    console.log("Query : " + query);
+    const results = await db.sequelize.query(query, {
+      replacements: params,
+      type: db.Sequelize.QueryTypes.SELECT
+    });
+
+    if (showlog) {
+      const maskedParams = maskSensitiveData(params);
+      console.log("Params : " + JSON.stringify(maskedParams));
+
+      if (Array.isArray(results)) {
+        const maskedResults = results.map(maskSensitiveData);
+        console.log("Results : " + JSON.stringify(maskedResults));
+      } else {
+        const maskedResult = maskSensitiveData(results);
+        console.log("Results is not an array!");
+        console.log("Results : " + JSON.stringify(maskedResult));
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error in queryPromise:', error);
+    throw error;
   }
 }
 
