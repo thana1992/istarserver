@@ -40,52 +40,41 @@ const pool = mysql2.createPool({
   timezone: 'Asia/Bangkok'
 });
 
-async function checkTimeZone() {
+// ตั้งค่าเขตเวลาเป็นเวลาของไทยเมื่อเริ่มต้นแอปพลิเคชัน
+async function setTimeZone() {
+  let connection;
   try {
-    const checkVar1 = await queryPromise("select CURTIME(), CURRENT_TIME() , CURRENT_TIMESTAMP() , NOW() ", [], true);
-    console.log('Check time zone : ', stringify(checkVar1[0]));
-    
+    connection = await pool.getConnection();
+    await connection.query("SET time_zone = 'Asia/Bangkok';");
   } catch (error) {
     console.error('Error in setTimeZone', error.stack);
     throw error;
+  } finally {
+    if (connection) connection.release();
   }
 }
 
 // เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
-checkTimeZone();
+setTimeZone();
 
 async function queryPromise(query, params, showlog) {
   let connection;
   try {
     console.log("Query : " + query);
-    // Clone params and mask values of keys containing "image"
     connection = await pool.getConnection();
     const [results] = await connection.query(query, params);
-    
-    if(showlog){
-      const maskedParams = { ...params };
-      for (const key in maskedParams) {
-        if (key.includes('image') || key.includes('password')) {
-          maskedParams[key] = '[HIDDEN]';
-        }
-      }
+
+    if (showlog) {
+      const maskedParams = maskSensitiveData(params);
       console.log("Params : " + JSON.stringify(maskedParams));
-      
+
       if (Array.isArray(results)) {
-        // Clone results and mask values of keys containing "image"
-        const maskedResults = results.map(result => {
-          const maskedResult = { ...result };
-          for (const key in maskedResult) {
-            if (key.includes('image') || key.includes('password')) {
-              maskedResult[key] = '[HIDDEN]';
-            }
-          }
-          return maskedResult;
-        });
+        const maskedResults = results.map(maskSensitiveData);
         console.log("Results : " + JSON.stringify(maskedResults));
       } else {
-        console.log("Results is not an array! ");
-        console.log("Results : " + JSON.stringify(results));
+        const maskedResult = maskSensitiveData(results);
+        console.log("Results is not an array!");
+        console.log("Results : " + JSON.stringify(maskedResult));
       }
     }
 
@@ -97,6 +86,27 @@ async function queryPromise(query, params, showlog) {
     if (connection) connection.release();
   }
 }
+
+function maskSensitiveData(data) {
+  const maskedData = { ...data };
+  for (const key in maskedData) {
+    if (key.includes('image') || key.includes('password')) {
+      maskedData[key] = '[HIDDEN]';
+    }
+  }
+  return maskedData;
+}
+
+
+// ฟังก์ชันตรวจสอบเขตเวลา
+async function checkTimeZone() {
+  const query = 'SELECT NOW() as currentTime';
+  const results = await queryPromise(query);
+  console.log('Current Time:', results[0].currentTime);
+}
+
+// เรียกใช้ฟังก์ชันตรวจสอบเขตเวลา
+checkTimeZone();
 
 // for save file log
 const morgan = require('morgan');
