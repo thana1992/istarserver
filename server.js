@@ -857,15 +857,6 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   day: 'numeric',
                 });
 
-                // Function to calculate age in years and months
-                const calculateAge = (dateOfBirth) => {
-                  const dob = new Date(dateOfBirth);
-                  const diff = Date.now() - dob.getTime();
-                  const ageDate = new Date(diff);
-                  const ageYears = ageDate.getUTCFullYear() - 1970;
-                  const ageMonths = ageDate.getUTCMonth();
-                  return parseFloat(`${ageYears}.${ageMonths}`);
-                };
                 // Prepare notification data
                 const jsonData = {
                   message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nโดยแอดมิน ' + req.user.username,
@@ -991,14 +982,6 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                       day: 'numeric',
                     });
 
-                    const calculateAge = (dateOfBirth) => {
-                      const dob = new Date(dateOfBirth);
-                      const diff = Date.now() - dob.getTime();
-                      const ageDate = new Date(diff);
-                      const ageYears = ageDate.getUTCFullYear() - 1970;
-                      const ageMonths = ageDate.getUTCMonth();
-                      return parseFloat(`${ageYears}.${ageMonths}`);
-                    };
                     // Prepare notification data
                     const jsonData = {
                       message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nจาก ' + oldClassdate + ' ' + oldClasstime + '\nเป็น ' + bookdate + ' ' + classtime +'\nโดยแอดมิน ' + req.user.username,
@@ -1199,14 +1182,6 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                   day: 'numeric',
                 });
 
-                const calculateAge = (dateOfBirth) => {
-                  const dob = new Date(dateOfBirth);
-                  const diff = Date.now() - dob.getTime();
-                  const ageDate = new Date(diff);
-                  const ageYears = ageDate.getUTCFullYear() - 1970;
-                  const ageMonths = ageDate.getUTCMonth();
-                  return parseFloat(`${ageYears}.${ageMonths}`);
-                };
                 // Prepare notification data
                 const jsonData = {
                   message: coursename + '\n' + studentnickname + ' ' + studentname + '\nอายุ ' + calculateAge(results[0].dateofbirth) + 'ปี' + '\nวันที่ ' + bookdate + ' ' + classtime + '\nโดยผู้ปกครอง ' + req.user.username,
@@ -1705,19 +1680,6 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
 
     const results = await queryPromise(query, [classdate]);
     //console.log("API getReservationList result: " + JSON.stringify(results));
-
-    // Function to calculate age in years and months
-    const calculateAge = (dateOfBirth) => {
-      if(dateOfBirth === null) {
-        return '';
-      }
-      const dob = new Date(dateOfBirth);
-      const diff = Date.now() - dob.getTime();
-      const ageDate = new Date(diff);
-      const ageYears = ageDate.getUTCFullYear() - 1970;
-      const ageMonths = ageDate.getUTCMonth();
-      return parseFloat(`${ageYears}.${ageMonths}`);
-    };
 
     // Add age field to each result
     results.forEach(result => {
