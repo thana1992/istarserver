@@ -1106,7 +1106,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
             const notifyResults = await queryPromise(queryNotifyData, [studentid]);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              const bookdate = new Date(classdate).toLocaleDateString('th-TH', {
+              var a = moment(classdate, "YYYYMMDD");
+              const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -1558,7 +1559,10 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
   try {
     const { classdate } = req.body;
     const query = `
-      SELECT a.*, b.coursename, CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF( c.middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') fullname, c.dateofbirth, case when c.gender = 'ชาย' then 'ช.' else 'ญ.' end as gender 
+      SELECT a.*, b.coursename, 
+        CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename,''), IF(c.middlename<>'', ' ', ''), IFNULL(c.lastname, ''), ' (', IFNULL(c.nickname,'') ,')') AS fullname, 
+        c.dateofbirth, 
+        CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END AS gender 
       FROM treservation a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN tstudent c ON a.studentid = c.studentid
@@ -1567,11 +1571,10 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
     `;
 
     const results = await queryPromise(query, [classdate]);
-    //console.log("API getReservationList result: " + JSON.stringify(results));
 
     // Add age field to each result
     results.forEach(result => {
-      result.fullname = result.fullname + " (" + result.gender + " " + calculateAge(result.dateofbirth) + ")";
+      result.fullname = `${result.fullname} (${result.gender} ${calculateAge(result.dateofbirth)})`;
     });
 
     if (results.length > 0) {
@@ -1580,7 +1583,7 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
       res.json({ success: true, message: 'No Reservation list', results });
     }
   } catch (error) {
-    console.error("Error in getReservationList" + JSON.stringify(error));
+    console.error("Error in getReservationList", error.stack);
     res.status(500).send(error);
   }
 });
@@ -1781,27 +1784,35 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate } = req.body;
     const courserefer = await generateRefer(course.refercode);
-    let query = 'INSERT INTO tcustomer_course (courserefer, courseid, paid, paydate ';
-      if (coursetype) query += ', coursetype ';
-      if (remaining) query += ', remaining ';
-      if (startdate) query += ', startdate ';
-      if (expiredate) query += ', expiredate ';
-      if (period) query += ', period ';
-      query += ') VALUES (?, ?, ?, ?';
-      if (coursetype) query += ', ?';
-      if (remaining) query += ', ?';
-      if (startdate) query += ', ?';
-      if (expiredate) query += ', ?';
-      if (period) query += ', ?';
-      query += ')';
-      const params = [courserefer, course.courseid, paid, paydate];
-      if (coursetype) params.push(coursetype);
-      if (remaining) params.push(remaining);
-      if (startdate) params.push(startdate);
-      if (expiredate) params.push(expiredate);
-      if (period) params.push(period);
 
-    const results = await queryPromise(query, params, true);
+    // สร้างคำสั่ง SQL และพารามิเตอร์
+    const fields = ['courserefer', 'courseid', 'paid', 'paydate'];
+    const values = [courserefer, course.courseid, paid, paydate];
+    
+    if (coursetype) {
+      fields.push('coursetype');
+      values.push(coursetype);
+    }
+    if (remaining) {
+      fields.push('remaining');
+      values.push(remaining);
+    }
+    if (startdate) {
+      fields.push('startdate');
+      values.push(startdate);
+    }
+    if (expiredate) {
+      fields.push('expiredate');
+      values.push(expiredate);
+    }
+    if (period) {
+      fields.push('period');
+      values.push(period);
+    }
+
+    const query = `INSERT INTO tcustomer_course (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+
+    const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
@@ -2031,7 +2042,6 @@ app.put('/holidays/:id', async (req, res) => {
   }
 });
 
-// DELETE holiday
 app.delete('/holidays/:id', async (req, res) => {
   const { id } = req.params;
   try {
