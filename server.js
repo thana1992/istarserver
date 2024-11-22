@@ -20,7 +20,7 @@ const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
 const { stringify } = require('querystring');
 
-/*const mysql2 = require('mysql2/promise');
+const mysql2 = require('mysql2/promise');
 
 // Create a connection pool
 const DB_HOST = process.env.DB_HOST;
@@ -28,6 +28,7 @@ const DB_PORT = process.env.DB_PORT;
 const DB_NAME = process.env.DB_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASSWORD = process.env.DB_PASSWORD;
+/*
 const pool = mysql2.createPool({
   host: DB_HOST,
   port: DB_PORT,
@@ -82,7 +83,6 @@ function maskSensitiveData(data) {
 */
 
 const { Sequelize } = require('sequelize');
-
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
   dialect: 'mysql',
@@ -104,8 +104,7 @@ async function queryPromise(query, params, showlog) {
   try {
     console.log("Query : " + query);
     const results = await db.sequelize.query(query, {
-      replacements: params,
-      type: db.Sequelize.QueryTypes.SELECT
+      replacements: params
     });
 
     if (showlog) {
