@@ -1612,7 +1612,8 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
       ' ON a.familyid = c.familyid ' +
       ' LEFT JOIN tuser d ' +
       ' ON c.username = d.username' +
-      ' WHERE a.delflag = 0';
+      ' WHERE a.delflag = 0' +
+      ' ORDER BY a.createdate desc';
     const results = await queryPromise(query);
 
     // มันมีรูป base64 ที่เก็บในฐานข้อมูล ทำให้ข้อมูลมีขนาดใหญ่ ทำให้การปริ้น log มันเยอะมาก
@@ -1844,6 +1845,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
         ON a.courserefer = s.courserefer 
         WHERE a.finish = 0 
         GROUP BY a.courseid, a.courserefer, b.coursename
+        ORDER BY a.createdate desc
     `;
 
     const results = await queryPromise(query, null);
