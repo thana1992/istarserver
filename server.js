@@ -2469,16 +2469,9 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   }
 
   const timeUntilNextRestart = nextRestart - now; // เวลาที่เหลือจนถึงการรีสตาร์ทในหน่วยมิลลิวินาที
-
   console.log(`Scheduled server restart at ${nextRestart}`);
-
   await new Promise(resolve => setTimeout(resolve, timeUntilNextRestart));
 
-  const jsonData = {
-    message: '[Auto] Server is restarting...'
-  };
-
-  sendNotification(jsonData);
 
   console.log("###################################################################");
   console.log("###################################################################");
@@ -2496,8 +2489,8 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   scheduleRestartAtSpecificTime(hour, minute);
 }
 
-// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 22:30 น.
-scheduleRestartAtSpecificTime(22, 30);
+// เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 01:30 น.
+scheduleRestartAtSpecificTime(1, 30);
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 55 นาที
 cron.schedule('0,55 * * * *', () => {
