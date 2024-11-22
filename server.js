@@ -731,6 +731,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           console.log('newExpireDate', newExpireDate);
           if (moment(classdate).isAfter(moment(newExpireDate), 'day')) {
             console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
+            return res.json({ success: false, message: 'Sorry, your course has expire on ' + moment(expiredate).format('DD/MM/YYYY') });
           } else {
             console.log('Your course is still valid.');
           }
@@ -1080,6 +1081,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           console.log("newExpireDate : " + newExpireDate);
           if (moment(classdate).isAfter(moment(newExpireDate), 'day')) {
             console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
+            return res.json({ success: false, message: 'Sorry, your course has expire on ' + moment(expiredate).format('DD/MM/YYYY') });
           } else {
             console.log('Your course is still valid.');
           }
