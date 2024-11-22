@@ -1833,7 +1833,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
         a.classid,
         c.nickname,
-        a.checkedin,
+        r.checkedin,
         c.dateofbirth,
         CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender
       FROM tclassinfo a
