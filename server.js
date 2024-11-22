@@ -42,7 +42,7 @@ const pool = mysql2.createPool({
 
 async function checkTimeZone() {
   try {
-    const checkVar1 = await queryPromise("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()", [], true);
+    const checkVar1 = await queryPromise("select CURTIME() as curtime, CURRENT_TIME() as current_time , CURRENT_TIMESTAMP() as timestamp, NOW() as now", [], true);
     console.log('Check time zone : ', stringify(checkVar1[0]));
     
   } catch (error) {
