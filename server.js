@@ -92,6 +92,9 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
     min: 0,
     acquire: 30000,
     idle: 10000
+  },
+  dialectOptions: {
+    connectTimeout: 60000 // เพิ่มการตั้งค่า timeout เป็น 60 วินาที
   }
 });
 
