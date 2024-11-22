@@ -1074,8 +1074,12 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           }
 
           const classDate = new Date(classdate);
-          if (classDate > newExpireDate) {
-            return res.json({ success: false, message: `Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}` });
+          console.log("classDate : " + classDate);
+          console.log("newExpireDate : " + newExpireDate);
+          if (moment(classDate).isAfter(moment(newExpireDate), 'day')) {
+            console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
+          } else {
+            console.log('Your course is still valid.');
           }
         }
 
