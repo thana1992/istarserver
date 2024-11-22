@@ -19,6 +19,92 @@ const url = process.env.LINENOTIFY_URL;
 const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
 const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
 
+const mysql2 = require('mysql2/promise');
+const { stringify } = require('querystring');
+
+// Create a connection pool
+const DB_HOST = process.env.DB_HOST;
+const DB_PORT = process.env.DB_PORT;
+const DB_NAME = process.env.DB_NAME;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const pool = mysql2.createPool({
+  host: DB_HOST,
+  port: DB_PORT,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 30,
+  queueLimit: 0,
+  timezone: 'Z' // ตั้งค่าเขตเวลาเป็น UTC
+});
+
+async function setTimeZone() {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.query("SET time_zone = 'Asia/Bangkok';");
+    const checkTimeZone = await connection.query("SELECT @@time_zone;");
+    console.log('Time zone is set to', stringify(checkTimeZone));
+    const checkVar = await connection.query("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()");
+    console.log('Check time zone : ', stringify(checkVar));
+    
+  } catch (error) {
+    console.error('Error in setTimeZone', error.stack);
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+}
+
+// เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
+setTimeZone();
+
+async function queryPromise(query, params, showlog) {
+  let connection;
+  try {
+    console.log("Query : " + query);
+    // Clone params and mask values of keys containing "image"
+    connection = await pool.getConnection();
+    const [results] = await connection.query(query, params);
+    
+    if(showlog){
+      const maskedParams = { ...params };
+      for (const key in maskedParams) {
+        if (key.includes('image') || key.includes('password')) {
+          maskedParams[key] = '[HIDDEN]';
+        }
+      }
+      console.log("Params : " + JSON.stringify(maskedParams));
+      
+      if (Array.isArray(results)) {
+        // Clone results and mask values of keys containing "image"
+        const maskedResults = results.map(result => {
+          const maskedResult = { ...result };
+          for (const key in maskedResult) {
+            if (key.includes('image') || key.includes('password')) {
+              maskedResult[key] = '[HIDDEN]';
+            }
+          }
+          return maskedResult;
+        });
+        console.log("Results : " + JSON.stringify(maskedResults));
+      } else {
+        console.log("Results is not an array! ");
+        console.log("Results : " + JSON.stringify(results));
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error in queryPromise:', error);
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+}
+
 // for save file log
 const morgan = require('morgan');
 const winston = require('winston');
@@ -1914,7 +2000,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer, courseid, coursetype, remaining, startdate, expiredate, period, paid, paydate } = req.body;
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ?, paid = ?, paydate WHERE courserefer = ?';
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ?, paid = ?, paydate = ? WHERE courserefer = ?';
     const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, period, paid, paydate, courserefer]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course updated successfully' });
@@ -2579,93 +2665,6 @@ uploadOrUpdateLogFile();
 cron.schedule('0,55 * * * *', () => {
   uploadOrUpdateLogFile();
 });
-
-const mysql2 = require('mysql2/promise');
-const { log } = require('console');
-const { tr, th } = require('date-fns/locale');
-
-// Create a connection pool
-const DB_HOST = process.env.DB_HOST;
-const DB_PORT = process.env.DB_PORT;
-const DB_NAME = process.env.DB_NAME;
-const DB_USER = process.env.DB_USER;
-const DB_PASSWORD = process.env.DB_PASSWORD;
-const pool = mysql2.createPool({
-  host: DB_HOST,
-  port: DB_PORT,
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 30,
-  queueLimit: 0,
-  timezone: 'Z' // ตั้งค่าเขตเวลาเป็น UTC
-});
-
-async function setTimeZone() {
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    await connection.query("SET time_zone = 'Asia/Bangkok';");
-    const checkTimeZone = await connection.query("SELECT @@time_zone;");
-    console.log('Time zone is set to', checkTimeZone[0][0]['@@time_zone']);
-    const checkVar = await connection.query("select curdate(), CURTIME(), CURRENT_DATE(), CURRENT_TIME() , CURRENT_TIMESTAMP()");
-    console.log('checkVar : ', checkVar[0]);
-    
-  } catch (error) {
-    console.error('Error in setTimeZone', error.stack);
-    throw error;
-  } finally {
-    if (connection) connection.release();
-  }
-}
-
-// เรียกใช้ฟังก์ชันตั้งค่าเขตเวลาเมื่อเริ่มต้นแอปพลิเคชัน
-setTimeZone();
-
-async function queryPromise(query, params, showlog) {
-  let connection;
-  try {
-    console.log("Query : " + query);
-    // Clone params and mask values of keys containing "image"
-    connection = await pool.getConnection();
-    const [results] = await connection.query(query, params);
-    
-    if(showlog){
-      const maskedParams = { ...params };
-      for (const key in maskedParams) {
-        if (key.includes('image') || key.includes('password')) {
-          maskedParams[key] = '[HIDDEN]';
-        }
-      }
-      console.log("Params : " + JSON.stringify(maskedParams));
-      
-      if (Array.isArray(results)) {
-        // Clone results and mask values of keys containing "image"
-        const maskedResults = results.map(result => {
-          const maskedResult = { ...result };
-          for (const key in maskedResult) {
-            if (key.includes('image') || key.includes('password')) {
-              maskedResult[key] = '[HIDDEN]';
-            }
-          }
-          return maskedResult;
-        });
-        console.log("Results : " + JSON.stringify(maskedResults));
-      } else {
-        console.log("Results is not an array! ");
-        console.log("Results : " + JSON.stringify(results));
-      }
-    }
-
-    return results;
-  } catch (error) {
-    console.error('Error in queryPromise:', error);
-    throw error;
-  } finally {
-    if (connection) connection.release();
-  }
-}
 
 const server = app.listen(port, () => {
   clearActiveSessions();
