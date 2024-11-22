@@ -37,7 +37,7 @@ const pool = mysql2.createPool({
   waitForConnections: true,
   connectionLimit: 30,
   queueLimit: 0,
-  timezone: 'Asia/Bangkok'
+  timezone: 'Z'
 });
 
 // ตั้งค่าเขตเวลาเป็นเวลาของไทยเมื่อเริ่มต้นแอปพลิเคชัน
@@ -101,8 +101,7 @@ function maskSensitiveData(data) {
 // ฟังก์ชันตรวจสอบเขตเวลา
 async function checkTimeZone() {
   const query = 'SELECT NOW() as currentTime';
-  const results = await queryPromise(query);
-  console.log('Current Time:', results[0].currentTime);
+  await queryPromise(query, [], true);
 }
 
 // เรียกใช้ฟังก์ชันตรวจสอบเขตเวลา
