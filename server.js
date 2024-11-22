@@ -37,7 +37,6 @@ const pool = mysql2.createPool({
   waitForConnections: true,
   connectionLimit: 30,
   queueLimit: 0,
-  timezone: 'Asia/Bangkok'
 });
 
 async function queryPromise(query, params, showlog) {
@@ -45,7 +44,6 @@ async function queryPromise(query, params, showlog) {
   try {
     console.log("Query : " + query);
     connection = await pool.getConnection();
-    connection.timeZone = 'Asia/Bangkok';
     
     const [results] = await connection.query(query, params);
     
@@ -81,17 +79,6 @@ function maskSensitiveData(data) {
   }
   return maskedData;
 }
-
-
-// ฟังก์ชันตรวจสอบเขตเวลา
-async function checkTimeZone() {
-  
-  const query = 'SELECT NOW() as currentTime';
-  await queryPromise(query, [], true);
-}
-
-// เรียกใช้ฟังก์ชันตรวจสอบเขตเวลา
-checkTimeZone();
 
 // for save file log
 const morgan = require('morgan');
