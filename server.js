@@ -37,6 +37,7 @@ const pool = mysql2.createPool({
   waitForConnections: true,
   connectionLimit: 30,
   queueLimit: 0,
+  timezone: 'Asia/Bangkok' 
 });
 
 async function queryPromise(query, params, showlog) {
