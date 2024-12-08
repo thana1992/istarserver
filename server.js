@@ -117,14 +117,21 @@ const logger = winston.createLogger({
   ]
 });
 
-
+// เริ่มด้วย bodyParser
+app.use(bodyParser.json({ limit: '5mb' }));
 // ใช้ morgan เพื่อบันทึก log
-app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
 
-// สร้าง middleware เพื่อ log response
+// ตั้งค่า CORS (เลือกใช้ `cors` หรือ `res.header`)
+app.use(cors({
+  origin: '*', // ปรับ origin ตามความเหมาะสม
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+// เพิ่ม middleware logging (request/response)
+app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
 app.use((req, res, next) => {
-  // Log request
-  logger.info(`-----> REQUEST : ${req.method} ${req.url}`);
+  logger.info(`REQUEST: ${req.method} ${req.url}`);
   const originalSend = res.send;
   res.send = function (body) {
     let logBody = body;
@@ -164,17 +171,16 @@ app.use((req, res, next) => {
     // Send the original body to the client
     originalSend.call(res, body);
   };
-
   next();
 });
 
-app.use(bodyParser.json({ limit: '5mb' }));
+// เพิ่ม header สำหรับ response (หากจำเป็น)
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  // other headers...
+  res.header('Access-Control-Allow-Origin', '*'); // ถ้าจำเป็นต้องใช้
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
-app.use(cors());
 
 // Middleware for verifying the token
 const verifyToken = (req, res, next) => {
