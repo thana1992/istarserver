@@ -710,7 +710,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           tcustomer_course.coursetype, 
           tcustomer_course.remaining, 
           tcustomer_course.expiredate, 
-          tcustomer_course.period 
+          tcustomer_course.period,
+          tcustomer_course.owner
         FROM tstudent 
         INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
         WHERE tstudent.studentid = ?
@@ -718,34 +719,37 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
       const resCheckCourse = await queryPromise(checkCourseQuery, [studentid]);
 
       if (resCheckCourse.length > 0) {
-        const { courserefer, coursetype, remaining, expiredate, period } = resCheckCourse[0];
+        const { courserefer, coursetype, remaining, expiredate, period, owner } = resCheckCourse[0];
         let newExpireDate = expiredate;
 
         // ตรวจสอบวันหมดอายุของคอร์ส
-        if (!expiredate) {
-          newExpireDate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
-          const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
-          await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
-        } else {
-          const today = new Date();
-          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          if (todayDateOnly > newExpireDate) {
-            return res.json({ success: false, message: 'Sorry, your course has expired' });
-          }
-
-          console.log('classdate', classdate);
-          console.log('newExpireDate', newExpireDate);
-          if (moment(classdate).isAfter(moment(newExpireDate), 'day')) {
-            console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
-            return res.json({ success: false, message: 'Sorry, your course has expire on ' + moment(expiredate).format('DD/MM/YYYY') });
+        if(owner != 'trial') {
+          if (!expiredate) {
+            newExpireDate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+            const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
+            await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
           } else {
-            console.log('Your course is still valid.');
-          }
-        }
+            const today = new Date();
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            if (todayDateOnly > newExpireDate) {
+              return res.json({ success: false, message: 'Sorry, your course has expired' });
+            }
 
-        // ตรวจสอบจำนวนคลาสที่เหลือ
-        if (coursetype !== 'Monthly' && remaining <= 0) {
-          return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+            console.log('classdate', classdate);
+            console.log('newExpireDate', newExpireDate);
+            if (moment(classdate).isAfter(moment(newExpireDate), 'day')) {
+              console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
+              return res.json({ success: false, message: 'Sorry, your course has expire on ' + moment(expiredate).format('DD/MM/YYYY') });
+            } else {
+              console.log('Your course is still valid.');
+            }
+          }
+
+          // ตรวจสอบจำนวนคลาสที่เหลือ
+          if (coursetype !== 'Monthly' && remaining <= 0) {
+            return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+          }
+
         }
 
         // เพิ่มการจองคลาส
@@ -756,9 +760,12 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
         const insertResult = await queryPromise(insertReservationQuery, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
 
         if (insertResult.affectedRows > 0) {
-          // อัปเดตจำนวนคลาสที่เหลือ
-          const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-          await queryPromise(updateRemainingQuery, [courserefer]);
+
+          if(owner != 'trial') {
+            // อัปเดตจำนวนคลาสที่เหลือ
+            const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
+            await queryPromise(updateRemainingQuery, [courserefer]);
+          }
 
           // ส่งการแจ้งเตือน
           try {
@@ -950,7 +957,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [reservationid]);
     console.log("parameters : " + reservationid + " " + studentid + " " + courserefer);
     if (results.affectedRows > 0) {
-        const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ?';
+        const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
         res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
         
