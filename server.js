@@ -1718,7 +1718,9 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       }
 
       if (nickname) {
-        if (row.checkedin == 1) {
+        if (row.checkedin == 1 && row.color != null) {
+          acc[classLabel].push(`${nickname}(${row.checkedin}, ${row.color})`);
+        } else if (row.checkedin == 1) {
           acc[classLabel].push(`${nickname}(${row.checkedin})`);
         } else if (row.color != null) {
           acc[classLabel].push(`${nickname}(${row.color})`);
