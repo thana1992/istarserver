@@ -1705,12 +1705,14 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         r.checkedin,
         c.dateofbirth,
         CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
-        cc.color
+        cc.color,
+        cc.expiredate,
+        cc.remaining
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
-      LEFT JOIN tcustomer_course cc ON c.courserefer = cc.courserefer
+      LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
       WHERE a.classday = ? AND a.enableflag = 1
       ORDER BY a.classtime, r.classtime ASC
     `;
@@ -1735,6 +1737,10 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         } else {
           acc[classLabel].push(nickname);
         }
+
+        if(isExpired(row.expiredate) || row.remaining == 0) {
+          acc[classLabel].push(`${acc[classLabel]}(pay)`);
+        }
       }
 
       return acc;
@@ -1755,6 +1761,15 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   }
 });
 
+function isExpired(expiredate) {
+  if (!expiredate) {
+    return false;
+  }
+
+  const today = new Date();
+  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return new Date(expiredate) <= todayDateOnly;
+}
 // Function to calculate age in years and months
 function calculateAge(dateOfBirth) {
   if (!dateOfBirth) {
