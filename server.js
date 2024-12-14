@@ -1729,29 +1729,29 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
 
       if (nickname) {
         if (row.checkedin == 1 && row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            acc[classLabel].push(`${nickname}(pay)(${row.checkedin})(${row.color})`);
-          }else{
+          // if(isExpired(row.expiredate) || row.remaining == 0) {
+          //   acc[classLabel].push(`${nickname}(pay)(${row.checkedin})(${row.color})`);
+          // }else{
             acc[classLabel].push(`${nickname}(${row.checkedin})(${row.color})`);
-          }
+          //}
         } else if (row.checkedin == 1) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            acc[classLabel].push(`${nickname}(pay)(${row.checkedin})`);
-          }else{
+          // if(isExpired(row.expiredate) || row.remaining == 0) {
+          //   acc[classLabel].push(`${nickname}(pay)(${row.checkedin})`);
+          // }else{
             acc[classLabel].push(`${nickname}(${row.checkedin})`);
-          }
+          //}
         } else if (row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            acc[classLabel].push(`${nickname}(pay)(${row.color})`);
-          }else{
+          // if(isExpired(row.expiredate) || row.remaining == 0) {
+          //   acc[classLabel].push(`${nickname}(pay)(${row.color})`);
+          // }else{
             acc[classLabel].push(`${nickname}(${row.color})`);
-          }
+         // }
         } else {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            acc[classLabel].push(`${acc[classLabel]}(pay)`);
-          }else{
+          // if(isExpired(row.expiredate) || row.remaining == 0) {
+          //   acc[classLabel].push(`${acc[classLabel]}(pay)`);
+          // }else{
             acc[classLabel].push(nickname);
-          }
+          //}
         }
         
       }
