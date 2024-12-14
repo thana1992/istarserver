@@ -1694,7 +1694,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         a.courseid, 
         CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
         a.classid,
-        a.color,
+        b.color,
         c.nickname,
         r.checkedin,
         c.dateofbirth,
