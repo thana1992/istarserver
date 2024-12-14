@@ -1694,15 +1694,16 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         a.courseid, 
         CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
         a.classid,
-        b.color,
         c.nickname,
         r.checkedin,
         c.dateofbirth,
-        CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender
+        CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
+        cc.color
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
+      LEFT JOIN tcustomer_course cc ON c.courserefer = cc.courserefer
       WHERE a.classday = ? AND a.enableflag = 1
       ORDER BY a.classtime, r.classtime ASC
     `;
