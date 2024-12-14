@@ -1694,6 +1694,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         a.courseid, 
         CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
         a.classid,
+        a.color,
         c.nickname,
         r.checkedin,
         c.dateofbirth,
@@ -1719,6 +1720,8 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       if (nickname) {
         if (row.checkedin == 1) {
           acc[classLabel].push(`${nickname}(${row.checkedin})`);
+        } else if (row.color != null) {
+          acc[classLabel].push(`${nickname}(${row.color})`);
         } else {
           acc[classLabel].push(nickname);
         }
