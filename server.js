@@ -1707,7 +1707,8 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
         CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
         cc.color,
         cc.expiredate,
-        cc.remaining
+        cc.remaining,
+        (SELECT MAX(classdate) FROM treservation WHERE courserefer = r.courserefer) as lastBookingDate
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
@@ -1728,32 +1729,32 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       }
 
       if (nickname) {
+        const isLastBookingDate = row.lastBookingDate === classdate;
         if (row.checkedin == 1 && row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
+          if((isExpired(row.expiredate) || row.remaining == 0) && isLastBookingDate) {
             acc[classLabel].push(`${nickname}(pay)(${row.checkedin})(${row.color})`);
-          }else{
+          } else {
             acc[classLabel].push(`${nickname}(${row.checkedin})(${row.color})`);
           }
         } else if (row.checkedin == 1) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
+          if((isExpired(row.expiredate) || row.remaining == 0) && isLastBookingDate) {
             acc[classLabel].push(`${nickname}(pay)(${row.checkedin})`);
-          }else{
+          } else {
             acc[classLabel].push(`${nickname}(${row.checkedin})`);
           }
         } else if (row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
+          if((isExpired(row.expiredate) || row.remaining == 0) && isLastBookingDate) {
             acc[classLabel].push(`${nickname}(pay)(${row.color})`);
-          }else{
+          } else {
             acc[classLabel].push(`${nickname}(${row.color})`);
-         }
+          }
         } else {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
+          if((isExpired(row.expiredate) || row.remaining == 0) && isLastBookingDate) {
             acc[classLabel].push(`${nickname}(pay)`);
-          }else{
+          } else {
             acc[classLabel].push(nickname);
           }
         }
-        
       }
 
       return acc;
