@@ -1793,8 +1793,8 @@ function calculateAge(dateOfBirth) {
   const ageDate = new Date(diff);
   const ageYears = ageDate.getUTCFullYear() - 1970;
   const ageMonths = ageDate.getUTCMonth();
-  const ageDecimal = ageYears + (ageMonths / 12);
-  return ageDecimal.toFixed(2); // แสดงผลเป็นทศนิยม 2 ตำแหน่ง
+  const ageMonthsFormatted = ageMonths < 10 ? ageMonths : ageMonths;
+  return `${ageYears}.${ageMonthsFormatted}`;
 }
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
