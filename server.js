@@ -1793,6 +1793,9 @@ function calculateAge(dateOfBirth) {
   const ageDate = new Date(diff);
   const ageYears = ageDate.getUTCFullYear() - 1970;
   const ageMonths = ageDate.getUTCMonth();
+  if (ageMonths === 0) {
+    return `${ageYears}`;
+  }
   const ageMonthsFormatted = ageMonths < 10 ? ageMonths : ageMonths;
   return `${ageYears}.${ageMonthsFormatted}`;
 }
