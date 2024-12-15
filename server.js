@@ -1793,7 +1793,7 @@ function calculateAge(dateOfBirth) {
   const ageDate = new Date(diff);
   const ageYears = ageDate.getUTCFullYear() - 1970;
   const ageMonths = ageDate.getUTCMonth();
-  return parseFloat(`${ageYears}.${ageMonths}`);
+  return `${ageYears} ปี ${ageMonths} เดือน`;
 }
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
