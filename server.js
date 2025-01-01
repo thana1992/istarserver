@@ -1036,7 +1036,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
     // ตรวจสอบการจองซ้ำในวันเดียวกัน
     const checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
+    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate], true);
 
     if (resCheckDuplicateReservation.length > 0) {
       return res.json({ success: false, message: 'You have already booked on this day' });
@@ -1052,7 +1052,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
       WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
       GROUP BY tclassinfo.maxperson
     `;
-    const resCheckClassFull = await queryPromise(checkClassFullQuery, [classdate, classid, classday, classtime]);
+    const resCheckClassFull = await queryPromise(checkClassFullQuery, [classdate, classid, classday, classtime], true);
 
     if (resCheckClassFull.length > 0) {
       const { maxperson, currentCount } = resCheckClassFull[0];
