@@ -1891,9 +1891,9 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, remaining, startdate, expiredate, period, paid, paydate } = req.body;
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, remaining = ?, startdate = ?, expiredate = ?, period = ?, paid = ?, paydate = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, remaining, startdate, expiredate, period, paid, paydate, courserefer]);
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate } = req.body;
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, courserefer]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
