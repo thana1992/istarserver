@@ -1582,6 +1582,56 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
   }
 });
 
+app.get("/getStudentInfo/:studentid", verifyToken, async (req, res) => {
+  const { studentid } = req.params;
+  console.log("studentid : " + studentid);
+  try {
+    const query = `
+      SELECT 
+        a.studentid, 
+        a.familyid, 
+        a.firstname, 
+        a.middlename, 
+        a.lastname, 
+        a.nickname, 
+        a.gender, 
+        a.dateofbirth, 
+        a.courserefer, 
+        a.courserefer2, 
+        a.shortnote, 
+        CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,''), ' (', a.nickname,')') AS fullname, 
+        CASE 
+          WHEN b.coursetype = 'Monthly' THEN 'รายเดือน' 
+          WHEN b.coursetype IS NULL THEN 'ไม่มีคอร์ส' 
+          ELSE CONCAT(b.remaining, ' ครั้ง') 
+        END AS remaining_label, 
+        b.remaining, 
+        b.expiredate, 
+        t.coursename, 
+        d.mobileno, 
+        a.shortnote, 
+        a.level 
+      FROM tstudent a 
+      LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer 
+      LEFT JOIN tcourseinfo t ON b.courseid = t.courseid 
+      LEFT JOIN tfamily c ON a.familyid = c.familyid 
+      LEFT JOIN tuser d ON c.username = d.username
+      WHERE a.studentid = ? 
+      and a.delflag = 0 
+      ORDER BY a.createdate DESC
+    `;
+    const results = await queryPromise(query, [studentid]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Student list successful', results });
+    } else {
+      res.json({ success: true, message: 'No Student list', results });
+    }
+  } catch (error) {
+    console.error("Error in getStudentList", error.stack);
+    res.status(500).send(error);
+  }
+});
+
 app.post("/getReservationList", verifyToken, async (req, res) => {
   try {
     const { classdate } = req.body;
@@ -1702,6 +1752,8 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
         a.classid,
         c.nickname,
+        c.studentid,
+        c.shortnote,
         r.checkedin,
         c.dateofbirth,
         CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
@@ -1728,36 +1780,16 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       }
 
       if (nickname) {
-        if (row.checkedin == 1 && row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push('${nickname}(pay)(${row.checkedin})(${row.color})');
-          }else{
-            acc[classLabel].push('${nickname}(${row.checkedin})(${row.color})');
-          }
-        } else if (row.checkedin == 1) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push('${nickname}(pay)(${row.checkedin})');
-          }else{
-            acc[classLabel].push('${nickname}(${row.checkedin})');
-          }
-        } else if (row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push('${nickname}(pay)(${row.color})');
-          }else{
-            acc[classLabel].push('${nickname}(${row.color})');
-         }
-        } else {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push('${nickname}(pay)');
-          }else{
-            acc[classLabel].push(nickname);
-          }
-        }
-        
+        const getName = (nickname, checkedin, color, remaining) => {
+          let name = nickname;
+          if (remaining == 0) name += '(pay)';
+          if (checkedin == 1) name += `(${checkedin})`;
+          if (color != null) name += `(${color})`;
+          return name;
+        };
+      
+        const name = getName(nickname, row.checkedin, row.color, row.remaining);
+        acc[classLabel].push({ name, studentid: row.studentid, shortnote: row.shortnote });
       }
 
       return acc;
@@ -1817,36 +1849,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       }
 
       if (nickname) {
-        if (row.checkedin == 1 && row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push(`${nickname}(pay)(${row.checkedin})(${row.color})`);
-          }else{
-            acc[classLabel].push(`${nickname}(${row.checkedin})(${row.color})`);
-          }
-        } else if (row.checkedin == 1) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push(`${nickname}(pay)(${row.checkedin})`);
-          }else{
-            acc[classLabel].push(`${nickname}(${row.checkedin})`);
-          }
-        } else if (row.color != null) {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push(`${nickname}(pay)(${row.color})`);
-          }else{
-            acc[classLabel].push(`${nickname}(${row.color})`);
-         }
-        } else {
-          if(isExpired(row.expiredate) || row.remaining == 0) {
-            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
-            acc[classLabel].push(`${nickname}(pay)`);
-          }else{
-            acc[classLabel].push(nickname);
-          }
-        }
-        
+        acc[classLabel].push(nickname);
       }
 
       return acc;
