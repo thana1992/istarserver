@@ -1689,6 +1689,95 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
   }
 });
 
+app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
+  console.log("getBookingList [request] : " + JSON.stringify(req.body));
+  try {
+    const { classday, classdate } = req.body;
+
+    // Query to get all necessary data in one go
+    const query = `
+      SELECT 
+        a.classtime, 
+        a.courseid, 
+        CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
+        a.classid,
+        c.nickname,
+        r.checkedin,
+        c.dateofbirth,
+        CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
+        cc.color,
+        cc.expiredate,
+        cc.remaining
+      FROM tclassinfo a
+      JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
+      LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
+      LEFT JOIN tstudent c ON r.studentid = c.studentid
+      LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
+      WHERE a.classday = ? AND a.enableflag = 1
+      ORDER BY a.classtime, r.classtime ASC
+    `;
+    const results = await queryPromise(query, [classdate, classday]);
+
+    // Process results to create booking list
+    const bookinglist = results.reduce((acc, row) => {
+      const classLabel = row.class_label;
+      const nickname = row.nickname ? `${row.nickname} (${row.gender}${calculateAge(row.dateofbirth)})` : null;
+
+      if (!acc[classLabel]) {
+        acc[classLabel] = [];
+      }
+
+      if (nickname) {
+        if (row.checkedin == 1 && row.color != null) {
+          if(isExpired(row.expiredate) || row.remaining == 0) {
+            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
+            acc[classLabel].push('${nickname}(pay)(${row.checkedin})(${row.color})');
+          }else{
+            acc[classLabel].push('${nickname}(${row.checkedin})(${row.color})');
+          }
+        } else if (row.checkedin == 1) {
+          if(isExpired(row.expiredate) || row.remaining == 0) {
+            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
+            acc[classLabel].push('${nickname}(pay)(${row.checkedin})');
+          }else{
+            acc[classLabel].push('${nickname}(${row.checkedin})');
+          }
+        } else if (row.color != null) {
+          if(isExpired(row.expiredate) || row.remaining == 0) {
+            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
+            acc[classLabel].push('${nickname}(pay)(${row.color})');
+          }else{
+            acc[classLabel].push('${nickname}(${row.color})');
+         }
+        } else {
+          if(isExpired(row.expiredate) || row.remaining == 0) {
+            // ไปเช็คก่อน ว่ามีคอร์สใหม่หรือไม่ ถ้ามีแล้ว ก็ไม่ต้องใส่ (pay) แล้ว
+            acc[classLabel].push('${nickname}(pay)');
+          }else{
+            acc[classLabel].push(nickname);
+          }
+        }
+        
+      }
+
+      return acc;
+    }, {});
+
+    // Remove classes with "แข่ง" in the class time only if there are no names
+    Object.keys(bookinglist).forEach(classLabel => {
+      if (classLabel.includes('แข่ง') && bookinglist[classLabel].length === 0) {
+        delete bookinglist[classLabel];
+      }
+    });
+
+    console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
+    res.json({ success: true, message: 'Get Booking list successful', bookinglist });
+  } catch (error) {
+    console.error('Error in getBookingList', error.stack);
+    res.status(500).send(error);
+  }
+});
+
 app.post('/getBookingList', verifyToken, async (req, res) => {
   console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
