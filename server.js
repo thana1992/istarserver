@@ -1740,7 +1740,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
 });
 
 app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
-  console.log("getBookingList [request] : " + JSON.stringify(req.body));
+  console.log("getBookingListAdmin [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
 
@@ -1754,12 +1754,14 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         c.nickname,
         c.studentid,
         c.shortnote,
+        r.courserefer,
         r.checkedin,
         c.dateofbirth,
         CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
         cc.color,
         cc.expiredate,
-        cc.remaining
+        cc.remaining,
+        cc.paid
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
@@ -1771,29 +1773,63 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
     const results = await queryPromise(query, [classdate, classday]);
 
     // Process results to create booking list
-    const bookinglist = results.reduce((acc, row) => {
+    const getName = async (nickname, checkedin, color, remaining, studentid, courserefer) => {
+      let name = nickname;
+      if (remaining == 0 && !courserefer.includes('ทดลอง')) {
+        const query2 = 'SELECT courserefer from tstudent where studentid = ?';
+        const results2 = await queryPromise(query2, [studentid]);
+        if (results2.length > 0) {
+          const newCourserefer = results2[0].courserefer;
+          
+          if (newCourserefer && newCourserefer != courserefer) {
+            const query3 = 'SELECT * from tcustomer_course where courserefer = ?';
+            const results3 = await queryPromise(query3, [newCourserefer]);
+            if (results3.length > 0) {
+              const courseType = results3[0].coursetype;
+              if(courseType === "Monthly" && isExpired(results3[0].expiredate)){
+                name += '(pay)';
+              }
+              if(courseType !== "Monthly"){
+                const newRemaining = results3[0].remaining;
+                
+                if (newRemaining <= 0) {
+                  name += '(pay)';
+                }
+              }
+              const paid = results3[0].paid;
+              if(paid === 0){
+                name += '(pay)';
+              }
+            }
+          }else{
+            name += '(pay)';
+          }
+        } else {
+          name += '(pay)';
+        }
+      }
+      if (checkedin == 1) name += `(${checkedin})`;
+      if (color != null) name += `(${color})`;
+      return name;
+    };
+    
+    // Process results to create booking list
+    const bookinglist = await results.reduce(async (accPromise, row) => {
+      const acc = await accPromise;
       const classLabel = row.class_label;
       const nickname = row.nickname ? `${row.nickname} (${row.gender}${calculateAge(row.dateofbirth)})` : null;
-
+    
       if (!acc[classLabel]) {
         acc[classLabel] = [];
       }
-
+    
       if (nickname) {
-        const getName = (nickname, checkedin, color, remaining) => {
-          let name = nickname;
-          if (remaining == 0) name += '(pay)';
-          if (checkedin == 1) name += `(${checkedin})`;
-          if (color != null) name += `(${color})`;
-          return name;
-        };
-      
-        const name = getName(nickname, row.checkedin, row.color, row.remaining);
-        acc[classLabel].push({ name, studentid: row.studentid, shortnote: row.shortnote });
+        const name = await getName(nickname, row.checkedin, row.color, row.remaining, row.studentid, row.courserefer);
+        acc[classLabel].push({ name, studentid: row.studentid });
       }
-
+    
       return acc;
-    }, {});
+    }, Promise.resolve({}));
 
     // Remove classes with "แข่ง" in the class time only if there are no names
     Object.keys(bookinglist).forEach(classLabel => {
@@ -1877,6 +1913,7 @@ function isExpired(expiredate) {
 
   const today = new Date();
   const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  console.log("isExpired : " + new Date(expiredate) <= todayDateOnly);
   return new Date(expiredate) <= todayDateOnly;
 }
 // Function to calculate age in years and months
@@ -1895,6 +1932,39 @@ function calculateAge(dateOfBirth) {
   const ageMonthsFormatted = ageMonths < 10 ? ageMonths : ageMonths;
   return `${ageYears}.${ageMonthsFormatted}`;
 }
+
+app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    const query = `SELECT a.*, b.coursename, 
+        CASE 
+         WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
+         ELSE (
+           SELECT GROUP_CONCAT(DISTINCT s.nickname SEPARATOR ', ')
+           FROM tstudent s
+           JOIN treservation r ON s.studentid = r.studentid
+           WHERE r.courserefer = a.courserefer
+         )
+        END AS userlist
+FROM tcustomer_course a 
+LEFT JOIN tcourseinfo b 
+ON a.courseid = b.courseid 
+WHERE a.finish = 1 
+GROUP BY a.courseid, a.courserefer, b.coursename
+ORDER BY a.createdate desc
+    `;
+
+    const results = await queryPromise(query, null);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Customer Course List successful', results });
+    } else {
+      res.json({ success: true, message: 'No Customer Course List' });
+    }
+  } catch (error) {
+    console.error('Error in getCustomerCourseList', error.stack);
+    res.status(500).send(error);
+  }
+});
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   try {
