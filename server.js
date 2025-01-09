@@ -1549,7 +1549,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
         a.courserefer, 
         a.courserefer2, 
         a.shortnote, 
-        CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,''), ' (', a.nickname,')') AS fullname, 
+        CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,'')) AS fullname, 
         CASE 
           WHEN b.coursetype = 'Monthly' THEN 'รายเดือน' 
           WHEN b.coursetype IS NULL THEN 'ไม่มีคอร์ส' 
@@ -1598,7 +1598,7 @@ app.get("/getStudentInfo/:studentid", verifyToken, async (req, res) => {
         a.dateofbirth, 
         a.courserefer, 
         a.courserefer2, 
-        a.shortnote, 
+        a.shortnote,
         CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,''), ' (', a.nickname,')') AS fullname, 
         CASE 
           WHEN b.coursetype = 'Monthly' THEN 'รายเดือน' 
@@ -1610,14 +1610,14 @@ app.get("/getStudentInfo/:studentid", verifyToken, async (req, res) => {
         t.coursename, 
         d.mobileno, 
         a.shortnote, 
-        a.level 
+        a.level,
+        a.delflag
       FROM tstudent a 
       LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer 
       LEFT JOIN tcourseinfo t ON b.courseid = t.courseid 
       LEFT JOIN tfamily c ON a.familyid = c.familyid 
       LEFT JOIN tuser d ON c.username = d.username
-      WHERE a.studentid = ? 
-      and a.delflag = 0 
+      WHERE a.studentid = ?
       ORDER BY a.createdate DESC
     `;
     const results = await queryPromise(query, [studentid]);
