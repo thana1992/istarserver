@@ -1768,7 +1768,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         c.shortnote,
         r.courserefer,
         r.checkedin,
-        r.freeflag
+        r.freeflag,
         c.dateofbirth,
         CASE WHEN c.gender = 'ชาย' THEN 'ช.' ELSE 'ญ.' END as gender,
         cc.color,
