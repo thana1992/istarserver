@@ -1774,7 +1774,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         cc.color,
         cc.expiredate,
         cc.remaining,
-        cc.paid,
+        cc.paid
         
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
