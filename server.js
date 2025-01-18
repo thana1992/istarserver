@@ -1477,19 +1477,23 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
 
 app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
   const { courserefer } = req.body;
-  const query = 'UPDATE tcustomer_course SET finish = 1 WHERE courserefer = ?';
-  try {
-    const results = await queryPromise(query, [courserefer]);
-    if (results.affectedRows > 0) {
-      const query2 = 'UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?';
-      await queryPromise(query2, [courserefer]);
-      res.json({ success: true, message: 'Course finished successfully' });
-    } else {
-      res.json({ success: false, message: 'No course found with the given reference' });
+  if (!courserefer.includes('รายครั้ง')) {
+    const query = 'UPDATE tcustomer_course SET finish = 1 WHERE courserefer = ?';
+    try {
+      const results = await queryPromise(query, [courserefer]);
+      if (results.affectedRows > 0) {
+        const query2 = 'UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?';
+        await queryPromise(query2, [courserefer]);
+        res.json({ success: true, message: 'Course finished successfully' });
+      } else {
+        res.json({ success: false, message: 'No course found with the given reference' });
+      }
+    } catch (error) {
+      console.error('Error in finishCustomerCourse', error.stack);
+      res.status(500).send(error);
     }
-  } catch (error) {
-    console.error('Error in finishCustomerCourse', error.stack);
-    res.status(500).send(error);
+  } else {
+    res.json({ success: false, message: 'ไม่สามารถจบคอร์สรายครั้ง' });
   }
 });
 
@@ -1766,7 +1770,8 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         c.nickname,
         c.studentid,
         c.shortnote,
-        r.courserefer,
+        c.courserefer as currnent_courserefer,
+        r.courserefer as booking_courserefer,
         r.checkedin,
         r.freeflag,
         c.dateofbirth,
@@ -1774,7 +1779,8 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         cc.color,
         cc.expiredate,
         cc.remaining,
-        cc.paid
+        cc.paid,
+        cc.coursetype
         
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
@@ -1787,45 +1793,66 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
     const results = await queryPromise(query, [classdate, classday]);
 
     // Process results to create booking list
-    const getName = async (nickname, checkedin, color, remaining, studentid, courserefer, freeflag) => {
+    const getName = async (nickname, currnent_courserefer, booking_courserefer, checkedin, color, remaining, freeflag, coursetype, expiredate, paid) => {
       let name = nickname;
-      if (remaining == 0 && !courserefer.includes('ทดลอง')) {
-        const query2 = 'SELECT courserefer from tstudent where studentid = ?';
-        const results2 = await queryPromise(query2, [studentid]);
-        if (results2.length > 0) {
-          const newCourserefer = results2[0].courserefer;
-          
-          if (newCourserefer && newCourserefer != courserefer) {
-            const query3 = 'SELECT * from tcustomer_course where courserefer = ?';
-            const results3 = await queryPromise(query3, [newCourserefer]);
-            if (results3.length > 0) {
-              const courseType = results3[0].coursetype;
-              if(courseType === "Monthly" && isExpired(results3[0].expiredate)){
+      let warning_msg = "";
+      // เช็คว่า ไม่ใช่คอร์สทดลอง และ ไม่ใช่คอร์สฟรี
+      if ((booking_courserefer && !booking_courserefer.includes('ทดลอง')) || freeflag != 1) {
+        if (currnent_courserefer != booking_courserefer) {
+          // # ---- ถ้า คอร์สที่จอง ไม่ใช่คอร์สปัจจุบัน ให้ใช้คอร์สปัจจุบันเช็คแทน ---- #
+          const query2 = 'SELECT * from tcustomer_course where courserefer = ?';
+          const results2 = await queryPromise(query2, [currnent_courserefer]);
+          if (results2.length > 0) {
+            const courseType = results2[0].coursetype;
+            if(courseType === "Monthly" && isExpired(results2[0].expiredate)){
+              name += '(pay)';
+              warning_msg = "คอรส์หมดอายุการใช้งาน";
+            }
+            if(courseType !== "Monthly"){
+              const newRemaining = results2[0].remaining;
+              
+              if (newRemaining <= 0) {
                 name += '(pay)';
-              }
-              if(courseType !== "Monthly"){
-                const newRemaining = results3[0].remaining;
-                
-                if (newRemaining <= 0) {
-                  name += '(pay)';
-                }
-              }
-              const paid = results3[0].paid;
-              if(paid === 0){
-                name += '(pay)';
+                warning_msg = "คอรส์คอร์สเหลือ 0 ครั้ง";
               }
             }
-          }else{
-            name += '(pay)';
+            const paid = results2[0].paid;
+            if(paid === 0){
+              name += '(pay)';
+              warning_msg = "ยังไม่ได้ชำระค่าคอร์ส";
+            }
           }
-        } else {
-          name += '(pay)';
+        }else{
+          // # ---- ถ้า คอร์สที่จอง เป็นคอร์สปัจจุบัน ---- #
+          if(coursetype !== "Monthly" && remaining <= 0){
+            name += '(pay)';
+            if(booking_courserefer.includes('รายครั้ง')){
+              warning_msg = "[" + booking_courserefer + "]";
+            }else{
+              warning_msg = "คอร์สเหลือ 0 ครั้ง";
+            }
+          }else if(isExpired(expiredate)){
+            name += '(pay)';
+            if(coursetype === "Monthly") {
+              warning_msg = "คอรส์หมดอายุการใช้งาน";
+            }else{
+              if(remaining <= 0){
+                warning_msg = "คอร์สคงเหลือ 0 และ หมดอายุการใช้งาน";
+              }else{
+                warning_msg = "คอรส์หมดอายุการใช้งาน";
+              }
+            }
+          }else if (paid === 0){
+            name += '(pay)';
+            warning_msg = "ยังไม่ได้ชำระค่าคอร์ส";
+          }
         }
       }
       if (checkedin == 1) name += `(${checkedin})`;
       if (color != null) name += `(${color})`;
       if (freeflag == 1) name += '(blue)';
-      return name;
+      const result = { nickname : name , msg: warning_msg };
+      return result;
     };
     
     // Process results to create booking list
@@ -1839,8 +1866,8 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       }
     
       if (nickname) {
-        const name = await getName(nickname, row.checkedin, row.color, row.remaining, row.studentid, row.courserefer, row.freeflag);
-        acc[classLabel].push({ name, studentid: row.studentid });
+        const obj = await getName(nickname, row.currnent_courserefer, row.booking_courserefer, row.checkedin, row.color, row.remaining, row.freeflag, row.coursetype, row.expiredate, row.paid);
+        acc[classLabel].push({ name: obj.nickname, studentid: row.studentid, msg: obj.msg });
       }
     
       return acc;
@@ -2583,6 +2610,7 @@ async function deleteOldProfileImage(studentId) {
 
 const cron = require('node-cron');
 const { google } = require('googleapis');
+const { warn } = require('console');
 const drive = google.drive('v3');
 const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
 const auth = new google.auth.GoogleAuth({
