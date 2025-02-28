@@ -831,7 +831,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
 app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
   try {
-    const { studentid, classid, classdate, classtime, courseid, classday, reservationid } = req.body;
+    const { studentid, classid, classdate, classtime, courseid, classday, reservationid, freeflag } = req.body;
 
     // ตรวจสอบการจองซ้ำในวันเดียวกัน
     const checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ? AND reservationid <> ?';
