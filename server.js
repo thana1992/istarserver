@@ -794,7 +794,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`,
                 };
 
-                sendNotification(jsonData);
+                //sendNotification(jsonData);
               }
             } catch (error) {
               console.error('Error sending notification', error.stack);
@@ -956,7 +956,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     message: `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(results[0].dateofbirth)}ปี\nจาก ${oldClassdate} ${oldClasstime}\nเป็น ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`,
                   };
 
-                  sendNotificationUpdate(jsonData);
+                  //sendNotificationUpdate(jsonData);
                 }
               } catch (error) {
                 console.error('Error sending notification', error.stack);
@@ -1169,7 +1169,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`,
               };
 
-              sendNotification(jsonData);
+              //sendNotification(jsonData);
             }
           } catch (error) {
             console.error('Error sending notification', error.stack);
@@ -1185,7 +1185,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-
+/*
 async function sendNotification(jsonData) {
   try {
     // Send notification
@@ -1227,7 +1227,7 @@ async function sendNotificationUpdate(jsonData) {
     throw error;
   }
 }
-
+*/
 app.post('/deleteReservation', verifyToken, async (req, res) => {
   const { reservationid } = req.body;
   const query = 'DELETE FROM treservation WHERE reservationid = ?';
