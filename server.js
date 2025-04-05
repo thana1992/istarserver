@@ -2702,5 +2702,5 @@ console.log = (msg) => {
 
 console.error = (msg, error) => {
   logger.info(msg + " : " + error);
-  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด', msg + " : " + error);
+  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด', msg);
 };
