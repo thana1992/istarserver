@@ -62,5 +62,10 @@ async function sendNotificationUpdate(jsonData) {
     }
 }
 
-module.exports = logToDiscord;
+module.exports = {
+    logSystemToDiscord,
+    logBookingToDiscord,
+    sendNotification,
+    sendNotificationUpdate
+};
 
