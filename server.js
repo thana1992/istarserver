@@ -65,7 +65,7 @@ async function queryPromise(query, params, showlog) {
     
     // ส่งข้อมูลไป Discord พร้อมให้แสดงผลแบบบรรทัดใหม่
     const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}`;
-    logSystemToDiscord('info', `[Query]`, message);
+    //logSystemToDiscord('info', `[Query]`, message);
 
     return results;
   } catch (error) {
@@ -1307,7 +1307,6 @@ app.post('/deleteCourse', verifyToken, async (req, res) => {
 });
 
 app.get('/getAllClasses', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getAllClasses]', `User ${req.user.username} is getting all classes.`);
   const query = 'SELECT b.courseid, b.coursename, a.* FROM tclassinfo a inner join tcourseinfo b on a.courseid = b.courseid order by b.coursename , a.classday';
   try {
     const results = await queryPromise(query, null);
@@ -1323,7 +1322,6 @@ app.get('/getAllClasses', verifyToken, async (req, res) => {
 });
 
 app.post('/addClass', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[addClass]', `User ${req.user.username} is adding a class.\n${JSON.stringify(req.body)}`);
   const { courseid, classday, classtime, maxperson, adminflag } = req.body;
   const query = 'INSERT INTO tclassinfo (courseid, classday, classtime, maxperson, adminflag) VALUES (?, ?, ?, ?, ?)';
   try {
@@ -1336,7 +1334,6 @@ app.post('/addClass', verifyToken, async (req, res) => {
 });
 
 app.post('/updateClass', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[updateClass]', `User ${req.user.username} is updating a class.\n${JSON.stringify(req.body)}`);
   const { classid, courseid, classday, classtime, maxperson, adminflag } = req.body;
   const query = 'UPDATE tclassinfo SET courseid = ?, classday = ?, classtime = ?, maxperson = ?, adminflag = ? WHERE classid = ?';
   try {
@@ -1349,7 +1346,6 @@ app.post('/updateClass', verifyToken, async (req, res) => {
 });
 
 app.post('/deleteClass', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[deleteClass]', `User ${req.user.username} is deleting a class.\n${JSON.stringify(req.body)}`);
   const { classid } = req.body;
   const deleteClassQuery = 'DELETE FROM tclassinfo WHERE classid = ?';
   const deleteReservationQuery = 'DELETE FROM treservation WHERE classid = ?';
@@ -1364,7 +1360,6 @@ app.post('/deleteClass', verifyToken, async (req, res) => {
 });
 
 app.post('/getClassTime', verifyToken, async (req, res) => {
-  //logSystemToDiscord('info', '[getClassTime]', `User ${req.user.username} is getting class time.\n${JSON.stringify(req.body)}`);
   const { classdate, classday, courseid } = req.body;
   let query = `
     SELECT a.*, 
@@ -1423,7 +1418,6 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
 });
 
 app.get("/getNewStudentList", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getNewStudentList]', `User ${req.user.username} is getting new student list.`);
   const query = `
     SELECT a.*, 
       CONCAT(IFNULL(a.firstname, ''), ' ', IFNULL(a.middlename, ''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname, ''), ' (', a.nickname,')') AS fullname, 
@@ -1446,7 +1440,6 @@ app.get("/getNewStudentList", verifyToken, async (req, res) => {
 });
 
 app.get("/courseLookup", verifyToken, async (req, res) => {
-  
   const query = 'SELECT * FROM tcourseinfo WHERE enableflag = 1';
   try {
     const results = await queryPromise(query, null);
@@ -1489,7 +1482,6 @@ app.post('/getCustomerCourseInfo', verifyToken, async (req, res) => {
 });
 
 app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[finishCustomerCourse]', `User ${req.user.username} is finishing a customer course.\n${JSON.stringify(req.body)}`);
   const { courserefer } = req.body;
   if (!courserefer.includes('รายครั้ง')) {
     const query = 'UPDATE tcustomer_course SET finish = 1 WHERE courserefer = ?';
@@ -1515,7 +1507,6 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
 });
 
 app.get("/getFinishedCourse", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getFinishedCourse]', `User ${req.user.username} is getting finished courses.`);
   const query = 'SELECT * FROM tcustomer_course WHERE finish = 1';
   try {
     const results = await queryPromise(query, null);
@@ -1569,7 +1560,6 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getStudentList]', `User ${req.user.username} is getting student list.`);
   try {
     const query = `
       SELECT 
@@ -1618,7 +1608,6 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
 });
 
 app.get("/getStudentInfo/:studentid", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getStudentInfo]', `User ${req.user.username} is getting student info.\n${JSON.stringify(req.params)}`);
   const { studentid } = req.params;
   console.log("studentid : " + studentid);
   try {
@@ -1669,7 +1658,6 @@ app.get("/getStudentInfo/:studentid", verifyToken, async (req, res) => {
 });
 
 app.post("/getReservationList", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getReservationList]', `User ${req.user.username} is getting reservation list.\n${JSON.stringify(req.body)}`);
   try {
     const { classdate } = req.body;
     const query = `
@@ -1703,7 +1691,6 @@ app.post("/getReservationList", verifyToken, async (req, res) => {
 });
 
 app.post("/checkinByAdmin", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[checkinByAdmin]', `User ${req.user.username} is checking in a reservation.\n${JSON.stringify(req.body)}`);
   try {
     const { reservationid, studentid } = req.body;
     const query = 'UPDATE treservation SET checkedin = 1 WHERE reservationid = ? AND studentid = ?';
@@ -1722,7 +1709,6 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
 });
 
 app.post("/undoCheckinByAdmin", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[undoCheckinByAdmin]', `User ${req.user.username} is undoing check-in for a reservation.\n${JSON.stringify(req.body)}`);
   try {
     const { reservationid, studentid } = req.body;
     const query = 'UPDATE treservation SET checkedin = 0 WHERE reservationid = ? AND studentid = ?';
@@ -1779,7 +1765,6 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
 });
 
 app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getBookingListAdmin]', `User ${req.user.username} is getting booking list.\n${JSON.stringify(req.body)}`);
   console.log("getBookingListAdmin [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
@@ -1913,7 +1898,6 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
 });
 
 app.post('/getBookingList', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getBookingList]', `User ${req.user.username} is getting booking list.\n${JSON.stringify(req.body)}`);
   console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
@@ -2001,7 +1985,6 @@ function calculateAge(dateOfBirth) {
 }
 
 app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getFinishedCustomerCourseList]', `User ${req.user.username} is getting finished customer course list.`);
   try {
     const { username } = req.body;
     const query = `SELECT a.*, b.coursename, 
@@ -2035,7 +2018,6 @@ ORDER BY a.createdate desc
 });
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getCustomerCourseList]', `User ${req.user.username} is getting customer course list.`);
   try {
     const { username } = req.body;
     const query = `SELECT a.*, b.coursename, 
@@ -2081,7 +2063,6 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 });
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[addCustomerCourse]', `User ${req.user.username} is adding a customer course.\n${JSON.stringify(req.body)}`);
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate } = req.body;
     const courserefer = await generateRefer(course.refercode);
@@ -2131,7 +2112,6 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 });
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[updateCustomerCourse]', `User ${req.user.username} is updating a customer course.\n${JSON.stringify(req.body)}`);
   try {
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate } = req.body;
     const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ? WHERE courserefer = ?';
@@ -2152,7 +2132,6 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
 });
 
 app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[checkBeforeDeleteCustomerCourse]', `User ${req.user.username} is checking before deleting a customer course.\n${JSON.stringify(req.body)}`);
   try {
     const { courserefer } = req.body;
     const query = 'SELECT * FROM tstudent WHERE courserefer = ?';
@@ -2169,7 +2148,6 @@ app.post('/checkBeforeDeleteCustomerCourse', verifyToken, async (req, res) => {
 });
 
 app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[deleteCustomerCourse]', `User ${req.user.username} is deleting a customer course.\n${JSON.stringify(req.body)}`);
   try {
     const { courserefer } = req.body;
     const queryUpdateDelete = 'UPDATE tcustomer_course SET deleteby = ? WHERE courserefer = ?';
@@ -2202,7 +2180,6 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
 });
 
 app.get('/getStudentCourseDetail/:courserefer', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getStudentCourseDetail]', `User ${req.user.username} is getting student course detail.\n${JSON.stringify(req.params)}`);
   const { courserefer } = req.params;
   try {
     let query = `
@@ -2496,7 +2473,6 @@ app.post('/verify-otp', async (req, res) => {
 });
 
 app.post('/checkmobileno', async (req, res) => {
-  logSystemToDiscord('info', '[checkmobileno]', `User is checking mobile number.\n${JSON.stringify(req.body)}`);
   const { username, mobileno } = req.body;
   const query = 'SELECT * FROM tuser WHERE username = ? and mobileno = ?';
   try {
@@ -2513,7 +2489,6 @@ app.post('/checkmobileno', async (req, res) => {
 });
 
 app.post('/change-password', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[change-password]', `User ${req.user.username} is changing password.\n${JSON.stringify(req.body)}`);
   const { username, password } = req.body;
   const query = 'UPDATE tuser SET userpassword = ? WHERE username = ?';
   try {
