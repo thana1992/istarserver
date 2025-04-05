@@ -2864,7 +2864,8 @@ console.log = (msg) => {
 };
 
 console.error = (msg, error) => {
+  const CURRENT_TIMETOMILISECONDS = new Date().getTime();
+  const timestamp = new Date(CURRENT_TIMETOMILISECONDS).toLocaleString('th-TH', { timeZone: timeZone });
   logger.info('['+timestamp+'] : ' + msg + " : " + error);
-  const timestamp = new Date().toISOString();
   logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด ['+timestamp+'] : ' + msg);
 };
