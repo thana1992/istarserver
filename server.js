@@ -40,23 +40,23 @@ async function queryPromise(query, params, showlog) {
   let connection;
   try {
     console.log("Query : " + query);
-    logSystemToDiscord('info','[Query result]', query);
+    logSystemToDiscord('info','[Query]', query);
     connection = await pool.getConnection();
     await connection.query("SET time_zone = '+07:00';"); // ตั้งค่าเขตเวลาเป็นเวลาของไทย (UTC+7)
     const [results] = await connection.query(query, params);
     
     if (showlog) {
       const maskedParams = maskSensitiveData(params);
-      logSystemToDiscord('info','[Query Parameter]', maskedParams);
+      logSystemToDiscord('info','[Query Parameter]', JSON.stringify(maskedParams));
       console.log("Params : " + JSON.stringify(maskedParams));
 
       if (Array.isArray(results)) {
-        const maskedResults = results.map(maskSensitiveData);
-        logSystemToDiscord('info','[Query Result]', maskedResult);
+        const maskedResult = results.map(maskSensitiveData);
+        logSystemToDiscord('info','[Query Result]', JSON.stringify(maskedResult));
         //console.log("Results : " + JSON.stringify(maskedResults));
       } else {
         const maskedResult = maskSensitiveData(results);
-        logSystemToDiscord('info','[Query Result]', maskedResult);
+        logSystemToDiscord('info','[Query Result]', JSON.stringify(maskedResult));
         //console.log("Results is not an array!");
         //console.log("Results : " + JSON.stringify(maskedResult));
       }
@@ -2460,7 +2460,7 @@ app.post('/change-password', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-
+/*
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
@@ -2580,7 +2580,135 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     return res.status(500).json({ error: err.message });
   }
 });
+*/
 
+// ติดตั้ง package สำหรับ S3 v3
+const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const fs = require('fs');
+const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
+
+// สร้าง S3 Client
+const s3Client = new S3Client({
+  region: 'sgp1', // เปลี่ยนเป็น region ของคุณ
+  endpoint: 'https://sgp1.digitaloceanspaces.com', // ตั้งค่า endpoint ของ DigitalOcean Space
+  credentials: {
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+  }
+});
+
+app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
+  try {
+    const fileStream = fs.createReadStream(req.file.path);
+    let fileName = `slip_customer_course/${req.file.originalname}`;
+    let params = {
+      Bucket: 'istar', // ชื่อ Space ของคุณ
+      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
+      Body: fileStream,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+    };
+
+    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
+    let fileExists = true;
+    let fileIndex = 1;
+    while (fileExists) {
+      try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
+        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
+        const fileExtension = req.file.originalname.split('.').pop();
+        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
+        fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        params.Key = fileName;
+        fileIndex++;
+      } catch (headErr) {
+        if (headErr.name === 'NotFound') {
+          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
+          fileExists = false;
+        } else {
+          // ถ้าเกิดข้อผิดพลาดอื่นๆ
+          throw headErr;
+        }
+      }
+    }
+
+    // อัพโหลดไฟล์ใหม่
+    const data = await s3Client.send(new PutObjectCommand(params));
+
+    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Failed to delete temporary file:', err);
+    });
+
+    const slipImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+    const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
+    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
+    await queryPromise(query, [slipImageUrl, courserefer]);
+
+    res.json({ url: slipImageUrl });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
+  try {
+    const fileStream = fs.createReadStream(req.file.path);
+    let fileName = `profile_image/${req.file.originalname}`;
+    let params = {
+      Bucket: 'istar', // ชื่อ Space ของคุณ
+      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
+      Body: fileStream,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+    };
+
+    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
+    let fileExists = true;
+    let fileIndex = 1;
+    while (fileExists) {
+      try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
+        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
+        const fileExtension = req.file.originalname.split('.').pop();
+        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
+        fileName = `profile_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        params.Key = fileName;
+        fileIndex++;
+      } catch (headErr) {
+        if (headErr.name === 'NotFound') {
+          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
+          fileExists = false;
+        } else {
+          // ถ้าเกิดข้อผิดพลาดอื่นๆ
+          throw headErr;
+        }
+      }
+    }
+
+    // อัพโหลดไฟล์ใหม่
+    const data = await s3Client.send(new PutObjectCommand(params));
+
+    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Failed to delete temporary file:', err);
+    });
+
+    // อัพเดท URL ของรูปภาพในฐานข้อมูล
+    const profileImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+    const studentId = req.body.studentid; // สมมติว่า studentid ถูกส่งมาพร้อมกับ request
+
+    const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
+    await queryPromise(query, [profileImageUrl, studentId]);
+
+    await deleteOldProfileImage(studentId);
+
+    res.json({ url: profileImageUrl });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ฟังก์ชันลบรูปภาพเก่าจากฐานข้อมูล
 async function deleteOldProfileImage(studentId) {
   const query = 'UPDATE tstudent SET profile_image = NULL WHERE studentid = ?';
   await queryPromise(query, [studentId]);
