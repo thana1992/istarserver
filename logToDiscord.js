@@ -55,7 +55,8 @@ async function processQueue(urlType) {
         booking: DISCORD_WEBHOOK_URL_BOOKING,
         course: DISCORD_COURSE_WEBHOOK_URL,
         info: DISCORD_INFO_WEBHOOK_URL,
-        error: DISCORD_ERROR_WEBHOOK_URL
+        error: DISCORD_ERROR_WEBHOOK_URL,
+        success: DISCORD_INFO_WEBHOOK_URL
     };
 
     // ตรวจสอบว่ามีข้อความในคิวหรือไม่
