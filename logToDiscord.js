@@ -14,7 +14,8 @@ const queue = {
     booking: [],
     course: [],
     info: [],
-    error: []
+    error: [],
+    success: []
 };
 
 // ตัวแปรสำหรับการตรวจสอบว่ากำลังประมวลผลคิวอยู่หรือไม่
