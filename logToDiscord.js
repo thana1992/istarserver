@@ -1,4 +1,5 @@
 const axios = require('axios');
+const e = require('express');
 const { info } = require('winston');
 const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
 const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
@@ -39,6 +40,8 @@ function logSystemToDiscord(type, title, message) {
     }).catch((err) => {
         if (err.response?.status === 429) {
             console.warn("⏳ Rate limited by Discord. Skipping...");
+        } else if (err.response?.status === 400) {
+            console.warn("⚠️ Invalid webhook URL. Please check your configuration. [URL] ", SENDING_URL);
         } else {
             console.error("❌ Error sending to Discord:", err);
         }
@@ -101,6 +104,7 @@ module.exports = {
     logSystemToDiscord,
     logBookingToDiscord,
     sendNotification,
-    sendNotificationUpdate
+    sendNotificationUpdate,
+    logCourseToDiscord
 };
 
