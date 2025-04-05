@@ -62,11 +62,6 @@ async function queryPromise(query, params, showlog) {
       console.log("Params : " + JSON.stringify(logData.params));
       console.log("Results : " + JSON.stringify(logData.result));
     }
-    
-    // ส่งข้อมูลไป Discord พร้อมให้แสดงผลแบบบรรทัดใหม่
-    const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}`;
-    logSystemToDiscord('info', `[Query]`, message);
-    //logSystemToDiscord('info', `[Query]`, message);
 
     return results;
   } catch (error) {
@@ -572,7 +567,7 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
 });
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[updateStudentByAdmin]', `User ${req.user.username} is updating a student.\n${JSON.stringify(req.body)}`);
+  logSystemToDiscord('info', `[Update Student][${req.user.username}]`, `Updating a student.\n${JSON.stringify(req.body)}`);
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, level, familyid, courserefer, courserefer2, shortnote } = req.body;
 
@@ -644,6 +639,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
         }
       }
 
+      logSystemToDiscord('info', `[Update Student][${req.user.username}]`, `Student ${studentid} was updated successfully.`);
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
     } else {
       return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
