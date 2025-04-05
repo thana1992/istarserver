@@ -35,7 +35,7 @@ function logSystemToDiscord(type, title, message) {
         SENDING_URL = DISCORD_ERROR_WEBHOOK_URL;
     }
 
-    console.dir("embed : "+ JSON.stringify(embed));
+    
 
     // ฟังก์ชั่นส่ง webhook ที่จะลองใหม่เมื่อเกิด error 429
     const sendToDiscord = async () => {
@@ -49,6 +49,8 @@ function logSystemToDiscord(type, title, message) {
                 console.error(`⏳ Rate limited by Discord. Retrying in ${retryAfter} seconds...`);
                 setTimeout(sendToDiscord, retryAfter * 1000);  // รอเวลาตามที่ Discord แนะนำแล้วลองใหม่
             } else if (err.response?.status === 400) {
+                console.dir("embed size: "+ JSON.stringify(embed).length);
+                // ตรวจสอบขนาดของ embed
                 console.error("⚠️ Error 400 Bad Request webhook URL. ", err.response.data);
             } else {
                 console.error("❌ Error sending to Discord:", err);
