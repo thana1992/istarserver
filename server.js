@@ -48,25 +48,21 @@ async function queryPromise(query, params, showlog) {
       result: null
     };
     
-    logData.params = showlog ? maskSensitiveData(params) : null;  // Mask params only if showlog is true
+    logData.params = maskSensitiveData(params);
 
     connection = await pool.getConnection();
     await connection.query("SET time_zone = '+07:00';"); // ตั้งค่าเขตเวลาเป็นเวลาของไทย (UTC+7)
     const [results] = await connection.query(query, params);
     
     // Mask results if showlog is true
-    if (showlog) {
-      logData.result = Array.isArray(results) ? 
-        results.map(maskSensitiveData) : 
-        maskSensitiveData(results);
-    }
+    logData.result = Array.isArray(results) ? results.map(maskSensitiveData) : maskSensitiveData(results);
 
     // Log the data to Discord only once
     if (showlog) {
       console.log("Params : " + JSON.stringify(logData.params));
       console.log("Results : " + JSON.stringify(logData.result));
     }
-    logSystemToDiscord('info', '[Query]', JSON.stringify(logData));
+    logSystemToDiscord('info', '[Query]', 'SQL : ' + JSON.stringify(logData.query) + '\nParams : ' + JSON.stringify(logData.params) + '\nResult : ' + JSON.stringify(logData.result));
 
     return results;
   } catch (error) {
