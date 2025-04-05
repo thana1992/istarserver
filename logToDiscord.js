@@ -1,6 +1,4 @@
 const axios = require('axios');
-const e = require('express');
-const { info } = require('winston');
 const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
 const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
 const DISCORD_WEBHOOK_URL_BOOKING = process.env.DISCORD_WEBHOOK_URL_BOOKING;
@@ -10,12 +8,86 @@ const DISCORD_COURSE_WEBHOOK_URL = process.env.DISCORD_COURSE_WEBHOOK_URL;
 const MAX_TITLE_LENGTH = 256;
 const MAX_DESCRIPTION_LENGTH = 4096;
 const MAX_FOOTER_LENGTH = 2048;
-/**
- * ส่ง log ไปที่ Discord ด้วย Embed
- * @param {'success'|'error'} type ประเภท log
- * @param {string} title หัวเรื่อง
- * @param {string} message เนื้อหา
- */
+
+// คิวสำหรับแต่ละ URL
+const queue = {
+    booking: [],
+    course: [],
+    info: [],
+    error: []
+};
+
+// ตัวแปรสำหรับการตรวจสอบว่ากำลังประมวลผลคิวอยู่หรือไม่
+let isProcessing = false;
+
+// ฟังก์ชั่นหน่วงเวลา
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ฟังก์ชั่นส่ง webhook และ retry
+async function sendWebhook(url, message) {
+    try {
+        await axios.post(url, { content: message });
+    } catch (err) {
+        if (err.response?.status === 429) {
+            let retryAfter = 5 * 1000; // ค่าเริ่มต้น 5 วินาที
+            const headerRetry = err.response.headers['retry-after'];
+            const bodyRetry = err.response.data?.retry_after;
+
+            if (headerRetry) {
+                retryAfter = parseFloat(headerRetry) * 1000; // แปลงเป็นมิลลิวินาที
+            } else if (bodyRetry) {
+                retryAfter = parseFloat(bodyRetry);
+            }
+
+            console.warn(`⏳ Rate limited. Retrying in ${retryAfter / 1000} seconds...`);
+            return retryAfter; // ส่งค่าการ retry
+        } else {
+            console.error("❌ Error sending to Discord:", err.response?.data || err.message);
+        }
+    }
+}
+
+// ฟังก์ชั่นจัดการคิว webhook สำหรับแต่ละ URL
+async function processQueue(urlType) {
+    // เลือกคิวที่เกี่ยวข้อง
+    const urlMap = {
+        booking: DISCORD_WEBHOOK_URL_BOOKING,
+        course: DISCORD_COURSE_WEBHOOK_URL,
+        info: DISCORD_INFO_WEBHOOK_URL,
+        error: DISCORD_ERROR_WEBHOOK_URL
+    };
+
+    // ตรวจสอบว่ามีข้อความในคิวหรือไม่
+    while (queue[urlType].length > 0) {
+        const message = queue[urlType].shift(); // ดึงข้อความออกจากคิว
+        const url = urlMap[urlType];
+
+        // ส่ง webhook
+        let retryAfter = await sendWebhook(url, message);
+        
+        // ถ้ามีการ rate limit (error 429) ให้รอแล้วลองใหม่
+        if (retryAfter) {
+            console.log(`⏳ Retrying after ${retryAfter / 1000} seconds...`);
+            await delay(retryAfter); // รอเวลาตามที่ Discord แนะนำ
+        } else {
+            // หน่วงเวลา 0.75 วินาที (750ms) ก่อนส่งข้อความถัดไป
+            await delay(750);
+        }
+    }
+}
+
+// ฟังก์ชั่นสำหรับเพิ่มข้อความลงในคิวและเริ่มประมวลผล
+function logToQueue(urlType, message) {
+    queue[urlType].push(message);
+    if (!isProcessing) {
+        isProcessing = true;
+        processQueue(urlType).finally(() => {
+            isProcessing = false;
+        });
+    }
+}
+
+// ฟังก์ชั่นส่ง log ไปที่ Discord ด้วย Embed
 function logSystemToDiscord(type, title, message) {
     const colorMap = {
         success: 0x2ecc71,
@@ -23,26 +95,13 @@ function logSystemToDiscord(type, title, message) {
         error: 0xe74c3c
     };
 
-    // ป้องกันกรณี title หรือ message undefined/null
-    const safeTitleRaw = title || '';
-    const safeMessageRaw = message || '';
-    const footerTextRaw = 'Express.js Logger';
-
-    const safeTitle = safeTitleRaw.length > MAX_TITLE_LENGTH
-        ? safeTitleRaw.slice(0, MAX_TITLE_LENGTH - 3) + '...'
-        : safeTitleRaw;
-
-    const safeDescription = safeMessageRaw.length > MAX_DESCRIPTION_LENGTH
-        ? safeMessageRaw.slice(0, MAX_DESCRIPTION_LENGTH - 3) + '...'
-        : safeMessageRaw;
-
-    const safeFooterText = footerTextRaw.length > MAX_FOOTER_LENGTH
-        ? footerTextRaw.slice(0, MAX_FOOTER_LENGTH - 3) + '...'
-        : footerTextRaw;
+    const safeTitle = (title || '').slice(0, MAX_TITLE_LENGTH);
+    const safeMessage = (message || '').slice(0, MAX_DESCRIPTION_LENGTH);
+    const safeFooterText = 'Express.js Logger'.slice(0, MAX_FOOTER_LENGTH);
 
     const embed = {
         title: safeTitle,
-        description: safeDescription,
+        description: safeMessage,
         color: colorMap[type] || 0x95a5a6,
         timestamp: new Date().toISOString(),
         footer: {
@@ -51,87 +110,29 @@ function logSystemToDiscord(type, title, message) {
     };
 
     const SENDING_URL = type === 'error' ? DISCORD_ERROR_WEBHOOK_URL : DISCORD_INFO_WEBHOOK_URL;
-
-    const sendToDiscord = async () => {
-        try {
-            await axios.post(SENDING_URL, { embeds: [embed] });
-        } catch (err) {
-            if (err.response?.status === 429) {
-                const retryAfter = err.response.headers['retry-after'] || 5;
-                console.error(`⏳ Rate limited. Retrying in ${retryAfter} seconds...`);
-                setTimeout(sendToDiscord, retryAfter * 1000);
-            } else if (err.response?.status === 400) {
-                console.error("⚠️ Error 400 Bad Request. Possibly message too long or malformed.");
-                console.error("📦 Embed:", JSON.stringify(embed, null, 2));
-                console.error("🛑 Response:", err.response.data);
-            } else {
-                console.error("❌ Error sending to Discord:", err);
-            }
-        }
-    };
-
-    sendToDiscord();
+    logToQueue(type, JSON.stringify({ embeds: [embed] }));
 }
 
-
-/**
- * ส่ง log การเปลี่ยนแปลงคอร์ส
- * @param {string} title หัวข้อ
- * @param {string} message เนื้อหา
- */
+// ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
 function logCourseToDiscord(title, message) {
-    const safeTitleRaw = title || '';
-    const safeMessageRaw = message || '';
-
-    const safeTitle = safeTitleRaw.length > MAX_TITLE_LENGTH
-        ? safeTitleRaw.slice(0, MAX_TITLE_LENGTH - 3) + '...'
-        : safeTitleRaw;
-
-    const safeDescription = safeMessageRaw.length > MAX_DESCRIPTION_LENGTH
-        ? safeMessageRaw.slice(0, MAX_DESCRIPTION_LENGTH - 3) + '...'
-        : safeMessageRaw;
-
     const embed = {
-        title: safeTitle,
-        description: safeDescription,
+        title: title.slice(0, MAX_TITLE_LENGTH),
+        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
         color: 0x3498db,
         timestamp: new Date().toISOString(),
         footer: {
             text: 'Express.js Logger'
         }
     };
-
-    axios.post(DISCORD_COURSE_WEBHOOK_URL, {
-        embeds: [embed]
-    }).catch((err) => {
-        if (err.response?.status === 429) {
-            console.warn("⏳ Rate limited by Discord. Skipping...");
-        } else {
-            console.error("❌ Error sending course log to Discord:", err);
-        }
-    });
+    logToQueue('course', JSON.stringify({ embeds: [embed] }));
 }
 
-/**
- * ส่งข้อความการจองไปยัง Discord channel
- * @param {string} message 
- */
+// ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
 function logBookingToDiscord(message) {
-    axios.post(DISCORD_WEBHOOK_URL_BOOKING, {
-        content: message,
-    }).catch((err) => {
-        if (err.response?.status === 429) {
-            console.warn("⏳ Rate limited by Discord. Skipping...");
-        } else {
-            console.error("❌ Error sending booking to Discord:", err);
-        }
-    });
+    logToQueue('booking', message);
 }
 
-/**
- * ฟังก์ชันแจ้งเตือนเมื่อมีการจอง
- * @param {{ message: string }} jsonData 
- */
+// ฟังก์ชันแจ้งเตือนเมื่อมีการจอง
 async function sendNotification(jsonData) {
     try {
         logBookingToDiscord(jsonData.message);
@@ -142,10 +143,7 @@ async function sendNotification(jsonData) {
     }
 }
 
-/**
- * ฟังก์ชันแจ้งเตือนเมื่อมีการอัปเดตการจอง
- * @param {{ message: string }} jsonData 
- */
+// ฟังก์ชันแจ้งเตือนเมื่อมีการอัปเดตการจอง
 async function sendNotificationUpdate(jsonData) {
     try {
         logBookingToDiscord(jsonData.message);
@@ -163,4 +161,3 @@ module.exports = {
     sendNotificationUpdate,
     logCourseToDiscord
 };
-
