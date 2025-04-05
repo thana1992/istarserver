@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { info } = require('winston');
-const DISCORD_WEBHOOK_URL_SYSTEM = process.env.DISCORD_WEBHOOK_URL_SYSTEM;
+const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
+const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
 const DISCORD_WEBHOOK_URL_BOOKING = process.env.DISCORD_WEBHOOK_URL_BOOKING;
 
 /**
@@ -11,31 +12,36 @@ const DISCORD_WEBHOOK_URL_BOOKING = process.env.DISCORD_WEBHOOK_URL_BOOKING;
  */
 
 function logSystemToDiscord(type, title, message) {
-  const colorMap = {
-    success: 0x2ecc71, // เขียว
-    info: 0x3498db,   // น้ำเงิน
-    error: 0xe74c3c    // แดง
-  };
+    const colorMap = {
+        success: 0x2ecc71, // เขียว
+        info: 0x3498db,   // น้ำเงิน
+        error: 0xe74c3c    // แดง
+    };
 
-  const embed = {
-    title,
-    description: message,
-    color: colorMap[type] || 0x95a5a6, // เทาเป็นค่า default
-    timestamp: new Date().toISOString(),
-    footer: {
-      text: 'Express.js Logger'
-    }
-  };
+    const embed = {
+        title,
+        description: message,
+        color: colorMap[type] || 0x95a5a6, // เทาเป็นค่า default
+        timestamp: new Date().toISOString(),
+        footer: {
+            text: 'Express.js Logger'
+        },
+    };
 
-  axios.post(DISCORD_WEBHOOK_URL_SYSTEM, {
-    embeds: [embed]
-  }).catch((err) => {
-    if (err.response?.status === 429) {
-        console.warn("⏳ Rate limited by Discord. Skipping...");
-    } else {
-        console.error("❌ Error sending to Discord:", err);
+    var SENDING_URL = DISCORD_INFO_WEBHOOK_URL;
+    if (type === 'error') {
+        SENDING_URL = DISCORD_ERROR_WEBHOOK_URL;
     }
-  });
+
+    axios.post(SENDING_URL, {
+        embeds: [embed]
+    }).catch((err) => {
+        if (err.response?.status === 429) {
+            console.warn("⏳ Rate limited by Discord. Skipping...");
+        } else {
+            console.error("❌ Error sending to Discord:", err);
+        }
+    });
 }
 
 function logBookingToDiscord(message) {
