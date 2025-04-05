@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
 const blacklistSessions = [];
-
+const logToDiscord = require('./logToDiscord'); // import function ที่แยกไว้
 const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
 
@@ -1188,44 +1188,6 @@ app.post('/createReservation', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-const DISCORD_WEBHOOK_URL_SYSTEM = process.env.DISCORD_WEBHOOK_URL_SYSTEM;
-function logSystemToDiscord(message) {
-  axios.post(DISCORD_WEBHOOK_URL_SYSTEM, {
-    content: message,
-  }).catch((err) => {
-    console.error('Error sending log to Discord:', err.message);
-  });
-}
-
-const DISCORD_WEBHOOK_URL_BOOKING = process.env.DISCORD_WEBHOOK_URL_BOOKING;
-function logBookingToDiscord(message) {
-  axios.post(DISCORD_WEBHOOK_URL_BOOKING, {
-    content: message,
-  }).catch((err) => {
-    console.error('Error sending log to Discord:', err.message);
-  });
-}
-async function sendNotification(jsonData) {
-  try {
-    // Send notification
-    logBookingToDiscord(jsonData.message);
-    console.log('Notification Sent Successfully');
-  } catch (error) {
-    console.error('Error sending notification', error.stack);
-    throw error;
-  }
-}
-
-async function sendNotificationUpdate(jsonData) {
-  try {
-    // Send notification
-    logBookingToDiscord(jsonData.message);
-    console.log('Notification Sent Successfully');
-  } catch (error) {
-    console.error('Error sending notification:', error.stack);
-    throw error;
-  }
-}
 
 app.post('/deleteReservation', verifyToken, async (req, res) => {
   const { reservationid } = req.body;
@@ -2735,10 +2697,10 @@ const server = app.listen(port, () => {
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
   logger.info(msg);
-  logSystemToDiscord(msg);
+  logSystemToDiscord('info','[Info]', msg);
 };
 
 console.error = (msg, error) => {
   logger.info(msg + " : " + error);
-  logSystemToDiscord(msg + " : " + error);
+  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด', msg + " : " + error);
 };
