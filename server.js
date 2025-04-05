@@ -1735,7 +1735,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
         (SELECT count(*) FROM treservation WHERE classdate = ?) AS totalBookingTomorrow,
         (SELECT count(*) FROM jstudent) AS totalWaitingNewStudents
     `;
-    const results = await queryPromise(query, [today, tomorrow]);
+    const results = await queryPromise(query, [today, tomorrow], false);
 
     if (results.length > 0) {
       datacard.totalStudents = results[0].totalStudents;
