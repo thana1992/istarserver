@@ -23,12 +23,22 @@ function logSystemToDiscord(type, title, message) {
         error: 0xe74c3c
     };
 
-    // ตัดข้อความหากเกินขนาด
-    const safeTitle = title.length > MAX_TITLE_LENGTH ? title.slice(0, MAX_TITLE_LENGTH - 3) + '...' : title;
-    const safeDescription = message.length > MAX_DESCRIPTION_LENGTH ? message.slice(0, MAX_DESCRIPTION_LENGTH - 3) + '...' : message;
-    const safeFooterText = 'Express.js Logger'.length > MAX_FOOTER_LENGTH
-        ? 'Express.js Logger'.slice(0, MAX_FOOTER_LENGTH - 3) + '...'
-        : 'Express.js Logger';
+    // ป้องกันกรณี title หรือ message undefined/null
+    const safeTitleRaw = title || '';
+    const safeMessageRaw = message || '';
+    const footerTextRaw = 'Express.js Logger';
+
+    const safeTitle = safeTitleRaw.length > MAX_TITLE_LENGTH
+        ? safeTitleRaw.slice(0, MAX_TITLE_LENGTH - 3) + '...'
+        : safeTitleRaw;
+
+    const safeDescription = safeMessageRaw.length > MAX_DESCRIPTION_LENGTH
+        ? safeMessageRaw.slice(0, MAX_DESCRIPTION_LENGTH - 3) + '...'
+        : safeMessageRaw;
+
+    const safeFooterText = footerTextRaw.length > MAX_FOOTER_LENGTH
+        ? footerTextRaw.slice(0, MAX_FOOTER_LENGTH - 3) + '...'
+        : footerTextRaw;
 
     const embed = {
         title: safeTitle,
@@ -44,18 +54,16 @@ function logSystemToDiscord(type, title, message) {
 
     const sendToDiscord = async () => {
         try {
-            await axios.post(SENDING_URL, {
-                embeds: [embed]
-            });
+            await axios.post(SENDING_URL, { embeds: [embed] });
         } catch (err) {
             if (err.response?.status === 429) {
                 const retryAfter = err.response.headers['retry-after'] || 5;
-                console.error(`⏳ Rate limited by Discord. Retrying in ${retryAfter} seconds...`);
+                console.error(`⏳ Rate limited. Retrying in ${retryAfter} seconds...`);
                 setTimeout(sendToDiscord, retryAfter * 1000);
             } else if (err.response?.status === 400) {
-                console.error("⚠️ Error 400 Bad Request. Possibly due to message too long.");
-                console.error("📦 Embed causing issue:", JSON.stringify(embed, null, 2));
-                console.error("🛑 Discord response:", err.response.data);
+                console.error("⚠️ Error 400 Bad Request. Possibly message too long or malformed.");
+                console.error("📦 Embed:", JSON.stringify(embed, null, 2));
+                console.error("🛑 Response:", err.response.data);
             } else {
                 console.error("❌ Error sending to Discord:", err);
             }
@@ -65,14 +73,23 @@ function logSystemToDiscord(type, title, message) {
     sendToDiscord();
 }
 
+
 /**
  * ส่ง log การเปลี่ยนแปลงคอร์ส
  * @param {string} title หัวข้อ
  * @param {string} message เนื้อหา
  */
 function logCourseToDiscord(title, message) {
-    const safeTitle = title.length > MAX_TITLE_LENGTH ? title.slice(0, MAX_TITLE_LENGTH - 3) + '...' : title;
-    const safeDescription = message.length > MAX_DESCRIPTION_LENGTH ? message.slice(0, MAX_DESCRIPTION_LENGTH - 3) + '...' : message;
+    const safeTitleRaw = title || '';
+    const safeMessageRaw = message || '';
+
+    const safeTitle = safeTitleRaw.length > MAX_TITLE_LENGTH
+        ? safeTitleRaw.slice(0, MAX_TITLE_LENGTH - 3) + '...'
+        : safeTitleRaw;
+
+    const safeDescription = safeMessageRaw.length > MAX_DESCRIPTION_LENGTH
+        ? safeMessageRaw.slice(0, MAX_DESCRIPTION_LENGTH - 3) + '...'
+        : safeMessageRaw;
 
     const embed = {
         title: safeTitle,
