@@ -3,6 +3,7 @@ const { info } = require('winston');
 const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
 const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
 const DISCORD_WEBHOOK_URL_BOOKING = process.env.DISCORD_WEBHOOK_URL_BOOKING;
+const DISCORD_COURSE_WEBHOOK_URL = process.env.DISCORD_COURSE_WEBHOOK_URL;
 
 /**
  * ส่ง log ไปที่ Discord ด้วย Embed สวยงาม
@@ -44,6 +45,26 @@ function logSystemToDiscord(type, title, message) {
     });
 }
 
+function logCourseToDiscord(message) {
+    const embed = {
+        title,
+        description: message,
+        color: 0x3498db,
+        timestamp: new Date().toISOString(),
+        footer: {
+            text: 'Express.js Logger'
+        },
+    };
+    axios.post(DISCORD_COURSE_WEBHOOK_URL, {
+        embeds: [embed]
+    }).catch((err) => {
+        if (err.response?.status === 429) {
+            console.warn("⏳ Rate limited by Discord. Skipping...");
+        } else {
+            console.error("❌ Error sending to Discord:", err);
+        }
+    });
+}
 function logBookingToDiscord(message) {
     axios.post(DISCORD_WEBHOOK_URL_BOOKING, {
       content: message,
