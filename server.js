@@ -414,7 +414,7 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Error in getStudent", error.stack);
     res.status(500).send(error);
-  }
+  } 
 });
 
 app.post('/addStudent', verifyToken, async (req, res) => {
