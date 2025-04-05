@@ -15,10 +15,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
 const blacklistSessions = [];
-const url = process.env.LINENOTIFY_URL;
-const accessCode = process.env.LINENOTIFY_ACCESS_TOKEN;
-const accessCode2 = process.env.LINENOTIFY_ACCESS_TOKEN_2;
-
+const logToDiscord = require('./logToDiscord'); // import function ที่แยกไว้
 const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
 
@@ -768,7 +765,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             }
 
             // ส่งการแจ้งเตือน
-            /*
+            
             try {
               const queryNotifyData = `
                 SELECT 
@@ -795,12 +792,12 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`,
                 };
 
-                //sendNotification(jsonData);
+                sendNotification(jsonData);
               }
             } catch (error) {
               console.error('Error sending notification', error.stack);
             }
-            */
+            
             if (fullflag == 1) {
               return res.json({ success: true, message: 'จองคลาสสำเร็จ (เป็นการจองคลาสเกิน Maximun)' });
             } else {
@@ -932,7 +929,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
             if (insertResult.affectedRows > 0) {
               // ส่งการแจ้งเตือน
-              /*
+              
               try {
                 const queryNotifyData = `
                   SELECT a.nickname, CONCAT(IFNULL(a.firstname, ''), ' ', IFNULL(a.middlename, ''), IF(a.middlename<>'', ' ', ''), IFNULL(a.lastname, '')) AS fullname, a.dateofbirth, 
@@ -959,12 +956,12 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     message: `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(results[0].dateofbirth)}ปี\nจาก ${oldClassdate} ${oldClasstime}\nเป็น ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`,
                   };
 
-                  //sendNotificationUpdate(jsonData);
+                  sendNotificationUpdate(jsonData);
                 }
               } catch (error) {
                 console.error('Error sending notification', error.stack);
               }
-                */
+              
               return res.json({ success: true, message: 'แก้ไขข้อมูลการจองสำเร็จ' });
             }
           }
@@ -1147,7 +1144,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
           await queryPromise(updateRemainingQuery, [courserefer]);
 
           // ส่งการแจ้งเตือน
-          /*
+          
           try {
             const queryNotifyData = `
               SELECT 
@@ -1174,12 +1171,12 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`,
               };
 
-              //sendNotification(jsonData);
+              sendNotification(jsonData);
             }
           } catch (error) {
             console.error('Error sending notification', error.stack);
           }
-          */
+          
           return res.json({ success: true, message: 'Booking added successfully' });
         }
       }
@@ -1191,49 +1188,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-/*
-async function sendNotification(jsonData) {
-  try {
-    // Send notification
-    const requestOption = {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        Authorization: `Bearer ` + accessCode,
-      },
-      data: qs.stringify(jsonData),
-      url,
-    };
 
-    await axios(requestOption);
-    console.log('Notification Sent Successfully');
-  } catch (error) {
-    console.error('Error sending notification', error.stack);
-    throw error;
-  }
-}
-
-async function sendNotificationUpdate(jsonData) {
-  try {
-    // Send notification
-    const requestOption = {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        Authorization: `Bearer ` + accessCode2,
-      },
-      data: qs.stringify(jsonData),
-      url,
-    };
-
-    await axios(requestOption);
-    console.log('Notification Sent Successfully');
-  } catch (error) {
-    console.error('Error sending notification:', error.stack);
-    throw error;
-  }
-}
-*/
 app.post('/deleteReservation', verifyToken, async (req, res) => {
   const { reservationid } = req.body;
   const query = 'DELETE FROM treservation WHERE reservationid = ?';
@@ -2691,49 +2646,6 @@ async function uploadOrUpdateLogFile() {
   }
 }
 
-// async function scheduleRestartAtSpecificTime(hour, minute) {
-//   const now = new Date();
-//   const nextRestart = new Date();
-
-//   nextRestart.setHours(hour);
-//   nextRestart.setMinutes(minute);
-//   nextRestart.setSeconds(0);
-  
-//   // ถ้าเวลาที่ตั้งน้อยกว่าเวลาปัจจุบัน ให้ตั้งเป็นวันถัดไป
-//   if (nextRestart <= now) {
-//     nextRestart.setDate(nextRestart.getDate() + 1);
-//   }
-
-//   const timeUntilNextRestart = nextRestart - now; // เวลาที่เหลือจนถึงการรีสตาร์ทในหน่วยมิลลิวินาที
-
-//   console.log(`Scheduled server restart at ${nextRestart}`);
-
-//   await setTimeout(() => {
-//     const jsonData = {
-//       message: '[Auto] Server is restartiing...'
-//     };
-
-//     sendNotification(jsonData);
-
-//     console.log("###################################################################");
-//     console.log("###################################################################");
-//     console.log('############## upload log file before restart server ##############');
-//     uploadOrUpdateLogFile();
-//     console.log("###################################################################");
-//     console.log("###################################################################");
-//     console.log('####################### Server restarting... ######################');
-//     console.log("###################################################################");
-//     console.log("###################################################################");
-
-//     server.close(() => {
-//       process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
-//     });
-
-//     // เรียกใช้ฟังก์ชันใหม่เพื่อวางแผนการรีสตาร์ทครั้งถัดไป
-//     scheduleRestartAtSpecificTime(hour, minute);
-//   }, timeUntilNextRestart);
-// }
-
 async function scheduleRestartAtSpecificTime(hour, minute) {
   const now = new Date();
   const nextRestart = new Date();
@@ -2785,8 +2697,10 @@ const server = app.listen(port, () => {
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
   logger.info(msg);
+  logSystemToDiscord('info','[Info]', msg);
 };
 
 console.error = (msg, error) => {
   logger.info(msg + " : " + error);
+  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด', msg + " : " + error);
 };
