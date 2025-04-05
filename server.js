@@ -1694,6 +1694,7 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [reservationid, studentid]);
 
     if (results.affectedRows > 0) {
+      logSystemToDiscord('info', `[checkinByAdmin][${req.user.username}]`, `Admin checked in reservation ID ${reservationid} for student ID ${studentid}`);
       res.json({ success: true, message: 'Checkin successful' });
     } else {
       res.json({ success: false, message: 'No Booking data' });
@@ -1712,6 +1713,7 @@ app.post("/undoCheckinByAdmin", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [reservationid, studentid]);
 
     if (results.affectedRows > 0) {
+      logSystemToDiscord('info', `[undoCheckinByAdmin][${req.user.username}]`, `Admin unchecked reservation ID ${reservationid} for student ID ${studentid}`);
       res.json({ success: true, message: 'Cancel Checkin successful' });
     } else {
       res.json({ success: false, message: 'No Booking data' });
