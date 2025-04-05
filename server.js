@@ -2858,6 +2858,7 @@ console.log = (msg) => {
 };
 
 console.error = (msg, error) => {
-  logger.info(msg + " : " + error);
-  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด', msg + " : " + error);
+  logger.info('['+timestamp+'] : ' + msg + " : " + error);
+  const timestamp = new Date().toISOString();
+  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด ['+timestamp+'] : ' + msg);
 };
