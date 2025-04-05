@@ -41,7 +41,7 @@ function logSystemToDiscord(type, title, message) {
         if (err.response?.status === 429) {
             console.warn("⏳ Rate limited by Discord. Skipping...");
         } else if (err.response?.status === 400) {
-            console.warn("⚠️ Invalid webhook URL. Please check your configuration. [URL] ", SENDING_URL);
+            console.warn("⚠️ Error 400 Bad Request webhook URL. ", SENDING_URL);
         } else {
             console.error("❌ Error sending to Discord:", err);
         }
