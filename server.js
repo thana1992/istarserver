@@ -40,27 +40,33 @@ async function queryPromise(query, params, showlog) {
   let connection;
   try {
     console.log("Query : " + query);
-    logSystemToDiscord('info','[Query]', query);
+    
+    // Prepare log data for Discord
+    let logData = {
+      query: query,
+      params: null,
+      result: null
+    };
+    
+    logData.params = showlog ? maskSensitiveData(params) : null;  // Mask params only if showlog is true
+
     connection = await pool.getConnection();
     await connection.query("SET time_zone = '+07:00';"); // ตั้งค่าเขตเวลาเป็นเวลาของไทย (UTC+7)
     const [results] = await connection.query(query, params);
     
+    // Mask results if showlog is true
     if (showlog) {
-      const maskedParams = maskSensitiveData(params);
-      logSystemToDiscord('info','[Query Parameter]', JSON.stringify(maskedParams));
-      console.log("Params : " + JSON.stringify(maskedParams));
-
-      if (Array.isArray(results)) {
-        const maskedResult = results.map(maskSensitiveData);
-        logSystemToDiscord('info','[Query Result]', JSON.stringify(maskedResult));
-        //console.log("Results : " + JSON.stringify(maskedResults));
-      } else {
-        const maskedResult = maskSensitiveData(results);
-        logSystemToDiscord('info','[Query Result]', JSON.stringify(maskedResult));
-        //console.log("Results is not an array!");
-        //console.log("Results : " + JSON.stringify(maskedResult));
-      }
+      logData.result = Array.isArray(results) ? 
+        results.map(maskSensitiveData) : 
+        maskSensitiveData(results);
     }
+
+    // Log the data to Discord only once
+    if (showlog) {
+      console.log("Params : " + JSON.stringify(logData.params));
+      console.log("Results : " + JSON.stringify(logData.result));
+    }
+    logSystemToDiscord('info', '[Query]', JSON.stringify(logData));
 
     return results;
   } catch (error) {
