@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { parseJSON } = require('date-fns');
 const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
 const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
 const DISCORD_BOOKING_WEBHOOK_URL = process.env.DISCORD_BOOKING_WEBHOOK_URL;
@@ -111,7 +112,7 @@ function logSystemToDiscord(type, title, message) {
         }
     };
 
-    logToQueue(type, JSON.stringify({ embeds: [embed] }));
+    logToQueue(type, { embeds: [embed] });
 }
 
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
@@ -125,12 +126,12 @@ function logCourseToDiscord(title, message) {
             text: 'Express.js Logger'
         }
     };
-    logToQueue('course', JSON.stringify({ embeds: [embed] }));
+    logToQueue('course', { embeds: [embed] });
 }
 
 // ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
-function logBookingToDiscord(message) {
-    logToQueue('booking', message);
+function logBookingToDiscord(embedStr) {
+    logToQueue('booking', JSON.parse(embedStr));
 }
 
 // ฟังก์ชันแจ้งเตือนเมื่อมีการจอง
