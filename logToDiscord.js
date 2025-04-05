@@ -30,7 +30,11 @@ function logSystemToDiscord(type, title, message) {
   axios.post(DISCORD_WEBHOOK_URL_SYSTEM, {
     embeds: [embed]
   }).catch((err) => {
-    console.error('❌ ไม่สามารถส่ง log ไปที่ Discord:', err.message);
+    if (err.response?.status === 429) {
+        console.warn("⏳ Rate limited by Discord. Skipping...");
+    } else {
+        console.error("❌ Error sending to Discord:", err);
+    }
   });
 }
 
@@ -38,7 +42,11 @@ function logBookingToDiscord(message) {
     axios.post(DISCORD_WEBHOOK_URL_BOOKING, {
       content: message,
     }).catch((err) => {
-      console.error('Error sending log to Discord:', err.message);
+        if (err.response?.status === 429) {
+            console.warn("⏳ Rate limited by Discord. Skipping...");
+        } else {
+            console.error("❌ Error sending to Discord:", err);
+        }
     });
 }
 async function sendNotification(jsonData) {
