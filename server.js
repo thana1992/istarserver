@@ -43,7 +43,7 @@ async function queryPromise(query, params, showlog) {
     
     // Prepare log data for Discord
     let logData = {
-      query: query,
+      query: query.replace(/\n/g, ' '),  // เอา \n ออกก่อนเพื่อให้ query ดูสะอาด
       params: null,
       result: null
     };
@@ -62,7 +62,10 @@ async function queryPromise(query, params, showlog) {
       console.log("Params : " + JSON.stringify(logData.params));
       console.log("Results : " + JSON.stringify(logData.result));
     }
-    logSystemToDiscord('info', '[Query]', 'SQL : ' + JSON.stringify(logData.query) + '\nParams : ' + JSON.stringify(logData.params) + '\nResult : ' + JSON.stringify(logData.result));
+    
+    // ส่งข้อมูลไป Discord พร้อมให้แสดงผลแบบบรรทัดใหม่
+    const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}\nResult: ${JSON.stringify(logData.result)}`;
+    logSystemToDiscord('info', '[Query]', message);
 
     return results;
   } catch (error) {
@@ -72,6 +75,7 @@ async function queryPromise(query, params, showlog) {
     if (connection) connection.release();
   }
 }
+
 
 function maskSensitiveData(data) {
   const maskedData = { ...data };
