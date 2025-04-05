@@ -34,21 +34,32 @@ function logSystemToDiscord(type, title, message) {
     if (type === 'error') {
         SENDING_URL = DISCORD_ERROR_WEBHOOK_URL;
     }
-    
+
     console.dir("embed : ", embed);
-    axios.post(SENDING_URL, {
-        embeds: [embed]
-    }).catch((err) => {
-        if (err.response?.status === 429) {
-            console.warn("⏳ Rate limited by Discord. Skipping...");
-        } else if (err.response?.status === 400) {
-            
-            console.warn("⚠️ Error 400 Bad Request webhook URL. ", SENDING_URL);
-        } else {
-            console.error("❌ Error sending to Discord:", err);
+
+    // ฟังก์ชั่นส่ง webhook ที่จะลองใหม่เมื่อเกิด error 429
+    const sendToDiscord = async () => {
+        try {
+            await axios.post(SENDING_URL, {
+                embeds: [embed]
+            });
+        } catch (err) {
+            if (err.response?.status === 429) {
+                const retryAfter = err.response.headers['retry-after'] || 5; // ใช้เวลาจาก Discord, ถ้าไม่มีจะใช้ค่า 5 วินาที
+                console.warn(`⏳ Rate limited by Discord. Retrying in ${retryAfter} seconds...`);
+                setTimeout(sendToDiscord, retryAfter * 1000);  // รอเวลาตามที่ Discord แนะนำแล้วลองใหม่
+            } else if (err.response?.status === 400) {
+                console.warn("⚠️ Error 400 Bad Request webhook URL. ", SENDING_URL);
+            } else {
+                console.error("❌ Error sending to Discord:", err);
+            }
         }
-    });
+    };
+
+    // เริ่มการส่ง webhook
+    sendToDiscord();
 }
+
 
 function logCourseToDiscord(message) {
     const embed = {
