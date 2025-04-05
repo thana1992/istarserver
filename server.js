@@ -526,6 +526,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             let newOwner1 = ownerList1.join(',');
             const updateOwnerQuery1 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
             await queryPromise(updateOwnerQuery1, [newOwner1, courserefer]);
+            //Send Log to Discord
+            const logMessage = `${courserefer} : อัพเดทให้ ${newOwner1} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
+            logCourseToDiscord(logMessage);
           }
         }
       }
@@ -544,6 +547,9 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             let newOwner2 = ownerList2.join(',');
             const updateOwnerQuery2 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
             await queryPromise(updateOwnerQuery2, [newOwner2, courserefer2]);
+            //Send Log to Discord
+            const logMessage = `${courserefer2} : อัพเดทให้ ${newOwner2} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
+            logCourseToDiscord('info', '[Update Course Owner]', logMessage);
           }
         }
       }
@@ -602,6 +608,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               let newOwner1 = ownerList1.join(',');
               const updateOwnerQuery1 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
               await queryPromise(updateOwnerQuery1, [newOwner1, courserefer]);
+              //Send Log to Discord
+              const logMessage = `${courserefer} : อัพเดทให้ ${newOwner1} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
+              logCourseToDiscord(logMessage);
             }
           }
         }
@@ -623,6 +632,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               let newOwner2 = ownerList2.join(',');
               const updateOwnerQuery2 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
               await queryPromise(updateOwnerQuery2, [newOwner2, courserefer2]);
+              //Send Log to Discord
+              const logMessage = `${courserefer2} : อัพเดทให้ ${newOwner2} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
+              logCourseToDiscord(logMessage);
             }
           }
         }
@@ -1462,6 +1474,9 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
       if (results.affectedRows > 0) {
         const query2 = 'UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?';
         await queryPromise(query2, [courserefer]);
+        // Send log to Discord
+        const logMessage = `${courserefer} : จบคอร์ส โดย ${req.user.username}`;
+        logCourseToDiscord(logMessage);
         res.json({ success: true, message: 'Course finished successfully' });
       } else {
         res.json({ success: false, message: 'No course found with the given reference' });
@@ -1768,7 +1783,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       WHERE a.classday = ? AND a.enableflag = 1
       ORDER BY a.classtime, r.classtime ASC
     `;
-    const results = await queryPromise(query, [classdate, classday]);
+    const results = await queryPromise(query, [classdate, classday], true);
 
     // Process results to create booking list
     const getName = async (nickname, currnent_courserefer, booking_courserefer, checkedin, color, remaining, freeflag, coursetype, expiredate, paid) => {
@@ -2065,6 +2080,11 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
+      //Send Log to Discord
+      const logMessage = `${courserefer} : สร้าง Customer Course โดย ${req.user.username}\n มีรายละเอียดดังนี้:\n` +
+        `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
+        `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
+      await logCourseToDiscord(logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
@@ -2081,6 +2101,10 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
     const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ? WHERE courserefer = ?';
     const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, courserefer]);
     if (results.affectedRows > 0) {
+      //Send Log to Discord
+      const logMessage = `${courserefer} : แก้ไขข้อมูล โดย ${req.user.username}\n` +
+        `Course ID: ${courseid}, Course Type: ${coursetype}, Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
+      await logCourseToDiscord(logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
       res.json({ success: false, message: 'Error updating Customer Course' });
@@ -2122,6 +2146,9 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
         if (results.affectedRows > 0) {
           await queryPromise('UPDATE tstudent SET courserefer = NULL, updateby = ? WHERE courserefer = ?', [req.user.username, courserefer]);
           await queryPromise('UPDATE tstudent SET courserefer2 = NULL, updateby = ? WHERE courserefer2 = ?', [req.user.username, courserefer]);
+          //Send Log to Discord
+          const logMessage = `${courserefer} : ถูกลบโดย ${req.user.username}`;
+          await logCourseToDiscord(logMessage);
           res.json({ success: true, message: 'Customer Course deleted successfully' });
         }
       } else {
