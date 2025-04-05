@@ -34,13 +34,15 @@ function logSystemToDiscord(type, title, message) {
     if (type === 'error') {
         SENDING_URL = DISCORD_ERROR_WEBHOOK_URL;
     }
-
+    
+    console.dir("embed : ", embed);
     axios.post(SENDING_URL, {
         embeds: [embed]
     }).catch((err) => {
         if (err.response?.status === 429) {
             console.warn("⏳ Rate limited by Discord. Skipping...");
         } else if (err.response?.status === 400) {
+            
             console.warn("⚠️ Error 400 Bad Request webhook URL. ", SENDING_URL);
         } else {
             console.error("❌ Error sending to Discord:", err);
