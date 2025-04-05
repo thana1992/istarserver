@@ -1,7 +1,7 @@
 const axios = require('axios');
 const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
 const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
-const DISCORD_WEBHOOK_URL_BOOKING = process.env.DISCORD_WEBHOOK_URL_BOOKING;
+const DISCORD_BOOKING_WEBHOOK_URL = process.env.DISCORD_BOOKING_WEBHOOK_URL;
 const DISCORD_COURSE_WEBHOOK_URL = process.env.DISCORD_COURSE_WEBHOOK_URL;
 
 // ขนาดสูงสุดตามที่ Discord กำหนด
@@ -52,7 +52,7 @@ async function sendWebhook(url, message) {
 async function processQueue(urlType) {
     // เลือกคิวที่เกี่ยวข้อง
     const urlMap = {
-        booking: DISCORD_WEBHOOK_URL_BOOKING,
+        booking: DISCORD_BOOKING_WEBHOOK_URL,
         course: DISCORD_COURSE_WEBHOOK_URL,
         info: DISCORD_INFO_WEBHOOK_URL,
         error: DISCORD_ERROR_WEBHOOK_URL,
@@ -111,7 +111,6 @@ function logSystemToDiscord(type, title, message) {
         }
     };
 
-    const SENDING_URL = type === 'error' ? DISCORD_ERROR_WEBHOOK_URL : DISCORD_INFO_WEBHOOK_URL;
     logToQueue(type, JSON.stringify({ embeds: [embed] }));
 }
 
