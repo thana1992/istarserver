@@ -64,8 +64,8 @@ async function queryPromise(query, params, showlog) {
     }
     
     // ส่งข้อมูลไป Discord พร้อมให้แสดงผลแบบบรรทัดใหม่
-    const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}\nResult: ${JSON.stringify(logData.result)}`;
-    //logSystemToDiscord('info', '[Query]', message);
+    const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}`;
+    logSystemToDiscord('info', '[Query][${req.user.username}]', message);
 
     return results;
   } catch (error) {
@@ -271,7 +271,7 @@ app.post('/login', async (req, res) => {
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
         console.log("user.id = " + user.id);
-
+        logSystemToDiscord('info', '[Login]', `User ${username} logged in successfully.`);
         if (userdata.usertype != '10') {
           const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '5h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
@@ -281,9 +281,11 @@ app.post('/login', async (req, res) => {
         }
 
       } else {
+        logSystemToDiscord('error', '[Login]', `User ${username} failed to log in. Invalid password.`);
         return res.json({ success: false, message: 'password is invalid' });
       }
     } else {
+      logSystemToDiscord('error', '[Login]', `User ${username} failed to log in. Invalid username.`);
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
@@ -305,7 +307,7 @@ app.post('/logout', verifyToken, (req, res) => {
   blacklistSessions.push(token);
 
   // Optionally, you can add more cleanup logic here
-
+  logSystemToDiscord('info', '[Logout]', `User ${req.user.username} logged out successfully.`);
   res.json({ success: true, message: 'Logout successful' });
 });
 
@@ -443,7 +445,7 @@ app.post('/addStudent', verifyToken, async (req, res) => {
       if(dateofbirth) params.push(dateofbirth);
       if(school) params.push(school);
     await queryPromise(query, params);
-
+    logSystemToDiscord('info', '[Add Student][${req.user.username}]', `Family member ${firstname} ${lastname} was added successfully.`);
     res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
     console.error("Error in addStudent", error.stack);
@@ -532,9 +534,6 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             let newOwner1 = ownerList1.join(',');
             const updateOwnerQuery1 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
             await queryPromise(updateOwnerQuery1, [newOwner1, courserefer]);
-            //Send Log to Discord
-            const logMessage = `${courserefer} : อัพเดทให้ ${newOwner1} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
-            logCourseToDiscord(logMessage);
           }
         }
       }
@@ -553,9 +552,6 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
             let newOwner2 = ownerList2.join(',');
             const updateOwnerQuery2 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
             await queryPromise(updateOwnerQuery2, [newOwner2, courserefer2]);
-            //Send Log to Discord
-            const logMessage = `${courserefer2} : อัพเดทให้ ${newOwner2} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
-            logCourseToDiscord('info', '[Update Course Owner]', logMessage);
           }
         }
       }
@@ -614,9 +610,6 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               let newOwner1 = ownerList1.join(',');
               const updateOwnerQuery1 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
               await queryPromise(updateOwnerQuery1, [newOwner1, courserefer]);
-              //Send Log to Discord
-              const logMessage = `${courserefer} : อัพเดทให้ ${newOwner1} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
-              logCourseToDiscord(logMessage);
             }
           }
         }
@@ -638,9 +631,6 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               let newOwner2 = ownerList2.join(',');
               const updateOwnerQuery2 = 'UPDATE tcustomer_course SET owner = ? WHERE courserefer = ?';
               await queryPromise(updateOwnerQuery2, [newOwner2, courserefer2]);
-              //Send Log to Discord
-              const logMessage = `${courserefer2} : อัพเดทให้ ${newOwner2} เป็นเจ้าของคอร์ส โดย ${req.user.username}`;
-              logCourseToDiscord(logMessage);
             }
           }
         }
@@ -1482,7 +1472,7 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
         await queryPromise(query2, [courserefer]);
         // Send log to Discord
         const logMessage = `${courserefer} : จบคอร์ส โดย ${req.user.username}`;
-        logCourseToDiscord(logMessage);
+        logCourseToDiscord('[finishCustomerCourse][${req.user.username}]', logMessage);
         res.json({ success: true, message: 'Course finished successfully' });
       } else {
         res.json({ success: false, message: 'No course found with the given reference' });
@@ -2090,7 +2080,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       const logMessage = `${courserefer} : สร้าง Customer Course โดย ${req.user.username}\n มีรายละเอียดดังนี้:\n` +
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
-      await logCourseToDiscord(logMessage);
+      await logCourseToDiscord('[addCustomerCourse][${req.user.username}]', logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
@@ -2110,7 +2100,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       //Send Log to Discord
       const logMessage = `${courserefer} : แก้ไขข้อมูล โดย ${req.user.username}\n` +
         `Course ID: ${courseid}, Course Type: ${coursetype}, Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
-      await logCourseToDiscord(logMessage);
+      await logCourseToDiscord('[updateCustomerCourse][${req.user.username}]', logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
       res.json({ success: false, message: 'Error updating Customer Course' });
@@ -2154,7 +2144,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
           await queryPromise('UPDATE tstudent SET courserefer2 = NULL, updateby = ? WHERE courserefer2 = ?', [req.user.username, courserefer]);
           //Send Log to Discord
           const logMessage = `${courserefer} : ถูกลบโดย ${req.user.username}`;
-          await logCourseToDiscord(logMessage);
+          await logCourseToDiscord('[deleteCustomerCourse][${req.user.username}]', logMessage);
           res.json({ success: true, message: 'Customer Course deleted successfully' });
         }
       } else {
@@ -2748,7 +2738,7 @@ async function deleteOldProfileImage(studentId) {
 
 const cron = require('node-cron');
 const { google } = require('googleapis');
-const { warn } = require('console');
+const { warn, log } = require('console');
 const drive = google.drive('v3');
 const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
 const auth = new google.auth.GoogleAuth({
@@ -2837,6 +2827,7 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log("###################################################################");
   await uploadOrUpdateLogFile();
   server.close(() => {
+    logSystemToDiscord('info', '✅ Server restarting... ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
     process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
   });
 
@@ -2856,6 +2847,7 @@ const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
+  logSystemToDiscord('success', '✅ Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
 });
 
 // ทำให้ console.log ใช้ winston logger
