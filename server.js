@@ -2585,7 +2585,6 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
 // ติดตั้ง package สำหรับ S3 v3
 const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
-const fs = require('fs');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
 
 // สร้าง S3 Client
