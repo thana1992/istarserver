@@ -65,6 +65,7 @@ async function queryPromise(query, params, showlog) {
     
     // ส่งข้อมูลไป Discord พร้อมให้แสดงผลแบบบรรทัดใหม่
     const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}`;
+    logSystemToDiscord('info', `[Query]`, message);
     //logSystemToDiscord('info', `[Query]`, message);
 
     return results;
