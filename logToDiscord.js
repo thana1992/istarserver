@@ -50,31 +50,57 @@ async function sendWebhook(url, message) {
 
 // ฟังก์ชั่นจัดการคิว webhook สำหรับแต่ละ URL
 async function processQueue(urlType) {
-    // เลือกคิวที่เกี่ยวข้อง
-    const urlMap = {
-        booking: DISCORD_BOOKING_WEBHOOK_URL,
-        course: DISCORD_COURSE_WEBHOOK_URL,
-        info: DISCORD_INFO_WEBHOOK_URL,
-        error: DISCORD_ERROR_WEBHOOK_URL,
-        success: DISCORD_INFO_WEBHOOK_URL
-    };
+    const url = getUrlByType(urlType);
+    const queueForUrl = queue[urlType];
 
-    // ตรวจสอบว่ามีข้อความในคิวหรือไม่
-    while (queue[urlType].length > 0) {
-        const message = queue[urlType].shift(); // ดึงข้อความออกจากคิว
-        const url = urlMap[urlType];
-
-        // ส่ง webhook
-        let retryAfter = await sendWebhook(url, message);
+    while (queueForUrl.length > 0) {
+        const message = queueForUrl.shift();
         
-        // ถ้ามีการ rate limit (error 429) ให้รอแล้วลองใหม่
-        if (retryAfter) {
-            console.log(`⏳ Retrying after ${retryAfter / 1000} seconds...`);
-            await delay(retryAfter); // รอเวลาตามที่ Discord แนะนำ
+        let payload;
+        if (typeof message === 'string') {
+            // กรณีเป็นข้อความธรรมดา
+            payload = { content: message };
+        } else if (message.embeds) {
+            // ถ้ามี embeds อยู่แล้ว
+            payload = message;
         } else {
-            // หน่วงเวลา 0.75 วินาที (750ms) ก่อนส่งข้อความถัดไป
-            await delay(750);
+            // กรณีเป็น embed เดี่ยว ๆ
+            payload = { embeds: [message] };
         }
+
+        try {
+            await axios.post(url, payload);
+        } catch (err) {
+            if (err.response?.status === 429) {
+                const retryAfter = err.response.headers['retry-after'] || 1;
+                console.warn(`⏳ Rate limited. Retrying in ${retryAfter} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+                queueForUrl.unshift(message); // ใส่กลับไปในคิว
+            } else {
+                console.error("❌ Error sending to Discord:", err);
+            }
+        }
+
+        // รอ 0.75 วินาที
+        await new Promise((resolve) => setTimeout(resolve, 750));
+    }
+}
+
+// ฟังก์ชั่นเพื่อให้ URL ตามประเภท
+function getUrlByType(urlType) {
+    switch (urlType) {
+        case 'info':
+            return DISCORD_INFO_WEBHOOK_URL;
+        case 'error':
+            return DISCORD_ERROR_WEBHOOK_URL;
+        case 'booking':
+            return DISCORD_BOOKING_WEBHOOK_URL;
+        case 'course':
+            return DISCORD_COURSE_WEBHOOK_URL;
+        case 'success':
+            return DISCORD_INFO_WEBHOOK_URL;
+        default:
+            throw new Error(`Unknown URL type: ${urlType}`);
     }
 }
 
@@ -91,27 +117,17 @@ function logToQueue(urlType, message) {
 
 // ฟังก์ชั่นส่ง log ไปที่ Discord ด้วย Embed
 function logSystemToDiscord(type, title, message) {
-    const colorMap = {
-        success: 0x2ecc71,
-        info: 0x3498db,
-        error: 0xe74c3c
-    };
-
-    const safeTitle = (title || '').slice(0, MAX_TITLE_LENGTH);
-    const safeMessage = (message || '').slice(0, MAX_DESCRIPTION_LENGTH);
-    const safeFooterText = 'Express.js Logger'.slice(0, MAX_FOOTER_LENGTH);
-
     const embed = {
-        title: safeTitle,
-        description: safeMessage,
-        color: colorMap[type] || 0x95a5a6,
+        title: title || '',
+        description: message || '',
+        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
-            text: safeFooterText
+            text: 'Express.js Logger'
         }
     };
 
-    logToQueue(type, JSON.stringify({ embeds: [embed] }));
+    logToQueue(type === 'error' ? 'error' : 'info', embed);
 }
 
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
@@ -125,7 +141,7 @@ function logCourseToDiscord(title, message) {
             text: 'Express.js Logger'
         }
     };
-    logToQueue('course', JSON.stringify({ embeds: [embed] }));
+    logToQueue('course', embed);
 }
 
 // ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
