@@ -40,21 +40,25 @@ async function queryPromise(query, params, showlog) {
   let connection;
   try {
     console.log("Query : " + query);
+    logSystemToDiscord('info','[Query result]', query);
     connection = await pool.getConnection();
     await connection.query("SET time_zone = '+07:00';"); // ตั้งค่าเขตเวลาเป็นเวลาของไทย (UTC+7)
     const [results] = await connection.query(query, params);
     
     if (showlog) {
       const maskedParams = maskSensitiveData(params);
+      logSystemToDiscord('info','[Query Parameter]', maskedParams);
       console.log("Params : " + JSON.stringify(maskedParams));
 
       if (Array.isArray(results)) {
         const maskedResults = results.map(maskSensitiveData);
-        console.log("Results : " + JSON.stringify(maskedResults));
+        logSystemToDiscord('info','[Query Result]', maskedResult);
+        //console.log("Results : " + JSON.stringify(maskedResults));
       } else {
         const maskedResult = maskSensitiveData(results);
-        console.log("Results is not an array!");
-        console.log("Results : " + JSON.stringify(maskedResult));
+        logSystemToDiscord('info','[Query Result]', maskedResult);
+        //console.log("Results is not an array!");
+        //console.log("Results : " + JSON.stringify(maskedResult));
       }
     }
 
@@ -2685,7 +2689,7 @@ scheduleRestartAtSpecificTime(1, 30);
 uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 55 นาที
 cron.schedule('0,55 * * * *', () => {
-  uploadOrUpdateLogFile();
+  uploadOrUpdateLogFile() ;
 });
 
 const server = app.listen(port, () => {
@@ -2697,7 +2701,6 @@ const server = app.listen(port, () => {
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
   logger.info(msg);
-  logSystemToDiscord('info','[Info]', msg);
 };
 
 console.error = (msg, error) => {
