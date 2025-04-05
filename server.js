@@ -65,7 +65,7 @@ async function queryPromise(query, params, showlog) {
     
     // ส่งข้อมูลไป Discord พร้อมให้แสดงผลแบบบรรทัดใหม่
     const message = `SQL: ${logData.query}\nParams: ${JSON.stringify(logData.params)}`;
-    logSystemToDiscord('info', '[Query][${req.user.username}]', message);
+    logSystemToDiscord('info', `[Query][${req.user.username}]`, message);
 
     return results;
   } catch (error) {
@@ -445,7 +445,7 @@ app.post('/addStudent', verifyToken, async (req, res) => {
       if(dateofbirth) params.push(dateofbirth);
       if(school) params.push(school);
     await queryPromise(query, params);
-    logSystemToDiscord('info', '[Add Student][${req.user.username}]', `Family member ${firstname} ${lastname} was added successfully.`);
+    logSystemToDiscord('info', `[Add Student][${req.user.username}]`, `Family member ${firstname} ${lastname} was added successfully.`);
     res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
     console.error("Error in addStudent", error.stack);
@@ -1472,7 +1472,7 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
         await queryPromise(query2, [courserefer]);
         // Send log to Discord
         const logMessage = `${courserefer} : จบคอร์ส โดย ${req.user.username}`;
-        logCourseToDiscord('[finishCustomerCourse][${req.user.username}]', logMessage);
+        logCourseToDiscord(`[finishCustomerCourse][${req.user.username}]`, logMessage);
         res.json({ success: true, message: 'Course finished successfully' });
       } else {
         res.json({ success: false, message: 'No course found with the given reference' });
@@ -2080,7 +2080,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       const logMessage = `${courserefer} : สร้าง Customer Course โดย ${req.user.username}\n มีรายละเอียดดังนี้:\n` +
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
-      await logCourseToDiscord('[addCustomerCourse][${req.user.username}]', logMessage);
+      await logCourseToDiscord(`[addCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
@@ -2100,7 +2100,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       //Send Log to Discord
       const logMessage = `${courserefer} : แก้ไขข้อมูล โดย ${req.user.username}\n` +
         `Course ID: ${courseid}, Course Type: ${coursetype}, Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
-      await logCourseToDiscord('[updateCustomerCourse][${req.user.username}]', logMessage);
+      await logCourseToDiscord(`[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
       res.json({ success: false, message: 'Error updating Customer Course' });
@@ -2144,7 +2144,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
           await queryPromise('UPDATE tstudent SET courserefer2 = NULL, updateby = ? WHERE courserefer2 = ?', [req.user.username, courserefer]);
           //Send Log to Discord
           const logMessage = `${courserefer} : ถูกลบโดย ${req.user.username}`;
-          await logCourseToDiscord('[deleteCustomerCourse][${req.user.username}]', logMessage);
+          await logCourseToDiscord(`[deleteCustomerCourse][${req.user.username}]`, logMessage);
           res.json({ success: true, message: 'Customer Course deleted successfully' });
         }
       } else {
@@ -2858,6 +2858,8 @@ console.log = (msg) => {
 console.error = (msg, error) => {
   const CURRENT_TIMETOMILISECONDS = new Date().getTime();
   const timestamp = new Date(CURRENT_TIMETOMILISECONDS).toLocaleString('th-TH', { timeZone: timeZone });
+  
   logger.info('['+timestamp+'] : ' + msg + " : " + error);
-  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด ['+timestamp+'] : ' + msg);
+  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + msg);
+  throw error;
 };
