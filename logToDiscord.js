@@ -26,7 +26,7 @@ const queue = {
 let isProcessing = false;
 
 // ฟังก์ชั่นจัดการคิว webhook สำหรับแต่ละ URL
-async function processQueue(urlType) {s
+async function processQueue(urlType) {
     const url = getUrlByType(urlType);
     const queueForUrl = queue[urlType];
 
