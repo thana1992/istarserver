@@ -197,7 +197,7 @@ function logStudentToDiscord(type, title, message) {
         console.error('Error logging student to Discord:', error);
         throw error; // Re-throw the error after logging it
     }
-
+}
 module.exports = {
     logToQueue,
     logSystemToDiscord,
