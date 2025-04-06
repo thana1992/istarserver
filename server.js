@@ -171,8 +171,7 @@ app.use((req, res, next) => {
     }
 
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
-    const username = req.user && req.user.username ? req.user.username : 'Unknown User';
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     logToQueue('apicall', `[${timestamp}] [${username}] Request[${req.method}] ${req.url}`);
     // Send the original body to the client
     originalSend.call(res, body);
@@ -1027,8 +1026,8 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
-        res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
         logBookingToDiscord('info', `✅[cancelBookingByAdmin][${req.user.username}]`, `Reservationid : ${reservationid}`);
+        res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
     } else {
       res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
@@ -2895,9 +2894,7 @@ console.log = (msg) => {
 };
 
 console.error = (msg, error) => {
-  const CURRENT_TIMETOMILISECONDS = new Date().getTime();
-  const timestamp = new Date(CURRENT_TIMETOMILISECONDS).toLocaleString('th-TH', { timeZone: timeZone });
-  
+  const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
   logger.info('['+timestamp+'] : ' + msg + " : " + error);
   logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + msg);
   throw error;

@@ -98,13 +98,14 @@ function logToQueue(urlType, message) {
 
 // ฟังก์ชั่นส่ง log ไปที่ Discord ด้วย Embed
 function logSystemToDiscord(type, title, message) {
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title || '',
         description: message || '',
         color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
-            text: 'Express.js Logger'
+            text: timestamp
         }
     };
 
@@ -112,26 +113,28 @@ function logSystemToDiscord(type, title, message) {
 }
 
 function logLoginToDiscord(type, title, message) {
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
         color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
-            text: 'Express.js Logger'
+            text: timestamp
         }
     };
     logToQueue('login', embed);
 }
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
 function logCourseToDiscord(type, title, message) {
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
         color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
-            text: 'Express.js Logger'
+            text: timestamp
         }
     };
     logToQueue('course', embed);
@@ -139,26 +142,28 @@ function logCourseToDiscord(type, title, message) {
 
 // ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
 function logBookingToDiscord(type, title, message) {
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
         color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
-            text: 'Express.js Logger'
+            text: timestamp
         }
     };
     logToQueue('booking', embed);
 }
 
 function logStudentToDiscord(title, message) {
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
         color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
-            text: 'Express.js Logger'
+            text: timestamp
         }
     };
     logToQueue('student', embed);
