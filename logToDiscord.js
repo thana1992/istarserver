@@ -54,6 +54,7 @@ async function processQueue(urlType) {
                 await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
                 queueForUrl.unshift(message); // ใส่กลับไปในคิว
             } else {
+                logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + err.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
                 console.error("❌ Error sending to Discord:", err);
             }
         }
@@ -98,76 +99,104 @@ function logToQueue(urlType, message) {
 
 // ฟังก์ชั่นส่ง log ไปที่ Discord ด้วย Embed
 function logSystemToDiscord(type, title, message) {
-    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-    const embed = {
-        title: title || '',
-        description: message || '',
-        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: timestamp
-        }
-    };
-
-    logToQueue('info', embed);
+    try {
+        const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const embed = {
+            title: title || '',
+            description: message || '',
+            color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: timestamp
+            }
+        };
+        logToQueue('info', embed);
+    } catch (error) {
+        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
+        console.error('Error logging student to Discord:', error);
+        throw error; // Re-throw the error after logging it
+    }
 }
 
 function logLoginToDiscord(type, title, message) {
-    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-    const embed = {
-        title: title.slice(0, MAX_TITLE_LENGTH),
-        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
-        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: timestamp
-        }
-    };
-    logToQueue('login', embed);
+    try {
+        const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const embed = {
+            title: title.slice(0, MAX_TITLE_LENGTH),
+            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: timestamp
+            }
+        };
+        logToQueue('login', embed);
+    } catch (error) {
+        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
+        console.error('Error logging student to Discord:', error);
+        throw error; // Re-throw the error after logging it
+    }
 }
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
 function logCourseToDiscord(type, title, message) {
-    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-    const embed = {
-        title: title.slice(0, MAX_TITLE_LENGTH),
-        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
-        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: timestamp
-        }
-    };
-    logToQueue('course', embed);
+    try {
+        const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const embed = {
+            title: title.slice(0, MAX_TITLE_LENGTH),
+            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: timestamp
+            }
+        };
+        logToQueue('course', embed);
+    } catch (error) {
+        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
+        console.error('Error logging student to Discord:', error);
+        throw error; // Re-throw the error after logging it
+    }
 }
 
 // ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
 function logBookingToDiscord(type, title, message) {
-    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-    const embed = {
-        title: title.slice(0, MAX_TITLE_LENGTH),
-        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
-        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: timestamp
-        }
-    };
-    logToQueue('booking', embed);
+    try {
+        const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const embed = {
+            title: title.slice(0, MAX_TITLE_LENGTH),
+            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: timestamp
+            }
+        };
+        logToQueue('booking', embed);
+    } catch (error) {
+        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
+        console.error('Error logging student to Discord:', error);
+        throw error; // Re-throw the error after logging it
+    }
 }
 
 function logStudentToDiscord(type, title, message) {
-    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-    const embed = {
-        title: title.slice(0, MAX_TITLE_LENGTH),
-        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
-        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: timestamp
-        }
-    };
-    logToQueue('student', embed);
-}
+    try {
+        const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const embed = {
+            title: title.slice(0, MAX_TITLE_LENGTH),
+            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: timestamp
+            }
+        };
+        logToQueue('student', embed);
+    } catch (error) {
+        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
+        console.error('Error logging student to Discord:', error);
+        throw error; // Re-throw the error after logging it
+    }
 
 module.exports = {
     logToQueue,
