@@ -3,7 +3,8 @@ const DISCORD_INFO_WEBHOOK_URL = process.env.DISCORD_INFO_WEBHOOK_URL;
 const DISCORD_ERROR_WEBHOOK_URL = process.env.DISCORD_ERROR_WEBHOOK_URL;
 const DISCORD_BOOKING_WEBHOOK_URL = process.env.DISCORD_BOOKING_WEBHOOK_URL;
 const DISCORD_COURSE_WEBHOOK_URL = process.env.DISCORD_COURSE_WEBHOOK_URL;
-
+const DISCORD_LOGIN_WEBHOOK_URL = process.env.DISCORD_LOGIN_WEBHOOK_URL;
+const DISCORD_STUDENT_WEBHOOK_URL = process.env.DISCORD_STUDENT_WEBHOOK_URL;
 // ขนาดสูงสุดตามที่ Discord กำหนด
 const MAX_TITLE_LENGTH = 256;
 const MAX_DESCRIPTION_LENGTH = 4096;
@@ -20,33 +21,6 @@ const queue = {
 
 // ตัวแปรสำหรับการตรวจสอบว่ากำลังประมวลผลคิวอยู่หรือไม่
 let isProcessing = false;
-
-// ฟังก์ชั่นหน่วงเวลา
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// ฟังก์ชั่นส่ง webhook และ retry
-async function sendWebhook(url, message) {
-    try {
-        await axios.post(url, { content: message });
-    } catch (err) {
-        if (err.response?.status === 429) {
-            let retryAfter = 5 * 1000; // ค่าเริ่มต้น 5 วินาที
-            const headerRetry = err.response.headers['retry-after'];
-            const bodyRetry = err.response.data?.retry_after;
-
-            if (headerRetry) {
-                retryAfter = parseFloat(headerRetry) * 1000; // แปลงเป็นมิลลิวินาที
-            } else if (bodyRetry) {
-                retryAfter = parseFloat(bodyRetry);
-            }
-
-            console.warn(`⏳ Rate limited. Retrying in ${retryAfter / 1000} seconds...`);
-            return retryAfter; // ส่งค่าการ retry
-        } else {
-            console.error("❌ Error sending to Discord:", err.response?.data || err.message);
-        }
-    }
-}
 
 // ฟังก์ชั่นจัดการคิว webhook สำหรับแต่ละ URL
 async function processQueue(urlType) {
@@ -99,6 +73,10 @@ function getUrlByType(urlType) {
             return DISCORD_COURSE_WEBHOOK_URL;
         case 'success':
             return DISCORD_INFO_WEBHOOK_URL;
+        case 'login':
+            return DISCORD_LOGIN_WEBHOOK_URL;
+        case 'student':
+            return DISCORD_STUDENT_WEBHOOK_URL;
         default:
             throw new Error(`Unknown URL type: ${urlType}`);
     }
@@ -127,15 +105,27 @@ function logSystemToDiscord(type, title, message) {
         }
     };
 
-    logToQueue(type === 'error' ? 'error' : 'info', embed);
+    logToQueue('info', embed);
 }
 
+function logLoginToDiscord(type, title, message) {
+    const embed = {
+        title: title.slice(0, MAX_TITLE_LENGTH),
+        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+        timestamp: new Date().toISOString(),
+        footer: {
+            text: 'Express.js Logger'
+        }
+    };
+    logToQueue('login', embed);
+}
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
 function logCourseToDiscord(title, message) {
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
-        color: 0x3498db,
+        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
         timestamp: new Date().toISOString(),
         footer: {
             text: 'Express.js Logger'
@@ -145,36 +135,36 @@ function logCourseToDiscord(title, message) {
 }
 
 // ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
-function logBookingToDiscord(message) {
-    logToQueue('booking', message);
+function logBookingToDiscord(title, message) {
+    const embed = {
+        title: title.slice(0, MAX_TITLE_LENGTH),
+        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+        timestamp: new Date().toISOString(),
+        footer: {
+            text: 'Express.js Logger'
+        }
+    };
+    logToQueue('booking', embed);
 }
 
-// ฟังก์ชันแจ้งเตือนเมื่อมีการจอง
-async function sendNotification(jsonData) {
-    try {
-        logBookingToDiscord(jsonData.message);
-        console.log('📢 Notification Sent Successfully');
-    } catch (error) {
-        console.error('❌ Error sending notification:', error.stack);
-        throw error;
-    }
-}
-
-// ฟังก์ชันแจ้งเตือนเมื่อมีการอัปเดตการจอง
-async function sendNotificationUpdate(jsonData) {
-    try {
-        logBookingToDiscord(jsonData.message);
-        console.log('📢 Notification Sent Successfully');
-    } catch (error) {
-        console.error('❌ Error sending update notification:', error.stack);
-        throw error;
-    }
+function logStudentToDiscord(title, message) {
+    const embed = {
+        title: title.slice(0, MAX_TITLE_LENGTH),
+        description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+        color: type === 'error' ? 0xe74c3c : 0x2ecc71,
+        timestamp: new Date().toISOString(),
+        footer: {
+            text: 'Express.js Logger'
+        }
+    };
+    logToQueue('student', embed);
 }
 
 module.exports = {
     logSystemToDiscord,
+    logLoginToDiscord,
     logBookingToDiscord,
-    sendNotification,
-    sendNotificationUpdate,
-    logCourseToDiscord
+    logCourseToDiscord,
+    logStudentToDiscord
 };
