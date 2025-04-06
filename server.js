@@ -171,7 +171,7 @@ app.use((req, res, next) => {
     }
 
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
-    logToQueue('apicall', `REQUEST: ${req.method} ${req.url}`);
+    logToQueue('apicall', `TEST`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
@@ -268,7 +268,7 @@ app.post('/login', async (req, res) => {
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
         console.log("username : " + username);
-        logLoginToDiscord('info', '[Login]', `User ${username} logged in successfully.`);
+        //logLoginToDiscord('info', '[Login]', `User ${username} logged in successfully.`);
         if (userdata.usertype != '10') {
           const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '5h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
@@ -286,6 +286,7 @@ app.post('/login', async (req, res) => {
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
+    logLoginToDiscord('error', '❌[Login]', `User ${username} failed to log in. Error: ${error.message}`);
     console.error("Error logging in", error.stack);
     return res.status(500).send(error);
   }
