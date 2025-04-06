@@ -1027,8 +1027,8 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
-        res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
         logBookingToDiscord('info', `✅[cancelBookingByAdmin][${req.user.username}]`, `Reservationid : ${reservationid}`);
+        res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
     } else {
       res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
