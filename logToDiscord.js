@@ -155,7 +155,7 @@ function logBookingToDiscord(type, title, message) {
     logToQueue('booking', embed);
 }
 
-function logStudentToDiscord(title, message) {
+function logStudentToDiscord(type, title, message) {
     const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
