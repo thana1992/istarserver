@@ -171,8 +171,7 @@ app.use((req, res, next) => {
     }
 
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
-    const username = req.user.username || 'Unknown User';
-    logToQueue('apicall', `USER [${username}] REQUEST[${req.method}] ${req.url}`);
+    //logToQueue('apicall', `REQUEST[${req.method}] ${req.url}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
