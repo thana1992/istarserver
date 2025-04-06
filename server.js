@@ -171,7 +171,7 @@ app.use((req, res, next) => {
     }
 
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
-    logToQueue('apicall', `REQUEST: ${req.method} ${req.url}`);
+    logToQueue('apicall', `USER [${req.user.username}] REQUEST[${req.method}] ${req.url}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
@@ -268,7 +268,7 @@ app.post('/login', async (req, res) => {
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
         console.log("username : " + username);
-        logLoginToDiscord('info', '[Login]', `User ${username} logged in successfully.`);
+        logLoginToDiscord('info', '✅[Login]', `User ${username} logged in successfully.`);
         if (userdata.usertype != '10') {
           const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '5h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
@@ -2884,7 +2884,7 @@ const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
-  logSystemToDiscord('success', '✅ Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
+  logSystemToDiscord('info', '✅ Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
 });
 
 // ทำให้ console.log ใช้ winston logger
