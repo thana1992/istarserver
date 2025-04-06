@@ -286,6 +286,7 @@ app.post('/login', async (req, res) => {
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
+    logLoginToDiscord('error', '❌[Login]', `User ${username} failed to log in. Error: ${error.message}`);
     console.error("Error logging in", error.stack);
     return res.status(500).send(error);
   }

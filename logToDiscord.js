@@ -17,7 +17,10 @@ const queue = {
     course: [],
     info: [],
     error: [],
-    success: []
+    success: [],
+    login: [],
+    student: [],
+    apicall: []
 };
 
 // ตัวแปรสำหรับการตรวจสอบว่ากำลังประมวลผลคิวอยู่หรือไม่
