@@ -98,7 +98,7 @@ function logToQueue(urlType, message) {
 
 // ฟังก์ชั่นส่ง log ไปที่ Discord ด้วย Embed
 function logSystemToDiscord(type, title, message) {
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title || '',
         description: message || '',
@@ -113,7 +113,7 @@ function logSystemToDiscord(type, title, message) {
 }
 
 function logLoginToDiscord(type, title, message) {
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
@@ -127,7 +127,7 @@ function logLoginToDiscord(type, title, message) {
 }
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
 function logCourseToDiscord(type, title, message) {
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
@@ -142,7 +142,7 @@ function logCourseToDiscord(type, title, message) {
 
 // ฟังก์ชั่นส่งข้อความการจองไปยัง Discord channel
 function logBookingToDiscord(type, title, message) {
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
@@ -156,7 +156,7 @@ function logBookingToDiscord(type, title, message) {
 }
 
 function logStudentToDiscord(title, message) {
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const embed = {
         title: title.slice(0, MAX_TITLE_LENGTH),
         description: message.slice(0, MAX_DESCRIPTION_LENGTH),
