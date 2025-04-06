@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
 const blacklistSessions = [];
-const { logSystemToDiscord, logLoginToDiscord, logBookingToDiscord, logCourseToDiscord, logStudentToDiscord } = require('./logToDiscord'); // import function ที่แยกไว้
+const { logToQueue, logSystemToDiscord, logLoginToDiscord, logBookingToDiscord, logCourseToDiscord, logStudentToDiscord } = require('./logToDiscord'); // import function ที่แยกไว้
 const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
 

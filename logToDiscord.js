@@ -165,6 +165,7 @@ function logStudentToDiscord(title, message) {
 }
 
 module.exports = {
+    logToQueue,
     logSystemToDiscord,
     logLoginToDiscord,
     logBookingToDiscord,
