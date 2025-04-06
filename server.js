@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
 const activeSessions = [];
 const blacklistSessions = [];
-const { logSystemToDiscord, logBookingToDiscord, sendNotification, sendNotificationUpdate, logCourseToDiscord } = require('./logToDiscord'); // import function ที่แยกไว้
+const { logSystemToDiscord, logLoginToDiscord, logBookingToDiscord, logCourseToDiscord, logStudentToDiscord } = require('./logToDiscord'); // import function ที่แยกไว้
 const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
 
@@ -171,6 +171,7 @@ app.use((req, res, next) => {
     }
 
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
+    logToQueue('apicall', `RESPONSE : ${req.url}\n Body : ${logBody}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
@@ -267,7 +268,7 @@ app.post('/login', async (req, res) => {
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [username]);
         console.log("user.id = " + user.id);
-        logSystemToDiscord('info', '[Login]', `User ${username} logged in successfully.`);
+        logLoginToDiscord('info', '✅[Login]', `User ${username} logged in successfully.`);
         if (userdata.usertype != '10') {
           const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '5h' });
           return res.json({ success: true, message: 'Login successful', token, userdata });
@@ -277,11 +278,11 @@ app.post('/login', async (req, res) => {
         }
 
       } else {
-        logSystemToDiscord('error', '[Login]', `User ${username} failed to log in. Invalid password.`);
+        logLoginToDiscord('error', '❌[Login]', `User ${username} failed to log in. Invalid password.`);
         return res.json({ success: false, message: 'password is invalid' });
       }
     } else {
-      logSystemToDiscord('error', '[Login]', `User ${username} failed to log in. Invalid username.`);
+      logLoginToDiscord('error', '❌[Login]', `User ${username} failed to log in. Invalid username.`);
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
@@ -303,12 +304,12 @@ app.post('/logout', verifyToken, (req, res) => {
   blacklistSessions.push(token);
 
   // Optionally, you can add more cleanup logic here
-  logSystemToDiscord('info', '[Logout]', `User ${req.user.username} logged out successfully.`);
+  logLoginToDiscord('info', '✅[Logout]', `User ${req.user.username} logged out successfully.`);
   res.json({ success: true, message: 'Logout successful' });
 });
 
 app.post('/register', async (req, res) => {
-  logSystemToDiscord('info', '[Register]', `User is registering.\n${JSON.stringify(req.body)}`);
+  logSystemToDiscord('info', '✅[Register]', `User is registering.\n${JSON.stringify(req.body)}`);
   console.log("register : " + JSON.stringify(req.body));
   const { username, password, firstname, middlename, lastname, address, email, mobileno, registercode, acceptPrivacyPolicy } = req.body;
 
@@ -349,7 +350,6 @@ app.post('/register', async (req, res) => {
 });
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getFamilyMember]', `User ${req.user.username} is getting family member.\n${JSON.stringify(req.body)}`);
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' b.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
@@ -382,7 +382,6 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 });
 
 app.post("/getFamilyList", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getFamilyList]', `User ${req.user.username} is getting family list.\n${JSON.stringify(req.body)}`);
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
@@ -414,7 +413,6 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
 });
 
 app.post('/addStudent', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[addStudent]', `User ${req.user.username} is adding a new student.\n${JSON.stringify(req.body)}`);
   try {
     const studentid = await generateRefer('TMP');
     const { familyid, firstname, middlename, lastname, nickname, gender, dateofbirth, school } = req.body;
@@ -445,16 +443,17 @@ app.post('/addStudent', verifyToken, async (req, res) => {
       if(dateofbirth) params.push(dateofbirth);
       if(school) params.push(school);
     await queryPromise(query, params);
-    logSystemToDiscord('info', `[Add Student][${req.user.username}]`, `Family member ${firstname} ${lastname} was added successfully.`);
+    logStudentToDiscord('info', `✅[Add Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully.`);
     res.json({ success: true, message: 'Family member was successfully added. Please wait for approval from the admin.' });
   } catch (error) {
+    logStudentToDiscord('error', `❌[Add Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n❌ Error adding family member: ${error.message}`);
     console.error("Error in addStudent", error.stack);
     res.status(500).send(error);
+    throw error; // Throw the error to be caught by the outer catch block
   }
 });
 
 app.post('/approveNewStudent', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[approveNewStudent]', `User ${req.user.username} is approving a new student.\n${JSON.stringify(req.body)}`);
   try {
     const { apprObj } = req.body;
     console.log("apprObj : " + JSON.stringify(apprObj));
@@ -484,19 +483,20 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
 
       await Promise.all(insertStudentQueries);
       await Promise.all(deleteStudentQueries);
-
+      logStudentToDiscord('info', `✅[Approve Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully approved new student(s): ${JSON.stringify(studentIds)}`);
       res.json({ success: true, message: 'Family member approve successfully' });
     } else {
+      logStudentToDiscord('error', `❌[Approve Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ No student found for approval.`);
       res.json({ success: false, message: 'No students found for approval' });
     }
   } catch (error) {
     console.error('Error in approveNewStudent', error.stack);
+    logStudentToDiscord('error', `❌[Approve Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error approving new student(s): ${error.message}`);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
 app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[addStudentByAdmin]', `User ${req.user.username} is adding a new student.\n${JSON.stringify(req.body)}`);
   const { firstname, middlename, lastname, nickname, gender, dateofbirth, level, familyid, courserefer, courserefer2, shortnote } = req.body;
   try {
     // ตรวจสอบการใช้งานคอร์ส
@@ -558,16 +558,16 @@ app.post('/addStudentByAdmin', verifyToken, async (req, res) => {
         }
       }
     }
-
+    logStudentToDiscord('info', `✅[Add Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully added new student: ${studentid}`);
     res.json({ success: true, message: 'Family member added successfully', studentid });
   } catch (error) {
+    logStudentToDiscord('error', `❌[Add Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error adding new student: ${error.message}`);
     console.error('Error in addStudentByAdmin', error.stack);
     res.status(500).send(error);
   }
 });
 
 app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', `[Update Student][${req.user.username}]`, `Updating a student.\n${JSON.stringify(req.body)}`);
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, level, familyid, courserefer, courserefer2, shortnote } = req.body;
 
@@ -639,12 +639,13 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
         }
       }
 
-      logSystemToDiscord('info', `[Update Student][${req.user.username}]`, `Student ${studentid} was updated successfully.`);
+      logStudentToDiscord('info', `✅[updateStudentByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student: ${studentid}`);
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
     } else {
       return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
     }
   } catch (error) {
+    logStudentToDiscord('error', `❌[updateStudentByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     console.log("updateStudentByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
@@ -686,7 +687,6 @@ async function checkCourseShare(courserefer, studentid) {
 }
 
 app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[addBookingByAdmin]', `User ${req.user.username} is adding a booking.\n${JSON.stringify(req.body)}`);
   try {
     const { studentid, classid, classdate, classtime, courseid, classday, freeflag } = req.body;
 
@@ -782,7 +782,6 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             }
 
             // ส่งการแจ้งเตือน
-            
             try {
               const queryNotifyData = `
                 SELECT 
@@ -805,11 +804,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   day: 'numeric',
                 });
 
-                const jsonData = {
-                  message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`,
-                };
-
-                sendNotification(jsonData);
+                const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
+                logBookingToDiscord('info', `✅[addBookingByAdmin][${req.user.username}]`, `Booking updated successfully.\n${message}`);
               }
             } catch (error) {
               console.error('Error sending notification', error.stack);
@@ -833,6 +829,35 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
         const insertResult = await queryPromise(insertReservationQuery, [studentid, classid, classdate, classtime, courseid, freeflag, req.user.username]);
         if (insertResult.affectedRows > 0) {
+          // ส่งการแจ้งเตือน
+          try {
+            const queryNotifyData = `
+              SELECT 
+                tstudent.nickname, 
+                CONCAT(IFNULL(tstudent.firstname, ''), ' ', IFNULL(tstudent.middlename, ''), IF(tstudent.middlename<>'', ' ', ''), IFNULL(tstudent.lastname, '')) AS fullname, 
+                tstudent.dateofbirth, 
+                tcourseinfo.course_shortname 
+              FROM tstudent 
+              INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
+              INNER JOIN tcourseinfo ON tcustomer_course.courseid = tcourseinfo.courseid 
+              WHERE tstudent.studentid = ?
+            `;
+            const notifyResults = await queryPromise(queryNotifyData, [studentid]);
+            if (notifyResults.length > 0 && req.user.username != 'tnpl') {
+              const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
+              var a = moment(classdate, "YYYYMMDD");
+              const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              });
+
+              const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
+              logBookingToDiscord('info', `✅[addBookingByAdmin][${req.user.username}]`, `Booking updated successfully.\n${message}`);
+            }
+          } catch (error) {
+            console.error('Error sending notification', error.stack);
+          }
           return res.json({ success: true, message: 'จองคลาสสำเร็จ' });
         }
       }
@@ -840,13 +865,13 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'No class found' });
     }
   } catch (error) {
+    logBookingToDiscord('error', `❌[addBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     console.log("addBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
 
 app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[updateBookingByAdmin]', `User ${req.user.username} is updating a booking.\n${JSON.stringify(req.body)}`);
   try {
     const { studentid, classid, classdate, classtime, courseid, classday, reservationid, freeflag } = req.body;
 
@@ -969,17 +994,12 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                     day: 'numeric',
                   });
 
-                  // Prepare notification data
-                  const jsonData = {
-                    message: `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(results[0].dateofbirth)}ปี\nจาก ${oldClassdate} ${oldClasstime}\nเป็น ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`,
-                  };
-
-                  sendNotificationUpdate(jsonData);
+                  const message = `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(results[0].dateofbirth)}ปี\nจาก ${oldClassdate} ${oldClasstime}\nเป็น ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
+                  logBookingToDiscord('info', `✅[updateBookingByAdmin][${req.user.username}]`, `Booking updated successfully.\n${message}`);
                 }
               } catch (error) {
                 console.error('Error sending notification', error.stack);
               }
-              
               return res.json({ success: true, message: 'แก้ไขข้อมูลการจองสำเร็จ' });
             }
           }
@@ -989,13 +1009,13 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'No class found' });
     }
   } catch (error) {
+    logBookingToDiscord('error', `❌[updateBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     console.log("updateBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
 
 app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[cancelBookingByAdmin]', `User ${req.user.username} is cancel a booking.\n${JSON.stringify(req.body)}`);
   try {
     const { reservationid, studentid, courserefer } = req.body;
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
@@ -1005,19 +1025,18 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
         res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
-        
+        logBookingToDiscord('info', `✅[cancelBookingByAdmin][${req.user.username}]`, `Reservationid : ${reservationid}`);
     } else {
       res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
   } catch (error) {
-    console.error("Error in deleteReservationByAdmin", error.stack);
-    
+    console.error("Error in cancelBookingByAdmin", error.stack);
+    logBookingToDiscord('error', `❌[cancelBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     res.json({ success: false, message: error.message });
   }
 });
 
 app.post('/deleteStudent', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[deleteStudent]', `User ${req.user.username} is deleting a student.\n${JSON.stringify(req.body)}`);
   const { familyid, studentid, journal } = req.body;
   console.log("deleteStudent : " + JSON.stringify(req.body));
   let queryDeleteStudent = 'UPDATE tstudent SET delflag = 1, courserefer = NULL, updateby = ? WHERE familyid = ? AND studentid = ?';
@@ -1033,18 +1052,19 @@ app.post('/deleteStudent', verifyToken, async (req, res) => {
       //   const queryDeleteTreservation = 'DELETE FROM treservation WHERE studentid = ?';
       //   await queryPromise(queryDeleteTreservation, [studentid]);
       // }
+      logStudentToDiscord('info', `✅[cancelBookingByAdmin][${req.user.username}]`, 'Delete Studentid '+studentid+' Successfuly.')
       return res.json({ success: true, message: 'Family member deleted successfully' });
     } else {
       return res.json({ success: false, message: 'No Family member data' });
     }
   } catch (error) {
+    logStudentToDiscord('error', `❌[cancelBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     console.error('Error in deleteStudent', error.stack);
     return res.status(500).send(error);
   }
 });
 
 app.post('/getMemberInfo', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getMemberInfo]', `User ${req.user.username} is getting member info.\n${JSON.stringify(req.body)}`);
   const { studentid } = req.body;
   const query = 'SELECT * FROM treservations WHERE studentid = ?';
   try {
@@ -1061,7 +1081,6 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 });
 
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getMemberReservationDetail]', `User ${req.user.username} is getting member reservation detail.\n${JSON.stringify(req.body)}`);
   const { studentid, courserefer } = req.body;
   const query = 'SELECT * FROM treservation WHERE studentid = ? and courserefer = ? order by classdate desc limit 10';
   await queryPromise(query, [studentid, courserefer])
@@ -1079,7 +1098,6 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 });
 
 app.post('/createReservation', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[createReservation]', `User ${req.user.username} is creating a reservation.\n${JSON.stringify(req.body)}`);
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
 
@@ -1190,11 +1208,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
                 day: 'numeric',
               });
 
-              const jsonData = {
-                message: `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`,
-              };
-
-              sendNotification(jsonData);
+              const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`
+              logBookingToDiscord('info', `✅[createReservation][${req.user.username}]`, `Booking created successfully.\n${message}`);
             }
           } catch (error) {
             console.error('Error sending notification', error.stack);
@@ -1207,30 +1222,31 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
     return res.json({ success: false, message: 'Error in processing booking' });
   } catch (error) {
+    logBookingToDiscord('error', `❌[createReservation][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error create booking: ${error.message}`)
     console.log("createReservation error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
 
 app.post('/deleteReservation', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[deleteReservation]', `User ${req.user.username} is deleting a reservation.\n${JSON.stringify(req.body)}`);
   const { reservationid } = req.body;
   const query = 'DELETE FROM treservation WHERE reservationid = ?';
   try {
     const results = await queryPromise(query, [reservationid]);
     if (results.affectedRows > 0) {
+      logBookingToDiscord('info', `✅[deleteReservation][${req.user.username}]`, 'Delete Booking Successfully.')
       res.json({ success: true, message: 'Reservation deleted successfully' });
     } else {
       res.json({ success: false, message: 'No reservation found with the given ID' });
     }
   } catch (error) {
+    logBookingToDiscord('error', `❌[deleteReservation][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error delete booking: ${error.message}`)
     console.error('Error in deleteReservation', error.stack);
     res.status(500).send(error);
   }
 });
 
 app.post('/checkDuplicateReservation', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[checkDuplicateReservation]', `User ${req.user.username} is checking for duplicate reservations.\n${JSON.stringify(req.body)}`);
   const { studentid, classdate } = req.body;
   const query = 'SELECT * FROM treservation WHERE studentid = ? and classdate = ?';
   try {
@@ -1247,7 +1263,6 @@ app.post('/checkDuplicateReservation', verifyToken, async (req, res) => {
 });
 
 app.get('/getAllCourses', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[getAllCourses]', `User ${req.user.username} is getting all courses.`);
   const query = 'SELECT * FROM tcourseinfo';
   try {
     const results = await queryPromise(query, null);
@@ -1263,41 +1278,44 @@ app.get('/getAllCourses', verifyToken, async (req, res) => {
 });
 
 app.post('/addCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[addCourse]', `User ${req.user.username} is adding a course.\n${JSON.stringify(req.body)}`);
   const { coursename, course_shortname } = req.body;
   const query = 'INSERT INTO tcourseinfo (coursename, course_shortname) VALUES (?, ?)';
   try {
     const results = await queryPromise(query, [coursename, course_shortname]);
+    logCourseToDiscord('info', `✅[addCourse][${req.user.username}]`, 'Add Course Successfully');
     res.json({ success: true, message: 'Course added successfully' });
   } catch (error) {
+    logCourseToDiscord('error', `❌[addCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error add course: ${error.message}`)
     console.error('Error in addCourse', error.stack);
     res.status(500).send(error);
   }
 });
 
 app.post('/updateCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[updateCourse]', `User ${req.user.username} is updating a course.\n${JSON.stringify(req.body)}`);
   const { coursename, course_shortname, courseid } = req.body;
   const query = 'UPDATE tcourseinfo SET coursename = ?, course_shortname = ? WHERE courseid = ?';
   try {
     const results = await queryPromise(query, [coursename, course_shortname, courseid]);
+    logCourseToDiscord('info', `✅[updateCourse][${req.user.username}]`, 'Update Course Successfully');
     res.json({ success: true, message: 'Course updated successfully' });
   } catch (error) {
+    logCourseToDiscord('error', `❌[updateCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error update course: ${error.message}`)
     console.error('Error in updateCourse', error.stack);
     res.status(500).send(error);
   }
 });
 
 app.post('/deleteCourse', verifyToken, async (req, res) => {
-  logSystemToDiscord('info', '[deleteCourse]', `User ${req.user.username} is deleting a course.\n${JSON.stringify(req.body)}`);
   const { courseid } = req.body;
   const deletetcourseinfoQuery = 'UPDATE tcourseinfo SET enableflag = 0 WHERE courseid = ?';
   const deleteTclassinfoQuery = 'UPDATE tclassinfo SET enableflag = 0 WHERE courseid = ?';
   try {
     await queryPromise(deletetcourseinfoQuery, [courseid]);
     await queryPromise(deleteTclassinfoQuery, [courseid]);
+    logCourseToDiscord('info', `✅[deleteCourse][${req.user.username}]`, 'Delete Course Successfully');
     res.json({ success: true, message: 'Course disabled successfully' });
   } catch (error) {
+    logCourseToDiscord('error', `❌[deleteCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error delete course: ${error.message}`)
     console.error('Error in deleteCourse', error.stack);
     res.status(500).send(error);
   }
@@ -1694,7 +1712,7 @@ app.post("/checkinByAdmin", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [reservationid, studentid]);
 
     if (results.affectedRows > 0) {
-      logSystemToDiscord('info', `[checkinByAdmin][${req.user.username}]`, `Admin checked in reservation ID ${reservationid} for student ID ${studentid}`);
+      logSystemToDiscord('info', `✅[checkinByAdmin][${req.user.username}]`, `Admin checked in reservation ID ${reservationid} for student ID ${studentid}`);
       res.json({ success: true, message: 'Checkin successful' });
     } else {
       res.json({ success: false, message: 'No Booking data' });
@@ -1713,7 +1731,7 @@ app.post("/undoCheckinByAdmin", verifyToken, async (req, res) => {
     const results = await queryPromise(query, [reservationid, studentid]);
 
     if (results.affectedRows > 0) {
-      logSystemToDiscord('info', `[undoCheckinByAdmin][${req.user.username}]`, `Admin unchecked reservation ID ${reservationid} for student ID ${studentid}`);
+      logSystemToDiscord('info', `✅[undoCheckinByAdmin][${req.user.username}]`, `Admin unchecked reservation ID ${reservationid} for student ID ${studentid}`);
       res.json({ success: true, message: 'Cancel Checkin successful' });
     } else {
       res.json({ success: false, message: 'No Booking data' });
@@ -2766,7 +2784,6 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const folderId = '1G5VdaeIpN36EQgFvoEbIivXK9vCKtAdv'; // ไอดีของโฟลเดอร์ใน Google Drive
-
 async function uploadOrUpdateLogFile() {
   console.log('[Process] Log file upload... '+logFileName);
   const authClient = await auth.getClient();
