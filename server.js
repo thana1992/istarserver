@@ -798,7 +798,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 WHERE tstudent.studentid = ?
               `;
               const notifyResults = await queryPromise(queryNotifyData, [studentid]);
-              if (notifyResults.length > 0 && req.user.username != 'tnpl') {
+              if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
                 var a = moment(classdate, "YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
@@ -846,7 +846,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               WHERE tstudent.studentid = ?
             `;
             const notifyResults = await queryPromise(queryNotifyData, [studentid]);
-            if (notifyResults.length > 0 && req.user.username != 'tnpl') {
+            if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
               var a = moment(classdate, "YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
