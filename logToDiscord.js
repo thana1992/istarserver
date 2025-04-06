@@ -17,7 +17,6 @@ const queue = {
     course: [],
     info: [],
     error: [],
-    success: [],
     login: [],
     student: [],
     apicall: []
@@ -75,8 +74,6 @@ function getUrlByType(urlType) {
             return DISCORD_BOOKING_WEBHOOK_URL;
         case 'course':
             return DISCORD_COURSE_WEBHOOK_URL;
-        case 'success':
-            return DISCORD_INFO_WEBHOOK_URL;
         case 'login':
             return DISCORD_LOGIN_WEBHOOK_URL;
         case 'student':
