@@ -171,6 +171,7 @@ app.use((req, res, next) => {
     }
 
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
+    logToQueue('apicall', `RESPONSE : ${req.url}\n Body : ${logBody}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };

@@ -5,7 +5,7 @@ const DISCORD_BOOKING_WEBHOOK_URL = process.env.DISCORD_BOOKING_WEBHOOK_URL;
 const DISCORD_COURSE_WEBHOOK_URL = process.env.DISCORD_COURSE_WEBHOOK_URL;
 const DISCORD_LOGIN_WEBHOOK_URL = process.env.DISCORD_LOGIN_WEBHOOK_URL;
 const DISCORD_STUDENT_WEBHOOK_URL = process.env.DISCORD_STUDENT_WEBHOOK_URL;
-
+const DISCORD_APICALL_WEBHOOK_URL = process.env.DISCORD_APICALL_WEBHOOK_URL;
 // ขนาดสูงสุดตามที่ Discord กำหนด
 const MAX_TITLE_LENGTH = 256;
 const MAX_DESCRIPTION_LENGTH = 4096;
@@ -78,6 +78,8 @@ function getUrlByType(urlType) {
             return DISCORD_LOGIN_WEBHOOK_URL;
         case 'student':
             return DISCORD_STUDENT_WEBHOOK_URL;
+        case 'apicall':
+            return DISCORD_APICALL_WEBHOOK_URL;
         default:
             throw new Error(`Unknown URL type: ${urlType}`);
     }
