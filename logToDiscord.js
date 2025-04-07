@@ -23,7 +23,15 @@ const queue = {
 };
 
 // ตัวแปรสำหรับการตรวจสอบว่ากำลังประมวลผลคิวอยู่หรือไม่
-let isProcessing = false;
+const isProcessing = {
+    booking: false,
+    course: false,
+    info: false,
+    error: false,
+    login: false,
+    student: false,
+    apicall: false
+};
 
 // ฟังก์ชั่นจัดการคิว webhook สำหรับแต่ละ URL
 async function processQueue(urlType) {
@@ -89,13 +97,12 @@ function getUrlByType(urlType) {
 
 // ฟังก์ชั่นสำหรับเพิ่มข้อความลงในคิวและเริ่มประมวลผล
 function logToQueue(urlType, message) {
-
     queue[urlType].push(message);
-    if (!isProcessing) {
-        isProcessing = true;
+    console.log(`Queue for ${urlType}:`, queue[urlType]);
+    if (!isProcessing[urlType]) {
+        isProcessing[urlType] = true;
         processQueue(urlType).finally(() => {
-            isProcessing = false;
-            console.log('Display Queue:', queue);
+            isProcessing[urlType] = false;
         });
     }
 }
