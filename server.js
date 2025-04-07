@@ -808,7 +808,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 });
 
                 const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
-                logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `Booking updated successfully.\n${message}`);
+                logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:pencil: การจองคลาสสำเร็จ\n${message}`);
               }
             } catch (error) {
               console.error('Error sending notification', error.stack);
@@ -856,7 +856,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               });
 
               const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
-              logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `Booking updated successfully.\n${message}`);
+              logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:pencil: การจองคลาสสำเร็จ\n${message}`);
             }
           } catch (error) {
             console.error('Error sending notification', error.stack);
@@ -912,9 +912,49 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
         const insertResult = await queryPromise(insertReservationQuery, [classid, classdate, classtime, courseid, req.user.username, reservationid]);
         if (insertResult.affectedRows > 0) {
-          return res.json({ success: true, message: 'แก้ไขข้อมูลการจองสำเร็จ' });
+          // ส่งการแจ้งเตือน
+          try {
+            
+            const queryNotifyData = `
+              SELECT a.nickname, CONCAT(IFNULL(a.firstname, ''), ' ', IFNULL(a.middlename, ''), IF(a.middlename<>'', ' ', ''), IFNULL(a.lastname, '')) AS fullname, a.dateofbirth, 
+                c.course_shortname 
+              FROM tstudent a 
+              INNER JOIN tcustomer_course b ON a.courserefer = b.courserefer 
+              INNER JOIN tcourseinfo c ON b.courseid = c.courseid 
+              WHERE a.studentid = ?
+            `;
+            const results = await queryPromise(queryNotifyData, [studentid]);
+            if (results.length > 0) {
+              const studentnickname = results[0].nickname;
+              const studentname = results[0].fullname;
+              const coursename = results[0].course_shortname;
+              var a = moment(classdate, "YYYYMMDD");
+              const bookdate = new Date(a).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              });
+              // ดึงข้อมูลการจองเดิม
+              const queryOldReservation = 'SELECT * FROM treservation WHERE reservationid = ?';
+              const results4 = await queryPromise(queryOldReservation, [reservationid]);
+              if (results4.length > 0) {
+                const oldClassdate = new Date(results4[0].classdate).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                });
+                const oldClasstime = results4[0].classtime;
+                
+                const message = `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(results[0].dateofbirth)}ปี\nจาก ${oldClassdate} ${oldClasstime}\nเป็น ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
+                logBookingToDiscord('info', `✅ [updateBookingByAdmin][${req.user.username}]`, `:pencil: แก้ไขการจองคลาสสำเร็จ(ทดลองเรียนฟรี).\n${message}`);
+              }
+            }
+          } catch (error) {
+            console.error('Error sending notification', error.stack);
+          }
+          return res.json({ success: true, message: 'แก้ไขข้อมูลการจองคลาสสำเร็จ' });
         } else {
-          return res.json({ success: false, message: 'แก้ไขข้อมูลการจองไม่สำเร็จ' });
+          return res.json({ success: false, message: 'แก้ไขข้อมูลการจองคลาสไม่สำเร็จ' });
         }
       } else {
         // ตรวจสอบข้อมูลคอร์สของนักเรียน
@@ -975,7 +1015,6 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
             if (insertResult.affectedRows > 0) {
               // ส่งการแจ้งเตือน
-              
               try {
                 const queryNotifyData = `
                   SELECT a.nickname, CONCAT(IFNULL(a.firstname, ''), ' ', IFNULL(a.middlename, ''), IF(a.middlename<>'', ' ', ''), IFNULL(a.lastname, '')) AS fullname, a.dateofbirth, 
@@ -998,7 +1037,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   });
 
                   const message = `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(results[0].dateofbirth)}ปี\nจาก ${oldClassdate} ${oldClasstime}\nเป็น ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
-                  logBookingToDiscord('info', `✅ [updateBookingByAdmin][${req.user.username}]`, `Booking updated successfully.\n${message}`);
+                  logBookingToDiscord('info', `✅ [updateBookingByAdmin][${req.user.username}]`, `:pencil: แก้ไขการจองคลาสสำเร็จ.\n${message}`);
                 }
               } catch (error) {
                 console.error('Error sending notification', error.stack);
