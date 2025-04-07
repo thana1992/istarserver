@@ -31,6 +31,7 @@ async function processQueue(urlType) {
     const queueForUrl = queue[urlType];
 
     while (queueForUrl.length > 0) {
+        console.log(`⏳ Processing queue for ${urlType}: ${queueForUrl.length} items left`);
         const message = queueForUrl.shift();
         
         let payload;
