@@ -1167,7 +1167,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
     })
 });
 
-app.post('/zingByCustomer', verifyToken, async (req, res) => {
+app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
 
