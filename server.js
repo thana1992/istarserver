@@ -1021,15 +1021,43 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
   try {
     const { reservationid, studentid, courserefer } = req.body;
+    let message = '';
+    const queryNotifyData = `
+      SELECT a.nickname, CONCAT(IFNULL(a.firstname, ''), ' ', IFNULL(a.middlename, ''), IF(a.middlename<>'', ' ', ''), IFNULL(a.lastname, '')) AS fullname, a.dateofbirth, 
+        c.course_shortname, d.classdate, d.classtime
+      FROM tstudent a
+      INNER JOIN treservation d ON a.studentid = d.studentid and d.reservationid = ?
+      INNER JOIN tcustomer_course b ON a.courserefer = b.courserefer 
+      INNER JOIN tcourseinfo c ON b.courseid = c.courseid
+      WHERE a.studentid = ?
+    `;
+    const resultsMsg = await queryPromise(queryNotifyData, [reservationid, studentid]);
+    if (resultsMsg.length > 0) {
+      const studentnickname = resultsMsg[0].nickname;
+      const studentname = resultsMsg[0].fullname;
+      const coursename = resultsMsg[0].course_shortname;
+      const classdate = resultsMsg[0].classdate;
+      const classtime = resultsMsg[0].classtime;
+      var a = moment(classdate, "YYYYMMDD");
+      const bookdate = new Date(a).toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+      message = `${coursename}\n${studentnickname} ${studentname}\nอายุ ${calculateAge(resultsMsg[0].dateofbirth)}ปี\n${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
+    }
+    
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
     const results = await queryPromise(query, [reservationid]);
     console.log("parameters : " + reservationid + " " + studentid + " " + courserefer);
     if (results.affectedRows > 0) {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
-        logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `Reservationid : ${reservationid}`);
+        
+        logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
         res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
     } else {
+      logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสไม่สำเร็จ\nReservationid : ${reservationid}\nไม่มีข้อมูลการจอง`);
       res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
   } catch (error) {
