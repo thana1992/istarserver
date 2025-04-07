@@ -97,8 +97,8 @@ function getUrlByType(urlType) {
 
 // ฟังก์ชั่นสำหรับเพิ่มข้อความลงในคิวและเริ่มประมวลผล
 function logToQueue(urlType, message) {
+    console.log("Adding message to queue:" + urlType + "\nMessage:" + message);
     queue[urlType].push(message);
-    console.log(`Queue for ${urlType}:`, queue[urlType]);
     if (!isProcessing[urlType]) {
         isProcessing[urlType] = true;
         processQueue(urlType).finally(() => {
