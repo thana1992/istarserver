@@ -808,7 +808,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 });
 
                 const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
-                logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:pencil: การจองคลาสสำเร็จ\n${message}`);
+                logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:calendar_spiral: การจองคลาสสำเร็จ\n${message}`);
               }
             } catch (error) {
               console.error('Error sending notification', error.stack);
@@ -856,7 +856,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               });
 
               const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
-              logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:pencil: การจองคลาสสำเร็จ\n${message}`);
+              logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:calendar_spiral: การจองคลาสสำเร็จ\n${message}`);
             }
           } catch (error) {
             console.error('Error sending notification', error.stack);
@@ -1093,7 +1093,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
         const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
         
-        logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
+        logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
         res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
     } else {
       logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสไม่สำเร็จ\nReservationid : ${reservationid}\nไม่มีข้อมูลการจอง`);
@@ -1167,7 +1167,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
     })
 });
 
-app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
+app.post('/zingByCustomer', verifyToken, async (req, res) => {
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
 
@@ -1280,7 +1280,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
               });
 
               const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`
-              logBookingToDiscord('info', `✅ [addBookingByCustomer][${req.user.username}]`, `Booking created successfully.\n${message}`);
+              logBookingToDiscord('info', `✅ [addBookingByCustomer][${req.user.username}]`, `:calendar_spiral: การจองคลาสสำเร็จ\n${message}`);
             }
           } catch (error) {
             logBookingToDiscord('error', `❌ [addBookingByCustomer][${req.user.username}]`, 'Error sending notification', error.message);
