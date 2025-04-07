@@ -89,11 +89,13 @@ function getUrlByType(urlType) {
 
 // ฟังก์ชั่นสำหรับเพิ่มข้อความลงในคิวและเริ่มประมวลผล
 function logToQueue(urlType, message) {
+
     queue[urlType].push(message);
     if (!isProcessing) {
         isProcessing = true;
         processQueue(urlType).finally(() => {
             isProcessing = false;
+            console.log('Display Queue:', queue);
         });
     }
 }
