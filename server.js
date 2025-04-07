@@ -1100,7 +1100,7 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
     })
 });
 
-app.post('/createReservation', verifyToken, async (req, res) => {
+app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
 
@@ -1202,6 +1202,7 @@ app.post('/createReservation', verifyToken, async (req, res) => {
               WHERE tstudent.studentid = ?
             `;
             const notifyResults = await queryPromise(queryNotifyData, [studentid]);
+            console.log("notifyResults lenght: " + notifyResults.length);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
               var a = moment(classdate, "YYYYMMDD");
@@ -1212,12 +1213,12 @@ app.post('/createReservation', verifyToken, async (req, res) => {
               });
 
               const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยผู้ปกครอง ${req.user.username}`
-              logBookingToDiscord('info', `✅ [createReservation][${req.user.username}]`, `Booking created successfully.\n${message}`);
+              logBookingToDiscord('info', `✅ [addBookingByCustomer][${req.user.username}]`, `Booking created successfully.\n${message}`);
             }
           } catch (error) {
+            logBookingToDiscord('error', `❌ [addBookingByCustomer][${req.user.username}]`, 'Error sending notification', error.message);
             console.error('Error sending notification', error.stack);
           }
-          
           return res.json({ success: true, message: 'Booking added successfully' });
         }
       }
@@ -1225,8 +1226,8 @@ app.post('/createReservation', verifyToken, async (req, res) => {
 
     return res.json({ success: false, message: 'Error in processing booking' });
   } catch (error) {
-    logBookingToDiscord('error', `❌ [createReservation][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error create booking: ${error.message}`)
-    console.log("createReservation error : " + JSON.stringify(error));
+    logBookingToDiscord('error', `❌ [addBookingByCustomer][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error create booking: ${error.message}`)
+    console.log("addBookingByCustomer error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
 });
