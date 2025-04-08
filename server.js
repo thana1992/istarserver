@@ -2225,7 +2225,10 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
             const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
             const newDate = new Date(newValue).setHours(0, 0, 0, 0);
             if (oldDate !== newDate) {
-              changedFields[key] = { old: oldValue, new: newValue };
+              // แปลง format วันที่ให้เป็น YYYY-MM-DD
+              const oldDateString = new Date(oldDate).toISOString().split('T')[0];
+              const newDateString = new Date(newDate).toISOString().split('T')[0];
+              changedFields[key] = { old: oldDateString, new: newDateString };
             }
           }
           else if (oldValue !== newValue) {
