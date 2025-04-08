@@ -1580,7 +1580,7 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
         await queryPromise(query2, [courserefer]);
         // Send log to Discord
         const logMessage = `:open_file_folder: จบคอร์ส ${courserefer}`;
-        logCourseToDiscord(`[finishCustomerCourse][${req.user.username}]`, logMessage);
+        logCourseToDiscord('info', `[finishCustomerCourse][${req.user.username}]`, logMessage);
         res.json({ success: true, message: 'Course finished successfully' });
       } else {
         res.json({ success: false, message: 'No course found with the given reference' });
@@ -2190,7 +2190,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
-      await logCourseToDiscord(`[addCustomerCourse][${req.user.username}]`, logMessage);
+      await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
@@ -2214,7 +2214,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       const logMessage = `${courserefer} : แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
         `ข้อมูลเก่า: ${JSON.stringify(oldData[0])}\n` +
         `ข้อมูลใหม่: ${JSON.stringify(newData[0])}`;
-      await logCourseToDiscord(`[updateCustomerCourse][${req.user.username}]`, logMessage);
+      await logCourseToDiscord('info', `[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
       res.json({ success: false, message: 'Error updating Customer Course' });
@@ -2258,7 +2258,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
           await queryPromise('UPDATE tstudent SET courserefer2 = NULL, updateby = ? WHERE courserefer2 = ?', [req.user.username, courserefer]);
           //Send Log to Discord
           const logMessage = `ลบข้อมูล Customer Course courserefer: ${courserefer}`;
-          await logCourseToDiscord(`[deleteCustomerCourse][${req.user.username}]`, logMessage);
+          await logCourseToDiscord('info', `[deleteCustomerCourse][${req.user.username}]`, logMessage);
           res.json({ success: true, message: 'Customer Course deleted successfully' });
         }
       } else {
