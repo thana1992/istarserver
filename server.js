@@ -574,6 +574,8 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, level, familyid, courserefer, courserefer2, shortnote } = req.body;
 
+    const queryData = 'SELECT * FROM tstudent WHERE studentid = ?';
+    const oldData = await queryPromise(queryData, [studentid]);
     // ตรวจสอบการใช้งานคอร์ส
     if (courserefer) {
       const checkCourseUsing1 = await checkCourseShare(courserefer, studentid);
@@ -641,8 +643,8 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
           }
         }
       }
-
-      logStudentToDiscord('info', `✅ [updateStudentByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student: ${studentid}`);
+      const newData = await queryPromise(queryData, [studentid]);
+      logStudentToDiscord('info', `✅ [updateStudentByAdmin][${req.user.username}]`, `Successfully updated student: ${studentid}\nข้อมูลเก่า: ${JSON.stringify(oldData)}\nข้อมูลใหม่: ${JSON.stringify(newData)}`);
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
     } else {
       return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
@@ -1577,7 +1579,7 @@ app.post('/finishCustomerCourse', verifyToken, async (req, res) => {
         const query2 = 'UPDATE tstudent SET courserefer = NULL WHERE courserefer = ?';
         await queryPromise(query2, [courserefer]);
         // Send log to Discord
-        const logMessage = `${courserefer} : จบคอร์ส โดย ${req.user.username}`;
+        const logMessage = `:open_file_folder: จบคอร์ส ${courserefer}`;
         logCourseToDiscord(`[finishCustomerCourse][${req.user.username}]`, logMessage);
         res.json({ success: true, message: 'Course finished successfully' });
       } else {
@@ -2185,7 +2187,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
       //Send Log to Discord
-      const logMessage = `${courserefer} : สร้าง Customer Course โดย ${req.user.username}\n มีรายละเอียดดังนี้:\n` +
+      const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
       await logCourseToDiscord(`[addCustomerCourse][${req.user.username}]`, logMessage);
@@ -2202,12 +2204,16 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate } = req.body;
+    queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+    const oldData = await queryPromise(queryData, [courserefer]);
     const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ? WHERE courserefer = ?';
     const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, courserefer]);
     if (results.affectedRows > 0) {
       //Send Log to Discord
-      const logMessage = `${courserefer} : แก้ไขข้อมูล โดย ${req.user.username}\n` +
-        `Course ID: ${courseid}, Course Type: ${coursetype}, Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
+      const newData = await queryPromise(queryData, [courserefer]);
+      const logMessage = `${courserefer} : แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
+        `ข้อมูลเก่า: ${JSON.stringify(oldData[0])}\n` +
+        `ข้อมูลใหม่: ${JSON.stringify(newData[0])}`;
       await logCourseToDiscord(`[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
@@ -2251,7 +2257,7 @@ app.post('/deleteCustomerCourse', verifyToken, async (req, res) => {
           await queryPromise('UPDATE tstudent SET courserefer = NULL, updateby = ? WHERE courserefer = ?', [req.user.username, courserefer]);
           await queryPromise('UPDATE tstudent SET courserefer2 = NULL, updateby = ? WHERE courserefer2 = ?', [req.user.username, courserefer]);
           //Send Log to Discord
-          const logMessage = `${courserefer} : ถูกลบโดย ${req.user.username}`;
+          const logMessage = `ลบข้อมูล Customer Course courserefer: ${courserefer}`;
           await logCourseToDiscord(`[deleteCustomerCourse][${req.user.username}]`, logMessage);
           res.json({ success: true, message: 'Customer Course deleted successfully' });
         }
