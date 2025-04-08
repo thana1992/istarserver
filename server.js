@@ -2211,9 +2211,17 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
       //Send Log to Discord
       const newData = await queryPromise(queryData, [courserefer]);
+      //เปรี่ยนแปลงข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง
+      const changedFields = Object.keys(oldData[0]).reduce((acc, key) => {
+        if (oldData[0][key] !== newData[0][key]) {
+          acc[key] = { old: oldData[0][key], new: newData[0][key] };
+        }
+        return acc;
+      }, {});
       const logMessage = `${courserefer} : แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
-        `ข้อมูลเก่า: ${JSON.stringify(oldData[0])}\n` +
-        `ข้อมูลใหม่: ${JSON.stringify(newData[0])}`;
+        `รายละเอียดที่เปลี่ยนแปลง:\n` +
+        Object.entries(changedFields).map(([key, { old, new: newValue }]) => `${key}: ${old} -> ${newValue}`).join('\n');
+        
       await logCourseToDiscord('info', `[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
