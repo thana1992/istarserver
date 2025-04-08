@@ -2218,10 +2218,10 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
         }
         return acc;
       }, {});
-      const logMessage = `${courserefer} : แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
+      const logMessage = `แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
         `รายละเอียดที่เปลี่ยนแปลง:\n` +
         Object.entries(changedFields).map(([key, { old, new: newValue }]) => `${key}: ${old} -> ${newValue}`).join('\n');
-        
+
       await logCourseToDiscord('info', `[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
