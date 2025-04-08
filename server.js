@@ -2211,12 +2211,17 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
-      // แปลงค่า date ใน oldData และ newData ให้เป็น string dd/mm/yyyy ก่อนเปรียบเทียบ
-      const oldDataString = JSON.stringify(oldData).replace(/"(\d{4})-(\d{2})-(\d{2})"/g, '"$3/$2/$1"');
-      const newDataString = JSON.stringify(newData).replace(/"(\d{4})-(\d{2})-(\d{2})"/g, '"$3/$2/$1"');
-      // แปลงค่า string กลับเป็น object
-      oldData = JSON.parse(oldDataString);
-      newData = JSON.parse(newDataString);
+      // ใน newData และ oldData มีข้อมูลที่เป็น datetime เช่น paydate ต้องแปลงเป็นวันที่ format dd/mm/yyyy ตัดเวลาออก ก่อนเปรียบเทียบ
+      oldData[0].paydate = oldData[0].paydate ? moment(oldData[0].paydate).format('DD/MM/YYYY') : null;
+      newData[0].paydate = newData[0].paydate ? moment(newData[0].paydate).format('DD/MM/YYYY') : null;
+      oldData[0].expiredate = oldData[0].expiredate ? moment(oldData[0].expiredate).format('DD/MM/YYYY') : null;
+      newData[0].expiredate = newData[0].expiredate ? moment(newData[0].expiredate).format('DD/MM/YYYY') : null;
+      oldData[0].startdate = oldData[0].startdate ? moment(oldData[0].startdate).format('DD/MM/YYYY') : null;
+      newData[0].startdate = newData[0].startdate ? moment(newData[0].startdate).format('DD/MM/YYYY') : null;
+      oldData[0].createdate = oldData[0].createdate ? moment(oldData[0].createdate).format('DD/MM/YYYY') : null;
+      newData[0].createdate = newData[0].createdate ? moment(newData[0].createdate).format('DD/MM/YYYY') : null;
+      oldData[0].updatedate = oldData[0].updatedate ? moment(oldData[0].updatedate).format('DD/MM/YYYY') : null;
+      newData[0].updatedate = newData[0].updatedate ? moment(newData[0].updatedate).format('DD/MM/YYYY') : null;
       
       //เปรี่ยนแปลงข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง
       const changedFields = Object.keys(oldData[0]).reduce((acc, key) => {
