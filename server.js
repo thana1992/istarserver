@@ -18,7 +18,7 @@ const blacklistSessions = [];
 const { logToQueue, logSystemToDiscord, logLoginToDiscord, logBookingToDiscord, logCourseToDiscord, logStudentToDiscord } = require('./logToDiscord'); // import function ที่แยกไว้
 const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
-
+const SERVER_TYPE = process.env.SERVER_TYPE;
 // Create a connection pool
 const DB_HOST = process.env.DB_HOST;
 const DB_PORT = process.env.DB_PORT;
@@ -2205,12 +2205,19 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
-    const oldData = await queryPromise(queryData, [courserefer]);
+    let oldData = await queryPromise(queryData, [courserefer]);
     const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ? WHERE courserefer = ?';
     const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, courserefer]);
     if (results.affectedRows > 0) {
       //Send Log to Discord
-      const newData = await queryPromise(queryData, [courserefer]);
+      let newData = await queryPromise(queryData, [courserefer]);
+      // แปลงค่า date ใน oldData และ newData ให้เป็น string dd/mm/yyyy ก่อนเปรียบเทียบ
+      const oldDataString = JSON.stringify(oldData).replace(/"(\d{4})-(\d{2})-(\d{2})"/g, '"$3/$2/$1"');
+      const newDataString = JSON.stringify(newData).replace(/"(\d{4})-(\d{2})-(\d{2})"/g, '"$3/$2/$1"');
+      // แปลงค่า string กลับเป็น object
+      oldData = JSON.parse(oldDataString);
+      newData = JSON.parse(newDataString);
+      
       //เปรี่ยนแปลงข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง
       const changedFields = Object.keys(oldData[0]).reduce((acc, key) => {
         if (oldData[0][key] !== newData[0][key]) {
@@ -2968,7 +2975,7 @@ const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
   console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
-  logSystemToDiscord('info', '✅ Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
+  logSystemToDiscord('info', '✅ ['+SERVER_TYPE+'] Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
 });
 
 // ทำให้ console.log ใช้ winston logger
