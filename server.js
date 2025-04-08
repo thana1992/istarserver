@@ -2211,28 +2211,38 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
-      // ใน newData และ oldData มีข้อมูลที่เป็น datetime เช่น paydate ต้องแปลงเป็นวันที่ format dd/mm/yyyy ตัดเวลาออก ก่อนเปรียบเทียบ
-      oldData[0].paydate = oldData[0].paydate ? moment(oldData[0].paydate).format('DD/MM/YYYY') : null;
-      newData[0].paydate = newData[0].paydate ? moment(newData[0].paydate).format('DD/MM/YYYY') : null;
-      oldData[0].expiredate = oldData[0].expiredate ? moment(oldData[0].expiredate).format('DD/MM/YYYY') : null;
-      newData[0].expiredate = newData[0].expiredate ? moment(newData[0].expiredate).format('DD/MM/YYYY') : null;
-      oldData[0].startdate = oldData[0].startdate ? moment(oldData[0].startdate).format('DD/MM/YYYY') : null;
-      newData[0].startdate = newData[0].startdate ? moment(newData[0].startdate).format('DD/MM/YYYY') : null;
-      oldData[0].createdate = oldData[0].createdate ? moment(oldData[0].createdate).format('DD/MM/YYYY') : null;
-      newData[0].createdate = newData[0].createdate ? moment(newData[0].createdate).format('DD/MM/YYYY') : null;
-      oldData[0].updatedate = oldData[0].updatedate ? moment(oldData[0].updatedate).format('DD/MM/YYYY') : null;
-      newData[0].updatedate = newData[0].updatedate ? moment(newData[0].updatedate).format('DD/MM/YYYY') : null;
-      
-      //เปรี่ยนแปลงข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง
-      const changedFields = Object.keys(oldData[0]).reduce((acc, key) => {
-        if (oldData[0][key] !== newData[0][key]) {
-          acc[key] = { old: oldData[0][key], new: newData[0][key] };
+
+      //เปรี่ยนแปลงข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
+      const changedFields = {};
+      const oldDataObj = oldData[0];
+      const newDataObj = newData[0];
+      for (const key in oldDataObj) {
+        if (oldDataObj.hasOwnProperty(key) && newDataObj.hasOwnProperty(key)) {
+          const oldValue = oldDataObj[key];
+          const newValue = newDataObj[key];
+          // startdate, expiredate, paydate, editdate, createdate, finishdate, paiddate
+          if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
+            const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
+            const newDate = new Date(newValue).setHours(0, 0, 0, 0);
+            if (oldDate !== newDate) {
+              changedFields[key] = { old: oldValue, new: newValue };
+            }
+          }
+          else if (oldValue !== newValue) {
+            changedFields[key] = { old: oldValue, new: newValue };
+          }
         }
-        return acc;
-      }, {});
-      const logMessage = `แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
+      }
+      // Log only the changed fields
+      let logMessage = `แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
         `รายละเอียดที่เปลี่ยนแปลง:\n` +
-        Object.entries(changedFields).map(([key, { old, new: newValue }]) => `${key}: ${old} -> ${newValue}`).join('\n');
+        Object.entries(changedFields).map(([key, { old, new: newValue }]) => {
+          return `${key}: ${old} -> ${newValue}`;
+        }).join('\n');
+
+      if (Object.keys(changedFields).length === 0) {
+        logMessage = `แก้ไขข้อมูล Customer Course courserefer: ${courserefer} ไม่มีการเปลี่ยนแปลงข้อมูล`;
+      }
 
       await logCourseToDiscord('info', `[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
