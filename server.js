@@ -250,7 +250,7 @@ app.get('/checkToken', (req, res) => {
 app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
   const { username, password } = req.body;
-  const query = 'SELECT * FROM tuser WHERE username = ?';
+  const query = 'SELECT * FROM tuser WHERE LOWER(username) = ?';
   try {
     const results = await queryPromise(query, [username.toLowerCase()]);
     if (results.length > 0) {
@@ -268,8 +268,8 @@ app.post('/login', async (req, res) => {
           familyid: user.familyid,
         }
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
-        await queryPromise(logquery, [username]);
-        console.log("username : " + username);
+        await queryPromise(logquery, [user.username]);
+        console.log("username : " + user.username);
         logLoginToDiscord('info', '✅ [Login]', `User ${username} logged in successfully.`);
         if (userdata.usertype != '10') {
           const token = jwt.sign({ username: user.username ,adminflag: 1 }, SECRET_KEY, { expiresIn: '5h' });
@@ -2225,7 +2225,10 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
             const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
             const newDate = new Date(newValue).setHours(0, 0, 0, 0);
             if (oldDate !== newDate) {
-              changedFields[key] = { old: oldValue, new: newValue };
+              // แปลง format วันที่ให้เป็น YYYY-MM-DD
+              const oldDateString = new Date(oldDate).toISOString().split('T')[0];
+              const newDateString = new Date(newDate).toISOString().split('T')[0];
+              changedFields[key] = { old: oldDateString, new: newDateString };
             }
           }
           else if (oldValue !== newValue) {
