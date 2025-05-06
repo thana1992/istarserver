@@ -653,7 +653,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
         if (req.body.hasOwnProperty(key)) {
           const newValue = req.body[key];
           const oldValue = oldData[0][key];
-          if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
+          if (key === 'dateofbirth' || key === 'editdate' || key === 'createdate') {
             const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
             const newDate = new Date(newValue).setHours(0, 0, 0, 0);
             if (oldDate !== newDate) {
