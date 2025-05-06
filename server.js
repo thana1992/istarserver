@@ -643,8 +643,29 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
           }
         }
       }
-      const newData = await queryPromise(queryData, [studentid]);
-      logStudentToDiscord('info', `✅ [updateStudentByAdmin][${req.user.username}]`, `Successfully updated student: ${studentid}\nข้อมูลเก่า: ${JSON.stringify(oldData)}\nข้อมูลใหม่: ${JSON.stringify(newData)}`);
+      //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
+      let logData = {
+        studentid: studentid,
+        oldData: {},
+        newData: {}
+      };
+      for (const key in req.body) {
+        if (req.body.hasOwnProperty(key)) {
+          const newValue = req.body[key];
+          const oldValue = oldData[0][key];
+          if (newValue !== oldValue) {
+            logData.oldData[key] = oldValue;
+            logData.newData[key] = newValue;
+          }
+        }
+      }
+      // Log ข้อมูลที่มีการเปลี่ยนแปลง
+      if (Object.keys(logData.oldData).length > 0 || Object.keys(logData.newData).length > 0) {
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student: ${JSON.stringify(logData)}`);
+      } else {
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student: ${studentid}`);
+      }
+      
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
     } else {
       return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
@@ -2212,7 +2233,7 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
 
-      //เปรี่ยนแปลงข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
+      //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
       const changedFields = {};
       const oldDataObj = oldData[0];
       const newDataObj = newData[0];
