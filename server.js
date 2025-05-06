@@ -653,7 +653,16 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
         if (req.body.hasOwnProperty(key)) {
           const newValue = req.body[key];
           const oldValue = oldData[0][key];
-          if (newValue !== oldValue) {
+          if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
+            const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
+            const newDate = new Date(newValue).setHours(0, 0, 0, 0);
+            if (oldDate !== newDate) {
+              // แปลง format วันที่ให้เป็น YYYY-MM-DD
+              const oldDateString = new Date(oldDate).toISOString().split('T')[0];
+              const newDateString = new Date(newDate).toISOString().split('T')[0];
+              changedFields[key] = { old: oldDateString, new: newDateString };
+            }
+          } else if (newValue !== oldValue) {
             logData.oldData[key] = oldValue;
             logData.newData[key] = newValue;
           }
@@ -2257,18 +2266,14 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
           }
         }
       }
-      // Log only the changed fields
-      let logMessage = `แก้ไขข้อมูล Customer Course courserefer: ${courserefer}\n` +
-        `รายละเอียดที่เปลี่ยนแปลง:\n` +
-        Object.entries(changedFields).map(([key, { old, new: newValue }]) => {
-          return `${key}: ${old} -> ${newValue}`;
-        }).join('\n');
-
-      if (Object.keys(changedFields).length === 0) {
-        logMessage = `แก้ไขข้อมูล Customer Course courserefer: ${courserefer} ไม่มีการเปลี่ยนแปลงข้อมูล`;
+      // Log ข้อมูลที่มีการเปลี่ยนแปลง
+      if (Object.keys(changedFields).length > 0) {
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated CustomerCourse: ${JSON.stringify(courserefer)} \n` 
+        + `Changed Fields: ${JSON.stringify(changedFields)}`);
+      } else {
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for CustomerCourse: ${courserefer}`);
       }
 
-      await logCourseToDiscord('info', `[updateCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Customer Course updated successfully' });
     } else {
       res.json({ success: false, message: 'Error updating Customer Course' });
