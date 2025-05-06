@@ -647,7 +647,8 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       let logData = {
         studentid: studentid,
         oldData: {},
-        newData: {}
+        newData: {},
+        changedFields: {}
       };
       for (const key in req.body) {
         if (req.body.hasOwnProperty(key)) {
@@ -660,7 +661,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
               // แปลง format วันที่ให้เป็น YYYY-MM-DD
               const oldDateString = new Date(oldDate).toISOString().split('T')[0];
               const newDateString = new Date(newDate).toISOString().split('T')[0];
-              changedFields[key] = { old: oldDateString, new: newDateString };
+              logData.changedFields[key] = { old: oldDateString, new: newDateString };
             }
           } else if (newValue !== oldValue) {
             logData.oldData[key] = oldValue;
@@ -671,7 +672,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.oldData).length > 0 || Object.keys(logData.newData).length > 0) {
         logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student: ` + studentid + '\n' +
-        + `Changed Fields: ${JSON.stringify(changedFields)}`);
+        + `Changed Fields: ${JSON.stringify(logData.changedFields)}`);
       } else {
         logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student: ${studentid}`);
       }
