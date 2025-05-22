@@ -666,11 +666,12 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
           } else if (newValue !== oldValue) {
             logData.oldData[key] = oldValue;
             logData.newData[key] = newValue;
+            logData.changedFields[key] = { old: oldValue, new: newValue };
           }
         }
       }
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
-      if (Object.keys(logData.oldData).length > 0 || Object.keys(logData.newData).length > 0) {
+      if (Object.keys(logData.changedFields).length > 0) {
         logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student : ${studentid}\n Changed Fields : ${JSON.stringify(logData.changedFields)}`);
       } else {
         logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student : ${studentid}`);
