@@ -671,9 +671,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       }
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.oldData).length > 0 || Object.keys(logData.newData).length > 0) {
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student: ${studentid} \nChanged Fields: ${JSON.stringify(logData.changedFields)}`);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated student : ${studentid}\n Changed Fields : ${JSON.stringify(logData.changedFields)}`);
       } else {
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student: ${studentid}`);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student : ${studentid}`);
       }
       
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
@@ -681,7 +681,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'แก้ไขข้อมูลไม่สำเร็จ' });
     }
   } catch (error) {
-    logStudentToDiscord('error', `❌ [updateStudentByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
+    logStudentToDiscord('error', `❌ [updateStudentByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student : ${error.message}`);
     console.log("updateStudentByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
   }
