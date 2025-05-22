@@ -673,7 +673,7 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]\nBody : ${JSON.stringify(req.body)}\nSuccessfully updated student : ${studentid}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nSuccessfully updated student : ${studentid}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
       } else {
         logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student : ${studentid}`);
       }
