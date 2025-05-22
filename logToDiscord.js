@@ -111,9 +111,11 @@ function logToQueue(urlType, message) {
 function logSystemToDiscord(type, title, message) {
     try {
         const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const safeTitle = String(title || '').slice(0, MAX_TITLE_LENGTH);
+        const safeMessage = String(message || '').slice(0, MAX_DESCRIPTION_LENGTH);
         const embed = {
-            title: title || '',
-            description: message || '',
+            title: safeTitle,
+            description: safeMessage,
             color: type === 'error' ? 0xe74c3c : 0x2ecc71,
             timestamp: new Date().toISOString(),
             footer: {
@@ -131,9 +133,11 @@ function logSystemToDiscord(type, title, message) {
 function logLoginToDiscord(type, title, message) {
     try {
         const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const safeTitle = String(title || '').slice(0, MAX_TITLE_LENGTH);
+        const safeMessage = String(message || '').slice(0, MAX_DESCRIPTION_LENGTH);
         const embed = {
-            title: title.slice(0, MAX_TITLE_LENGTH),
-            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            title: safeTitle,
+            description: safeMessage,
             color: type === 'error' ? 0xe74c3c : 0x2ecc71,
             timestamp: new Date().toISOString(),
             footer: {
@@ -151,9 +155,11 @@ function logLoginToDiscord(type, title, message) {
 function logCourseToDiscord(type, title, message) {
     try {
         const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const safeTitle = String(title || '').slice(0, MAX_TITLE_LENGTH);
+        const safeMessage = String(message || '').slice(0, MAX_DESCRIPTION_LENGTH);
         const embed = {
-            title: title.slice(0, MAX_TITLE_LENGTH),
-            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            title: safeTitle,
+            description: safeMessage,
             color: type === 'error' ? 0xe74c3c : 0x2ecc71,
             timestamp: new Date().toISOString(),
             footer: {
@@ -172,9 +178,11 @@ function logCourseToDiscord(type, title, message) {
 function logBookingToDiscord(type, title, message) {
     try {
         const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const safeTitle = String(title || '').slice(0, MAX_TITLE_LENGTH);
+        const safeMessage = String(message || '').slice(0, MAX_DESCRIPTION_LENGTH);
         const embed = {
-            title: title.slice(0, MAX_TITLE_LENGTH),
-            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            title: safeTitle,
+            description: safeMessage,
             color: type === 'error' ? 0xe74c3c : 0x2ecc71,
             timestamp: new Date().toISOString(),
             footer: {
@@ -192,9 +200,12 @@ function logBookingToDiscord(type, title, message) {
 function logStudentToDiscord(type, title, message) {
     try {
         const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const safeTitle = String(title || '').slice(0, MAX_TITLE_LENGTH);
+        const safeMessage = String(message || '').slice(0, MAX_DESCRIPTION_LENGTH);
+
         const embed = {
-            title: title.slice(0, MAX_TITLE_LENGTH),
-            description: message.slice(0, MAX_DESCRIPTION_LENGTH),
+            title: safeTitle,
+            description: safeMessage,
             color: type === 'error' ? 0xe74c3c : 0x2ecc71,
             timestamp: new Date().toISOString(),
             footer: {
@@ -203,9 +214,10 @@ function logStudentToDiscord(type, title, message) {
         };
         logToQueue('student', embed);
     } catch (error) {
-        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
-        console.error('Error logging student to Discord:', error);
-        throw error; // Re-throw the error after logging it
+        // จัดการ error ที่อาจเกิดขึ้นภายใน logStudentToDiscord เอง
+        const internalErrorMessage = error instanceof Error ? error.message : String(error);
+        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาดภายใน logStudentToDiscord: ' + internalErrorMessage, 'ไม่สามารถสร้าง embed สำหรับ log student ได้');
+        console.error('Error in logStudentToDiscord itself:', error);
     }
 }
 module.exports = {
