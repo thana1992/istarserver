@@ -2247,14 +2247,16 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       let newData = await queryPromise(queryData, [courserefer]);
 
       //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
-      const changedFields = {};
-      const oldDataObj = oldData[0];
-      const newDataObj = newData[0];
-      for (const key in oldDataObj) {
-        if (oldDataObj.hasOwnProperty(key) && newDataObj.hasOwnProperty(key)) {
-          const oldValue = oldDataObj[key];
-          const newValue = newDataObj[key];
-          // startdate, expiredate, paydate, editdate, createdate, finishdate, paiddate
+      let logData = {
+        courserefer: courserefer,
+        oldData: {},
+        newData: {},
+        changedFields: {}
+      };
+      for (const key in req.body) {
+        if (req.body.hasOwnProperty(key)) {
+          const newValue = req.body[key];
+          const oldValue = oldData[0][key];
           if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
             const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
             const newDate = new Date(newValue).setHours(0, 0, 0, 0);
@@ -2262,20 +2264,21 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
               // แปลง format วันที่ให้เป็น YYYY-MM-DD
               const oldDateString = new Date(oldDate).toISOString().split('T')[0];
               const newDateString = new Date(newDate).toISOString().split('T')[0];
-              changedFields[key] = { old: oldDateString, new: newDateString };
+              logData.changedFields[key] = { old: oldDateString, new: newDateString };
             }
-          }
-          else if (oldValue !== newValue) {
-            changedFields[key] = { old: oldValue, new: newValue };
+          } else if (newValue !== oldValue) {
+            logData.oldData[key] = oldValue;
+            logData.newData[key] = newValue;
+            logData.changedFields[key] = { old: oldValue, new: newValue };
           }
         }
       }
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
-      if (Object.keys(changedFields).length > 0) {
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully updated CustomerCourse: ${JSON.stringify(courserefer)} \n` 
-        + `Changed Fields: ${JSON.stringify(changedFields)}`);
+      if (Object.keys(logData.changedFields).length > 0) {
+        const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nSuccessfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
       } else {
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for CustomerCourse: ${courserefer}`);
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nNo changes detected for CustomerCourse : ${courserefer}`);
       }
 
       res.json({ success: true, message: 'Customer Course updated successfully' });
