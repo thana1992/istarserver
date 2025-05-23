@@ -673,9 +673,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nSuccessfully updated student : ${studentid}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Successfully updated student : ${studentid}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
       } else {
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student : ${studentid}`);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `No changes detected for student : ${studentid}\nBody : ${JSON.stringify(req.body)}`);
       }
       
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
@@ -2278,9 +2278,9 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nSuccessfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
       } else {
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nNo changes detected for CustomerCourse : ${courserefer}`);
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}`);
       }
 
       res.json({ success: true, message: 'Customer Course updated successfully' });
