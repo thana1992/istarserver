@@ -2187,12 +2187,12 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
-    const fields = ['courserefer', 'courseid', 'paid', 'paydate'];
-    const values = [courserefer, course.courseid, paid, paydate];
+    const fields = ['courserefer', 'courseid', 'paid', 'paydate', 'shortnote'];
+    const values = [courserefer, course.courseid, paid, paydate, shortnote];
     
     if (coursetype) {
       fields.push('coursetype');
@@ -2222,7 +2222,8 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       //Send Log to Discord
       const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
-        `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}`;
+        `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}\n` +
+        `Short Note: ${shortnote}`;
       await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
@@ -2236,11 +2237,11 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate } = req.body;
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, courserefer]);
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, courserefer]);
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
@@ -2867,7 +2868,7 @@ app.post('/uploadSlipImage', verifyToken, upload.single('slipImage'), async (req
 
     const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
     await queryPromise(query, [slipImageUrl, courserefer]);
-    
+
     // ส่ง log ไปยัง Discord พร้อมรูปภาพ
     logCourseToDiscord(
         'info',
