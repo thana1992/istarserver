@@ -152,7 +152,7 @@ function logLoginToDiscord(type, title, message) {
     }
 }
 // ฟังก์ชั่นส่ง log การเปลี่ยนแปลงคอร์ส
-function logCourseToDiscord(type, title, message) {
+function logCourseToDiscord(type, title, message, imageUrl = null) {
     try {
         const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
         const safeTitle = String(title || '').slice(0, MAX_TITLE_LENGTH);
@@ -166,11 +166,17 @@ function logCourseToDiscord(type, title, message) {
                 text: timestamp
             }
         };
+
+        if (imageUrl) { // ถ้ามี imageUrl ให้เพิ่ม object image เข้าไปใน embed
+            embed.image = {
+                url: imageUrl
+            };
+        }
+
         logToQueue('course', embed);
     } catch (error) {
         logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
         console.error('Error logging student to Discord:', error);
-        throw error; // Re-throw the error after logging it
     }
 }
 

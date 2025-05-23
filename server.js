@@ -2796,28 +2796,43 @@ const s3Client = new S3Client({
   }
 });
 
-app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
+app.post('/uploadSlipImage', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    if (!req.user || !req.user.username) { // ตรวจสอบ req.user.username
+        // หากไม่มี req.user.username อาจจะต้องกำหนดค่า default หรือส่ง error
+        console.warn('[uploadSlipImage] req.user.username is missing. Using default or skipping user specific log.');
+        // กำหนดค่า default หากจำเป็น เช่น req.user = { username: 'System' };
+    }
+
     const fileStream = fs.createReadStream(req.file.path);
+    let originalFileName = req.file.originalname;
+    let fileExtension = originalFileName.split('.').pop();
+    let fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
     let fileName = `slip_customer_course/${req.file.originalname}`;
     let params = {
       Bucket: 'istar', // ชื่อ Space ของคุณ
       Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
       Body: fileStream,
       ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+      ContentType: req.file.mimetype // เพิ่ม ContentType เพื่อให้แสดงผลถูกต้อง
     };
 
     // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
     let fileExists = true;
     let fileIndex = 1;
+    let finalFileName = fileName;
     while (fileExists) {
       try {
         await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
         // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
-        const fileExtension = req.file.originalname.split('.').pop();
-        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
+        fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // คำนวณใหม่ทุกครั้ง
+        fileExtension = req.file.originalname.split('.').pop();
+        finalFileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
         fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        params.Key = fileName;
+        params.Key = finalFileName;
         fileIndex++;
       } catch (headErr) {
         if (headErr.name === 'NotFound') {
@@ -2825,12 +2840,18 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
           fileExists = false;
         } else {
           // ถ้าเกิดข้อผิดพลาดอื่นๆ
+          console.error('Error checking file existence:', headErr);
           throw headErr;
         }
       }
     }
 
-    // อัพโหลดไฟล์ใหม่
+    // อัพโหลดไฟล์ใหม่ (ต้องสร้าง ReadStream ใหม่หากมีการใช้งานไปแล้วในการ check หรือ Body เป็น Buffer)
+    // ในกรณีนี้ `fileStream` ถูกสร้างครั้งเดียวและอาจจะถูก consume หาก HeadObjectCommand อ่าน stream
+    // วิธีที่ปลอดภัยกว่าคือการอ่านไฟล์เข้า Buffer หรือสร้าง Stream ใหม่ทุกครั้งที่ PUT
+    const fileBuffer = fs.readFileSync(req.file.path);
+    params.Body = fileBuffer; // ใช้ Buffer แทน Stream เพื่อความแน่นอน
+
     const data = await s3Client.send(new PutObjectCommand(params));
 
     // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
@@ -2840,9 +2861,20 @@ app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
 
     const slipImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
     const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
+
+    // ตรวจสอบว่า req.user และ req.user.username มีค่าหรือไม่
+    const username = req.user && req.user.username ? req.user.username : 'UnknownUser';
+
     const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
     await queryPromise(query, [slipImageUrl, courserefer]);
-
+    
+    // ส่ง log ไปยัง Discord พร้อมรูปภาพ
+    logCourseToDiscord(
+        'info',
+        `✅ [uploadSlipImage][${username}]`, // ใช้ username ที่ตรวจสอบแล้ว
+        `Uploaded Slip Image for course refer: ${JSON.stringify(courserefer)}\nSlip URL: ${slipImageUrl}`,
+        slipImageUrl // ส่ง URL ของรูปภาพไปยังฟังก์ชัน log
+    );
     res.json({ url: slipImageUrl });
   } catch (err) {
     return res.status(500).json({ error: err.message });
