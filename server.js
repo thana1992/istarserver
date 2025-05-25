@@ -673,9 +673,9 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nSuccessfully updated student : ${studentid}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Successfully updated student : ${studentid}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
       } else {
-        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n No changes detected for student : ${studentid}`);
+        logStudentToDiscord('info', `✅ [Update Student][${req.user.username}]`, `No changes detected for student : ${studentid}\nBody : ${JSON.stringify(req.body)}`);
       }
       
       return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
@@ -2214,6 +2214,10 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       fields.push('period');
       values.push(period);
     }
+    if(req.user.username) {
+      fields.push('createby');
+      values.push(req.user.username);
+    }
 
     const query = `INSERT INTO tcustomer_course (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
 
@@ -2240,8 +2244,8 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, courserefer]);
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
@@ -2278,9 +2282,9 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nSuccessfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
       } else {
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\nNo changes detected for CustomerCourse : ${courserefer}`);
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}`);
       }
 
       res.json({ success: true, message: 'Customer Course updated successfully' });
