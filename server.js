@@ -2564,6 +2564,7 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
 
           if (key !== 'course') {
             if (['startdate', 'expiredate', 'paydate', 'editdate', 'createdate'].includes(key)) {
+              console.log("DEBUG # -1 oldValue : " + oldValue + " newValue : " + newValue);
               const oldDateObj = new Date(oldValue);
               const newDateObj = new Date(newValue);
               console.log("DEBUG # 0 oldDateObj : " + oldDateObj + " newDateObj : " + newDateObj);
