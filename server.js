@@ -2303,10 +2303,10 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
-      const slip_customer = req.file;
-      console.log("slip_customer " + slip_customer);
+      const fileStream = fs.createReadStream(req.file.path);
+      console.log("slip_customer " + fileStream);
       let haveImageString = "";
-      if(slip_customer){
+      if(fileStream){
         haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
       } else {
         haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
@@ -2316,7 +2316,7 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}\n` +
         `Short Note: ${shortnote}\n` +
-        `Created By: ${req.user.username}` + haveImageString;
+        `Created By: ${req.user.username}\n` + haveImageString;
       await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
@@ -2346,14 +2346,6 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
     if (paydate) {
       fieldsToUpdate.push('paydate');
       valuesToUpdate.push(paydate);
-    }
-    
-    
-    // ถ้ามีการอัพโหลดรูปภาพ slip_image_url ให้เพิ่มเข้าไปใน query
-    if (req.file || slip_image_url) {
-      fieldsToUpdate.push('slip_image_url');
-      let slipImageUrl = req.file ? req.file.path : slip_image_url;
-      valuesToUpdate.push(slipImageUrl);
     }
 
     const query = `UPDATE tcustomer_course SET ${fieldsToUpdate.map(field => `${field} = ?`).join(', ')} WHERE courserefer = ?`;
@@ -2416,8 +2408,8 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
           }
         }
       }
-
-      const slip_customer = req.file;
+      const fileStream = fs.createReadStream(req.file.path);
+      const slip_customer = fileStream;
       console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
       let haveImageString = "";
       if(slip_customer){
