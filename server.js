@@ -2355,14 +2355,13 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
   }
 });
 
-async function uploadSlipImageToS3(reqFile) {
+async function uploadSlipImageToS3(reqFile, refer) {
   if (!reqFile) return { url: null, key: null };
 
   const fs = require('fs');
   let originalFileName = reqFile.originalname;
   let fileExtension = originalFileName.split('.').pop();
-  let fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
-  let fileName = `slip_customer_course/${originalFileName}`;
+  let fileName = `slip_customer_course/${refer}.${fileExtension}`;
   let params = {
     Bucket: 'istar',
     Key: fileName,
@@ -2377,9 +2376,8 @@ async function uploadSlipImageToS3(reqFile) {
   while (fileExists) {
     try {
       await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
-      fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
-      fileExtension = reqFile.originalname.split('.').pop();
-      fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+      // ถ้าซ้ำ ให้เพิ่ม _1, _2, ...
+      fileName = `slip_customer_course/${refer}_${fileIndex}.${fileExtension}`;
       params.Key = fileName;
       fileIndex++;
     } catch (headErr) {
@@ -2454,7 +2452,7 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
 
     let slipImageUrl = null;
     if (req.file) {
-      const uploadResult = await uploadSlipImageToS3(req.file);
+      const uploadResult = await uploadSlipImageToS3(req.file, courserefer);
       slipImageUrl = uploadResult.url;
       if (slipImageUrl) {
         fields.push('slip_image_url');
@@ -2514,6 +2512,16 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
     if (paydate) {
       fieldsToUpdate.push('paydate');
       valuesToUpdate.push(paydate);
+    }
+
+    let slipImageUrl = null;
+    if (req.file) {
+      const uploadResult = await uploadSlipImageToS3(req.file, courserefer);
+      slipImageUrl = uploadResult.url;
+      if (slipImageUrl) {
+        fields.push('slip_image_url');
+        values.push(slipImageUrl);
+      }
     }
 
     const query = `UPDATE tcustomer_course SET ${fieldsToUpdate.map(field => `${field} = ?`).join(', ')} WHERE courserefer = ?`;
