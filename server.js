@@ -2601,9 +2601,9 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       }
       let haveImageString = "";
       if(!slipImageUrl) {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip ใหม่👍👍`;
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip ใหม่`;
         if(slip_image_url) {
-          haveImageString += ` แต่มี Slip เก่าที่อัพโหลดไว้ : ${slip_image_url}`;
+          haveImageString += ` แต่มี Slip เก่าที่อัพโหลดไว้ 👍👍 : ${slip_image_url}`;
         }
       } else {
           haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่ 👍👍`;
