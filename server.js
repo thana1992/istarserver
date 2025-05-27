@@ -2205,8 +2205,8 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
-    const fields = ['courserefer', 'courseid', 'paid', 'paydate', 'shortnote'];
-    const values = [courserefer, course.courseid, paid, paydate, shortnote];
+    const fields = ['courserefer', 'courseid', 'paid', 'shortnote'];
+    const values = [courserefer, course.courseid, paid, shortnote];
     
     if (coursetype) {
       fields.push('coursetype');
@@ -2227,6 +2227,10 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     if (period) {
       fields.push('period');
       values.push(period);
+    }
+    if (period) {
+      fields.push('paydate');
+      values.push(paydate);
     }
     if(req.user.username) {
       fields.push('createby');
@@ -2355,7 +2359,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
     const query = `UPDATE tcustomer_course SET ${fieldsToUpdate.map(field => `${field} = ?`).join(', ')} WHERE courserefer = ?`;
     valuesToUpdate.push(courserefer);
 
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
+    const results = await queryPromise(query, valuesToUpdate);
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
