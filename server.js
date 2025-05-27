@@ -2586,13 +2586,18 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
                 if(newValue !== null) {
                   newDateObj = new Date(newValue);
                 }
+                // ถ้าค่าใดค่าหนึ่งเป็น null ให้ถือว่าแตกต่างกันทันที
+                if (oldDateObj === null || newDateObj === null) {
+                  const oldDateString = oldDateObj ? oldDateObj.toISOString().split('T')[0] : null;
+                  const newDateString = newDateObj ? newDateObj.toISOString().split('T')[0] : null;
+                  logData.changedFields[key] = { old: oldDateString, new: newDateString };
+                } else {
+                  console.log("------------- DEBUG # 1 oldDateObj : " + oldDateObj + " newDateObj : " + newDateObj);
+                  const isOldDateValid = !isNaN(oldDateObj.getTime());
+                  const isNewDateValid = !isNaN(newDateObj.getTime());
+                  console.log("------------- DEBUG # 2 isOldDateValid : " + isOldDateValid + " isNewDateValid : " + isNewDateValid);
 
-                console.log("------------- DEBUG # 1 oldDateObj : " + oldDateObj + " newDateObj : " + newDateObj);
-                const isOldDateValid = !isNaN(oldDateObj.getTime());
-                const isNewDateValid = !isNaN(newDateObj.getTime());
-                console.log("------------- DEBUG # 2 isOldDateValid : " + isOldDateValid + " isNewDateValid : " + isNewDateValid);
-
-                if (isOldDateValid && isNewDateValid) {
+                  if (isOldDateValid && isNewDateValid) {
                   const oldDate = oldDateObj.setHours(0, 0, 0, 0);
                   const newDate = newDateObj.setHours(0, 0, 0, 0);
 
@@ -2601,14 +2606,15 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
                     const newDateString = new Date(newDate).toISOString().split('T')[0];
                     logData.changedFields[key] = { old: oldDateString, new: newDateString };
                   }
-                } else if (isOldDateValid && !isNewDateValid) {
+                  } else if (isOldDateValid && !isNewDateValid) {
                   const oldDateString = oldDateObj.toISOString().split('T')[0];
                   logData.changedFields[key] = { old: oldDateString, new: 'Invalid Date' };
-                } else if (!isOldDateValid && isNewDateValid) {
+                  } else if (!isOldDateValid && isNewDateValid) {
                   const newDateString = newDateObj.toISOString().split('T')[0];
                   logData.changedFields[key] = { old: 'Invalid Date', new: newDateString };
-                } else {
+                  } else {
                   logData.changedFields[key] = { old: 'Invalid Date', new: 'Invalid Date' };
+                  }
                 }
               }
             } else if (newValue != oldValue) {
