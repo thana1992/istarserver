@@ -2212,7 +2212,7 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
       fields.push('coursetype');
       values.push(coursetype);
     }
-    if (remaining) {
+    if (remaining !== undefined && remaining !== null && remaining !== 'null' && remaining !== '') {
       fields.push('remaining');
       values.push(remaining);
     }
@@ -2425,7 +2425,7 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
       fields.push('coursetype');
       values.push(coursetype);
     }
-    if (remaining) {
+    if (remaining !== undefined && remaining !== null && remaining !== 'null' && remaining !== '') {
       fields.push('remaining');
       values.push(remaining);
     }
@@ -2521,6 +2521,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       if (slipImageUrl) {
         fields.push('slip_image_url');
         values.push(slipImageUrl);
+        slip_image_url = slipImageUrl; // Update slip_image_url to the new value
       }
     }
 
@@ -2585,22 +2586,20 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
         }
       }
       let haveImageString = "";
-      if(!req.file) {
-        haveImageString = `\nยังมีการอัพโหลดรูปภาพ Slip ใหม่👍👍`;
-      } else {
-        const fileStream = fs.createReadStream(req.file.path);
-        const slip_customer = fileStream;
-        console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
-        if (slip_image_url) {
-          haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍`;
+      if(!slipImageUrl) {
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip ใหม่👍👍`;
+        if(slip_image_url) {
+          haveImageString += ` แต่มี Slip เก่าที่อัพโหลดไว้ : ${slip_image_url}`;
         }
+      } else {
+          haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่ 👍👍`;
       }
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        if(!slip_customer && slip_image_url) {
+        if(!slipImageUrl && slip_image_url) {
           console.log("DEBUG # 1");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
         }else{
           console.log("DEBUG # 2");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
