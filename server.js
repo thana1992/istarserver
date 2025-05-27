@@ -2566,9 +2566,10 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
             if (['startdate', 'expiredate', 'paydate', 'editdate', 'createdate'].includes(key)) {
               const oldDateObj = new Date(oldValue);
               const newDateObj = new Date(newValue);
-
+              console.log("DEBUG # 0 oldDateObj : " + oldDateObj + " newDateObj : " + newDateObj);
               const isOldDateValid = !isNaN(oldDateObj.getTime());
               const isNewDateValid = !isNaN(newDateObj.getTime());
+              console.log("DEBUG # 1 isOldDateValid : " + isOldDateValid + " isNewDateValid : " + isNewDateValid);
 
               if (isOldDateValid && isNewDateValid) {
                 const oldDate = oldDateObj.setHours(0, 0, 0, 0);
