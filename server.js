@@ -2479,9 +2479,9 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
         `Created By: ${req.user.username}` + haveImageString;
 
       if(slipImageUrl) {
-        await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage, slipImageUrl);
+        await logCourseToDiscord('info', `✅[addCustomerCourse][${req.user.username}]`, logMessage, slipImageUrl);
       } else {
-        await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
+        await logCourseToDiscord('info', `✅[addCustomerCourse][${req.user.username}]`, logMessage);
       }
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
