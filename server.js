@@ -2429,11 +2429,11 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
       fields.push('remaining');
       values.push(remaining);
     }
-    if (startdate) {
+    if (startdate !== undefined && startdate !== null && startdate !== 'null' && startdate !== '') {
       fields.push('startdate');
       values.push(startdate);
     }
-    if (expiredate) {
+    if (expiredate !== undefined && expiredate !== null && expiredate !== 'null' && expiredate !== '') {
       fields.push('expiredate');
       values.push(expiredate);
     }
@@ -2441,7 +2441,7 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
       fields.push('period');
       values.push(period);
     }
-    if (paydate) {
+    if (paydate !== undefined && paydate !== null && paydate !== 'null' && paydate !== '') {
       fields.push('paydate');
       values.push(paydate);
     }
