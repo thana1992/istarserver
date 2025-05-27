@@ -2375,29 +2375,48 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           const newValue = req.body[key];
           const oldValue = oldData[0][key];
-          if(key !== 'course') {
-            if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
-              const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
-              const newDate = new Date(newValue).setHours(0, 0, 0, 0);
-              if (oldDate !== newDate) {
-                // แปลง format วันที่ให้เป็น YYYY-MM-DD
-                const oldDateString = new Date(oldDate).toISOString().split('T')[0];
-                const newDateString = new Date(newDate).toISOString().split('T')[0];
-                logData.changedFields[key] = { old: oldDateString, new: newDateString };
+
+          if (key !== 'course') {
+            if (['startdate', 'expiredate', 'paydate', 'editdate', 'createdate'].includes(key)) {
+              const oldDateObj = new Date(oldValue);
+              const newDateObj = new Date(newValue);
+
+              const isOldDateValid = !isNaN(oldDateObj.getTime());
+              const isNewDateValid = !isNaN(newDateObj.getTime());
+
+              if (isOldDateValid && isNewDateValid) {
+                const oldDate = oldDateObj.setHours(0, 0, 0, 0);
+                const newDate = newDateObj.setHours(0, 0, 0, 0);
+
+                if (oldDate !== newDate) {
+                  const oldDateString = new Date(oldDate).toISOString().split('T')[0];
+                  const newDateString = new Date(newDate).toISOString().split('T')[0];
+                  logData.changedFields[key] = { old: oldDateString, new: newDateString };
+                }
+              } else if (isOldDateValid && !isNewDateValid) {
+                const oldDateString = oldDateObj.toISOString().split('T')[0];
+                logData.changedFields[key] = { old: oldDateString, new: 'Invalid Date' };
+              } else if (!isOldDateValid && isNewDateValid) {
+                const newDateString = newDateObj.toISOString().split('T')[0];
+                logData.changedFields[key] = { old: 'Invalid Date', new: newDateString };
+              } else {
+                logData.changedFields[key] = { old: 'Invalid Date', new: 'Invalid Date' };
               }
             } else if (newValue !== oldValue) {
-              if(key === 'slip_image_url') {
-                // ถ้าเป็น slip_image_url ให้ escape URL
-                oldValue = oldValue ? encodeURI(oldValue) : '';
-                newValue = newValue ? encodeURI(newValue) : '';
+              let oldVal = oldValue;
+              let newVal = newValue;
+              if (key === 'slip_image_url') {
+                oldVal = oldValue ? encodeURI(oldValue) : '';
+                newVal = newValue ? encodeURI(newValue) : '';
               }
-              logData.oldData[key] = oldValue;
-              logData.newData[key] = newValue;
-              logData.changedFields[key] = { old: oldValue, new: newValue };
+              logData.oldData[key] = oldVal;
+              logData.newData[key] = newVal;
+              logData.changedFields[key] = { old: oldVal, new: newVal };
             }
           }
         }
       }
+
       const slip_customer = req.file;
       console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
       let haveImageString = "";
