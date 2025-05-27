@@ -2372,7 +2372,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
         changedFields: {}
       };
       for (const key in req.body) {
-        if (req.body.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           const newValue = req.body[key];
           const oldValue = oldData[0][key];
           if(key !== 'course') {
