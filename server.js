@@ -2170,7 +2170,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getCustomerCourseLookup', verifyToken, upload.single('slipImage'), async (req, res) => {
+app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
   try {
     const query = 'SELECT a.* FROM tcustomer_course a WHERE a.finish = 0';
     const results = await queryPromise(query, null);
@@ -2185,7 +2185,7 @@ app.get('/getCustomerCourseLookup', verifyToken, upload.single('slipImage'), asy
   }
 });
 
-app.post('/addCustomerCourse', verifyToken, async (req, res) => {
+app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote, slip_customer } = req.body;
     const courserefer = await generateRefer(course.refercode);
@@ -2288,7 +2288,6 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
               logData.oldData[key] = oldValue;
               logData.newData[key] = newValue;
               logData.changedFields[key] = { old: oldValue, new: newValue };
-              
             }
           }
         }
