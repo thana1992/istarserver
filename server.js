@@ -2187,7 +2187,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote,slip_customer,slip_image_url } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote,slip_customer } = req.body;
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
@@ -2223,7 +2223,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
-      console.log("slip_customer " + slip_customer + "\nslip_image_url " + slip_image_url);
+      console.log("slip_customer " + slip_customer);
       let haveImageString = "";
       if(slip_customer){
         haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
@@ -2294,6 +2294,8 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
         let haveImageString = "";
         if(slip_customer){
           haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
+        } else if (slip_image_url) {
+          haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
         } else {
           haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
         }
