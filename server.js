@@ -2500,9 +2500,30 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
     let slip_image_url = req.body.slip_image_url || null; // ใช้ค่า slip_image_url จาก body ถ้ามี
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
-    let fieldsToUpdate = ['courseid', 'coursetype', 'paid', 'startdate', 'expiredate', 'paydate', 'shortnote', 'updateby'];
-    let valuesToUpdate = [courseid, coursetype, paid , startdate, expiredate, paydate, shortnote, req.user.username];
+    let fieldsToUpdate = ['courseid', 'coursetype', 'paid', 'shortnote', 'updateby'];
+    let valuesToUpdate = [courseid, coursetype, paid , shortnote, req.user.username];
 
+    if (startdate !== undefined && startdate !== null && startdate !== '' && startdate !== 'null') {
+      fieldsToUpdate.push('startdate');
+      valuesToUpdate.push(startdate);
+    } else {
+      fieldsToUpdate.push('startdate');
+      valuesToUpdate.push(null);
+    }
+    if (expiredate !== undefined && expiredate !== null && expiredate !== '' && expiredate !== 'null') {
+      fieldsToUpdate.push('expiredate');
+      valuesToUpdate.push(expiredate);
+    } else {
+      fieldsToUpdate.push('expiredate');
+      valuesToUpdate.push(null);
+    }
+    if (paydate !== undefined && paydate !== null && paydate !== '' && paydate !== 'null') {
+      fieldsToUpdate.push('paydate');
+      valuesToUpdate.push(paydate);
+    } else {
+      fieldsToUpdate.push('paydate');
+      valuesToUpdate.push(null);
+    }
     let slipImageUrl = null;
     if (req.file) {
       const uploadResult = await uploadSlipImageToS3(req.file, courserefer);
