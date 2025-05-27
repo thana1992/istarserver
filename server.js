@@ -2198,7 +2198,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-
+/*
 app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
@@ -2354,7 +2354,7 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
     res.status(500).send(error);
   }
 });
-
+*/
 async function uploadSlipImageToS3(reqFile, refer) {
   if (!reqFile) return { url: null, key: null };
 
@@ -2403,7 +2403,7 @@ async function uploadSlipImageToS3(reqFile, refer) {
   return { url: slipImageUrl, key: params.Key };
 }
 
-app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
+app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, coursestr, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
     //convert course from JSON string to object
@@ -2494,7 +2494,7 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
   }
 });
 
-app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
+app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote } = req.body;
     let slip_image_url = req.body.slip_image_url || null; // ใช้ค่า slip_image_url จาก body ถ้ามี
@@ -2601,9 +2601,9 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       }
       let haveImageString = "";
       if(!slipImageUrl) {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip ใหม่👍👍`;
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip ใหม่`;
         if(slip_image_url) {
-          haveImageString += ` แต่มี Slip เก่าที่อัพโหลดไว้ : ${slip_image_url}`;
+          haveImageString += ` แต่มี Slip เก่าที่อัพโหลดไว้ 👍👍 : ${slip_image_url}`;
         }
       } else {
           haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่ 👍👍`;
