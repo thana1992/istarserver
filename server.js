@@ -36,6 +36,20 @@ const pool = mysql2.createPool({
   queueLimit: 0,
 });
 
+// ติดตั้ง package สำหรับ S3 v3
+const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
+
+// สร้าง S3 Client
+const s3Client = new S3Client({
+  region: 'sgp1', // เปลี่ยนเป็น region ของคุณ
+  endpoint: 'https://sgp1.digitaloceanspaces.com', // ตั้งค่า endpoint ของ DigitalOcean Space
+  credentials: {
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+  }
+});
 async function queryPromise(query, params, showlog) {
   let connection;
   try {
@@ -2170,7 +2184,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getCustomerCourseLookup', verifyToken, upload.single('slipImage'), async (req, res) => {
+app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
   try {
     const query = 'SELECT a.* FROM tcustomer_course a WHERE a.finish = 0';
     const results = await queryPromise(query, null);
@@ -2185,7 +2199,7 @@ app.get('/getCustomerCourseLookup', verifyToken, upload.single('slipImage'), asy
   }
 });
 
-app.post('/addCustomerCourse', verifyToken, async (req, res) => {
+app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote, slip_customer } = req.body;
     const courserefer = await generateRefer(course.refercode);
@@ -2288,7 +2302,6 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
               logData.oldData[key] = oldValue;
               logData.newData[key] = newValue;
               logData.changedFields[key] = { old: oldValue, new: newValue };
-              
             }
           }
         }
@@ -2697,21 +2710,6 @@ app.post('/change-password', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error in chenge-password', error.stack);
     res.status(500).send(error);
-  }
-});
-
-// ติดตั้ง package สำหรับ S3 v3
-const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-
-// สร้าง S3 Client
-const s3Client = new S3Client({
-  region: 'sgp1', // เปลี่ยนเป็น region ของคุณ
-  endpoint: 'https://sgp1.digitaloceanspaces.com', // ตั้งค่า endpoint ของ DigitalOcean Space
-  credentials: {
-    accessKeyId: process.env.DO_SPACES_KEY,
-    secretAccessKey: process.env.DO_SPACES_SECRET,
   }
 });
 
