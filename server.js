@@ -2261,6 +2261,178 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     res.status(500).send(error);
   }
 });
+app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
+  try {
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
+    const courserefer = await generateRefer(course.refercode);
+
+    // สร้างคำสั่ง SQL และพารามิเตอร์
+    const fields = ['courserefer', 'courseid', 'paid', 'paydate', 'shortnote'];
+    const values = [courserefer, course.courseid, paid, paydate, shortnote];
+    
+    if (coursetype) {
+      fields.push('coursetype');
+      values.push(coursetype);
+    }
+    if (remaining) {
+      fields.push('remaining');
+      values.push(remaining);
+    }
+    if (startdate) {
+      fields.push('startdate');
+      values.push(startdate);
+    }
+    if (expiredate) {
+      fields.push('expiredate');
+      values.push(expiredate);
+    }
+    if (period) {
+      fields.push('period');
+      values.push(period);
+    }
+    if(req.user.username) {
+      fields.push('createby');
+      values.push(req.user.username);
+    }
+
+    const query = `INSERT INTO tcustomer_course (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+
+    const results = await queryPromise(query, values, true);
+    if (results.affectedRows > 0) {
+      const slip_customer = req.file;
+      console.log("slip_customer " + slip_customer);
+      let haveImageString = "";
+      if(slip_customer){
+        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
+      } else {
+        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+      }
+      //Send Log to Discord
+      const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
+        `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
+        `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}\n` +
+        `Short Note: ${shortnote}\n` +
+        `Created By: ${req.user.username}` + haveImageString;
+      await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
+      res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
+    } else {
+      res.json({ success: false, message: 'Error adding Customer Course' });
+    }
+  } catch (error) {
+    console.error('Error in addCustomerCourse', error.stack);
+    res.status(500).send(error);
+  }
+});
+
+app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
+  try {
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
+    queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+    let oldData = await queryPromise(queryData, [courserefer]);
+    let fieldsToUpdate = ['courseid', 'coursetype', 'paid', 'shortnote', 'updateby'];
+    let valuesToUpdate = [courseid, coursetype, paid , shortnote, req.user.username];
+    if (startdate) {
+      fieldsToUpdate.push('startdate');
+      valuesToUpdate.push(startdate);
+    }
+    if (expiredate) {
+      fieldsToUpdate.push('expiredate');
+      valuesToUpdate.push(expiredate);
+    }
+    if (paydate) {
+      fieldsToUpdate.push('paydate');
+      valuesToUpdate.push(paydate);
+    }
+    
+    
+    // ถ้ามีการอัพโหลดรูปภาพ slip_image_url ให้เพิ่มเข้าไปใน query
+    if (req.file || slip_image_url) {
+      fieldsToUpdate.push('slip_image_url');
+      let slipImageUrl = req.file ? req.file.path : slip_image_url;
+      valuesToUpdate.push(slipImageUrl);
+    }
+
+    const query = `UPDATE tcustomer_course SET ${fieldsToUpdate.map(field => `${field} = ?`).join(', ')} WHERE courserefer = ?`;
+    valuesToUpdate.push(courserefer);
+
+    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
+    if (results.affectedRows > 0) {
+      //Send Log to Discord
+      let newData = await queryPromise(queryData, [courserefer]);
+
+      //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
+      let logData = {
+        courserefer: courserefer,
+        oldData: {},
+        newData: {},
+        changedFields: {}
+      };
+      for (const key in req.body) {
+        if (req.body.hasOwnProperty(key)) {
+          const newValue = req.body[key];
+          const oldValue = oldData[0][key];
+          if(key !== 'course') {
+            if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
+              const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
+              const newDate = new Date(newValue).setHours(0, 0, 0, 0);
+              if (oldDate !== newDate) {
+                // แปลง format วันที่ให้เป็น YYYY-MM-DD
+                const oldDateString = new Date(oldDate).toISOString().split('T')[0];
+                const newDateString = new Date(newDate).toISOString().split('T')[0];
+                logData.changedFields[key] = { old: oldDateString, new: newDateString };
+              }
+            } else if (newValue !== oldValue) {
+              if(key === 'slip_image_url') {
+                // ถ้าเป็น slip_image_url ให้ escape URL
+                oldValue = oldValue ? encodeURI(oldValue) : '';
+                newValue = newValue ? encodeURI(newValue) : '';
+              }
+              logData.oldData[key] = oldValue;
+              logData.newData[key] = newValue;
+              logData.changedFields[key] = { old: oldValue, new: newValue };
+            }
+          }
+        }
+      }
+      const slip_customer = req.file;
+      console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
+      let haveImageString = "";
+      if(slip_customer){
+        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
+      } else if (slip_image_url) {
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
+      } else {
+        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+      }
+      // Log ข้อมูลที่มีการเปลี่ยนแปลง
+      if (Object.keys(logData.changedFields).length > 0) {
+        const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
+        if(!slip_customer && slip_image_url) {
+          console.log("DEBUG # 1");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
+        }else{
+          console.log("DEBUG # 2");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
+        }
+      } else {
+        if(slip_image_url) {
+          console.log("DEBUG # 3");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slip_image_url);
+        } else {
+          console.log("DEBUG # 4");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
+        }
+      }
+
+      res.json({ success: true, message: 'Customer Course updated successfully' });
+    } else {
+      res.json({ success: false, message: 'Error updating Customer Course' });
+    }
+  } catch (error) {
+    console.error('Error in updateCustomerCourse', error.stack);
+    res.status(500).send(error);
+  }
+});
 
 app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
