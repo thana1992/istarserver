@@ -36,6 +36,20 @@ const pool = mysql2.createPool({
   queueLimit: 0,
 });
 
+// ติดตั้ง package สำหรับ S3 v3
+const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
+
+// สร้าง S3 Client
+const s3Client = new S3Client({
+  region: 'sgp1', // เปลี่ยนเป็น region ของคุณ
+  endpoint: 'https://sgp1.digitaloceanspaces.com', // ตั้งค่า endpoint ของ DigitalOcean Space
+  credentials: {
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+  }
+});
 async function queryPromise(query, params, showlog) {
   let connection;
   try {
@@ -2696,21 +2710,6 @@ app.post('/change-password', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error in chenge-password', error.stack);
     res.status(500).send(error);
-  }
-});
-
-// ติดตั้ง package สำหรับ S3 v3
-const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-
-// สร้าง S3 Client
-const s3Client = new S3Client({
-  region: 'sgp1', // เปลี่ยนเป็น region ของคุณ
-  endpoint: 'https://sgp1.digitaloceanspaces.com', // ตั้งค่า endpoint ของ DigitalOcean Space
-  credentials: {
-    accessKeyId: process.env.DO_SPACES_KEY,
-    secretAccessKey: process.env.DO_SPACES_SECRET,
   }
 });
 
