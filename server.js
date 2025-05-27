@@ -2496,7 +2496,8 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
 
 app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote } = req.body;
+    let slip_image_url = req.body.slip_image_url || null; // ใช้ค่า slip_image_url จาก body ถ้ามี
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
     let fieldsToUpdate = ['courseid', 'coursetype', 'paid', 'startdate', 'expiredate', 'paydate', 'shortnote', 'updateby'];
@@ -2509,6 +2510,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       if (slipImageUrl) {
         fieldsToUpdate.push('slip_image_url');
         valuesToUpdate.push(slipImageUrl);
+        slip_image_url = slipImageUrl; // อัพเดตค่า slip_image_url ให้เป็น URL ที่อัพโหลดใหม่
       }
     }
 
@@ -2529,7 +2531,11 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       };
       for (const key in req.body) {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
-          const newValue = req.body[key];
+          let newValue = req.body[key];
+          if (key === 'slip_image_url') {
+            // ถ้าเป็น slip_image_url ให้ใช้ค่า slip_image_url ที่อัพโหลดใหม่
+            newValue = slip_image_url || null; // ใช้ค่า slip_image_url ที่อัพโหลดใหม่ ถ้าไม่มีให้เป็น null
+          }
           const oldValue = oldData[0][key];
 
           if (key !== 'course') {
