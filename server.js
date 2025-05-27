@@ -2564,7 +2564,7 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
 
           if (key !== 'course') {
             if (['startdate', 'expiredate', 'paydate', 'editdate', 'createdate'].includes(key)) {
-              console.log("DEBUG # -1 oldValue : " + oldValue + " newValue : " + newValue);
+              console.log("------------- DEBUG # 0 oldValue : " + oldValue + " newValue : " + newValue);
               // Normalize oldValue
               if (oldValue === undefined || oldValue === '' || oldValue === 'null') {
                 oldValue = null;
@@ -2577,12 +2577,20 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
               if (oldValue === null && newValue === null) {
                 continue; // ถ้าไม่มีการเปลี่ยนแปลงให้ข้าม
               }else{
-                const oldDateObj = new Date(oldValue);
-                const newDateObj = new Date(newValue);
-                console.log("DEBUG # 0 oldDateObj : " + oldDateObj + " newDateObj : " + newDateObj);
+                let oldDateObj = null;
+                let newDateObj = null;
+
+                if(oldValue !== null) {
+                  oldDateObj = new Date(oldValue);
+                }
+                if(newValue !== null) {
+                  newDateObj = new Date(newValue);
+                }
+
+                console.log("------------- DEBUG # 1 oldDateObj : " + oldDateObj + " newDateObj : " + newDateObj);
                 const isOldDateValid = !isNaN(oldDateObj.getTime());
                 const isNewDateValid = !isNaN(newDateObj.getTime());
-                console.log("DEBUG # 1 isOldDateValid : " + isOldDateValid + " isNewDateValid : " + isNewDateValid);
+                console.log("------------- DEBUG # 2 isOldDateValid : " + isOldDateValid + " isNewDateValid : " + isNewDateValid);
 
                 if (isOldDateValid && isNewDateValid) {
                   const oldDate = oldDateObj.setHours(0, 0, 0, 0);
