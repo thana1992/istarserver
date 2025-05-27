@@ -2187,7 +2187,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote,slip_customer,slip_image_url } = req.body;
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
@@ -2241,7 +2241,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
 
 app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote } = req.body;
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote,slip_customer,slip_image_url } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
     const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
@@ -2282,7 +2282,14 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\``);
+        console.log("slip_customer " + slip_customer + "\nslip_image_url " + slip_image_url);
+        let haveImageString = "";
+        if(slip_customer && slip_image_url){
+          haveImageString = `\nSlip Customer: ${slip_customer}\nSlip Image URL: ${slip_image_url}`;
+        } else {
+          haveImageString = `\nSlip Customer: ไม่มี Slip\nSlip Image URL: ไม่มี Slip`;
+        }
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
       } else {
         logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}`);
       }
