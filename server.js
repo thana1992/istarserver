@@ -2170,7 +2170,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
+app.get('/getCustomerCourseLookup', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const query = 'SELECT a.* FROM tcustomer_course a WHERE a.finish = 0';
     const results = await queryPromise(query, null);
@@ -2187,7 +2187,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote,slip_customer } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote, slip_customer } = req.body;
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
@@ -2247,9 +2247,9 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
+app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote,slip_customer,slip_image_url } = req.body;
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
     const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
@@ -2280,15 +2280,21 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
                 logData.changedFields[key] = { old: oldDateString, new: newDateString };
               }
             } else if (newValue !== oldValue) {
+              if(key === 'slip_image_url') {
+                // ถ้าเป็น slip_image_url ให้ escape URL
+                oldValue = oldValue ? encodeURI(oldValue) : '';
+                newValue = newValue ? encodeURI(newValue) : '';
+              }
               logData.oldData[key] = oldValue;
               logData.newData[key] = newValue;
               logData.changedFields[key] = { old: oldValue, new: newValue };
+              
             }
           }
         }
       }
 
-      console.log("slip_customer " + slip_customer + "\nslip_image_url " + slip_image_url);
+      console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
       let haveImageString = "";
       if(slip_customer){
         haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
@@ -2301,8 +2307,10 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
         if(!slip_customer && slip_image_url) {
+          console.log("DEBUG # 1");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
         }else{
+          console.log("DEBUG # 2");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
         }
       } else {
@@ -2691,127 +2699,6 @@ app.post('/change-password', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-/*
-const AWS = require('aws-sdk');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
-const spacesEndpoint = new AWS.Endpoint('sgp1.digitaloceanspaces.com');
-const s3 = new AWS.S3({
-  endpoint: spacesEndpoint,
-  accessKeyId: process.env.DO_SPACES_KEY,
-  secretAccessKey: process.env.DO_SPACES_SECRET,
-});
-
-app.post('/uploadSlipImage', upload.single('slipImage'), async (req, res) => {
-  try {
-    const fileStream = fs.createReadStream(req.file.path);
-    let fileName = `slip_customer_course/${req.file.originalname}`;
-    let params = {
-      Bucket: 'istar', // ชื่อ Space ของคุณ
-      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
-      Body: fileStream,
-      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
-    };
-
-    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
-    let fileExists = true;
-    let fileIndex = 1;
-    while (fileExists) {
-      try {
-        await s3.headObject({ Bucket: params.Bucket, Key: params.Key }).promise();
-        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
-        const fileExtension = req.file.originalname.split('.').pop();
-        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
-        fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        params.Key = fileName;
-        fileIndex++;
-      } catch (headErr) {
-        if (headErr.code === 'NotFound') {
-          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
-          fileExists = false;
-        } else {
-          // ถ้าเกิดข้อผิดพลาดอื่นๆ
-          throw headErr;
-        }
-      }
-    }
-
-    // อัพโหลดไฟล์ใหม่
-    const data = await s3.upload(params).promise();
-
-    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error('Failed to delete temporary file:', err);
-    });
-
-    const slipImageUrl = data.Location;
-    const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
-    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
-    await queryPromise(query, [slipImageUrl, courserefer]);
-
-    res.json({ url: slipImageUrl });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
-  try {
-    const fileStream = fs.createReadStream(req.file.path);
-    let fileName = `profile_image/${req.file.originalname}`;
-    let params = {
-      Bucket: 'istar', // ชื่อ Space ของคุณ
-      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
-      Body: fileStream,
-      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
-    };
-
-    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
-    let fileExists = true;
-    let fileIndex = 1;
-    while (fileExists) {
-      try {
-        await s3.headObject({ Bucket: params.Bucket, Key: params.Key }).promise();
-        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
-        const fileExtension = req.file.originalname.split('.').pop();
-        const fileNameWithoutExtension = req.file.originalname.replace(`.${fileExtension}`, '');
-        fileName = `profile_image/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        params.Key = fileName;
-        fileIndex++;
-      } catch (headErr) {
-        if (headErr.code === 'NotFound') {
-          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
-          fileExists = false;
-        } else {
-          // ถ้าเกิดข้อผิดพลาดอื่นๆ
-          throw headErr;
-        }
-      }
-    }
-
-    // อัพโหลดไฟล์ใหม่
-    const data = await s3.upload(params).promise();
-
-    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error('Failed to delete temporary file:', err);
-    });
-
-    // อัพเดท URL ของรูปภาพในฐานข้อมูล
-    const profileImageUrl = data.Location;
-    const studentId = req.body.studentid; // สมมติว่า studentid ถูกส่งมาพร้อมกับ request
-
-    const query = 'UPDATE tstudent SET profile_image_url = ? WHERE studentid = ?';
-    await queryPromise(query, [profileImageUrl, studentId]);
-
-    await deleteOldProfileImage(studentId);
-
-    res.json({ url: profileImageUrl });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-*/
 
 // ติดตั้ง package สำหรับ S3 v3
 const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
