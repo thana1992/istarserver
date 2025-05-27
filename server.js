@@ -2565,8 +2565,13 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
           if (key !== 'course') {
             if (['startdate', 'expiredate', 'paydate', 'editdate', 'createdate'].includes(key)) {
               console.log("DEBUG # -1 oldValue : " + oldValue + " newValue : " + newValue);
-              if(null == oldValue && null == newValue) {
-                continue; // ถ้าเป็น null ทั้งคู่ ไม่ต้อง log การเปลี่ยนแปลง
+              // Normalize oldValue
+              if (oldValue === undefined || oldValue === '' || oldValue === 'null') {
+                oldValue = null;
+              }
+              // Normalize newValue
+              if (newValue === undefined || newValue === '' || newValue === 'null') {
+                newValue = null;
               }
               const oldDateObj = new Date(oldValue);
               const newDateObj = new Date(newValue);
