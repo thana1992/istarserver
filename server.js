@@ -2521,7 +2521,6 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       if (slipImageUrl) {
         fieldsToUpdate.push('slip_image_url');
         valuesToUpdate.push(slipImageUrl);
-        slip_image_url = slipImageUrl; // Update slip_image_url to the new value
       }
     }
 
@@ -2597,17 +2596,17 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        if(!slipImageUrl && slip_image_url) {
+        if(!slipImageUrl) {
           console.log("DEBUG # 1");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
         }else{
           console.log("DEBUG # 2");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slipImageUrl);
         }
       } else {
-        if(slip_image_url) {
+        if(!slipImageUrl) {
           console.log("DEBUG # 3");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slip_image_url);
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slipImageUrl);
         } else {
           console.log("DEBUG # 4");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
