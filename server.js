@@ -2402,7 +2402,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
               } else {
                 logData.changedFields[key] = { old: 'Invalid Date', new: 'Invalid Date' };
               }
-            } else if (newValue !== oldValue) {
+            } else if (newValue != oldValue) {
               let oldVal = oldValue;
               let newVal = newValue;
               if (key === 'slip_image_url') {
