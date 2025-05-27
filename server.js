@@ -2422,16 +2422,16 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
           }
         }
       }
-      const fileStream = fs.createReadStream(req.file.path);
-      const slip_customer = fileStream;
-      console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
       let haveImageString = "";
-      if(slip_customer){
-        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
-      } else if (slip_image_url) {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
+      if(!req.file) {
+        haveImageString = `\nยังมีการอัพโหลดรูปภาพ Slip ใหม่👍👍`;
       } else {
-        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+        const fileStream = fs.createReadStream(req.file.path);
+        const slip_customer = fileStream;
+        console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
+        if (slip_image_url) {
+          haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍`;
+        }
       }
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
