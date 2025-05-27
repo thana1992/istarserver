@@ -2214,6 +2214,10 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       fields.push('period');
       values.push(period);
     }
+    if(req.user.username) {
+      fields.push('createby');
+      values.push(req.user.username);
+    }
 
     const query = `INSERT INTO tcustomer_course (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
 
@@ -2240,8 +2244,8 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote,slip_customer,slip_image_url } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, courserefer]);
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
