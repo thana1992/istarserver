@@ -2287,18 +2287,19 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
           }
         }
       }
+
+      console.log("slip_customer " + slip_customer + "\nslip_image_url " + slip_image_url);
+      let haveImageString = "";
+      if(slip_customer){
+        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
+      } else if (slip_image_url) {
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
+      } else {
+        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+      }
       // Log ข้อมูลที่มีการเปลี่ยนแปลง
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        console.log("slip_customer " + slip_customer + "\nslip_image_url " + slip_image_url);
-        let haveImageString = "";
-        if(slip_customer){
-          haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
-        } else if (slip_image_url) {
-          haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
-        } else {
-          haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
-        }
         if(!slip_customer && slip_image_url) {
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
         }else{
