@@ -2551,6 +2551,9 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
         changedFields: {}
       };
       for (const key in req.body) {
+        if(key === 'coursestr') {
+          continue; // ข้าม key นี้เพราะไม่ต้องการเปรียบเทียบ
+        }
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           let newValue = req.body[key];
           if (key === 'slip_image_url') {
