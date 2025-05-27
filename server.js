@@ -2359,7 +2359,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
     const query = `UPDATE tcustomer_course SET ${fieldsToUpdate.map(field => `${field} = ?`).join(', ')} WHERE courserefer = ?`;
     valuesToUpdate.push(courserefer);
 
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
+    const results = await queryPromise(query, valuesToUpdate);
     if (results.affectedRows > 0) {
       //Send Log to Discord
       let newData = await queryPromise(queryData, [courserefer]);
