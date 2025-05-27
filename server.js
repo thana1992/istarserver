@@ -2241,13 +2241,15 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
-      const slip_customer = req.file;
-      console.log("slip_customer " + slip_customer);
       let haveImageString = "";
-      if(slip_customer){
-        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
+      if(!req.file) {
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦`;
+
       } else {
-        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+        const slip_customer = fs.createReadStream(req.file.path);
+        console.log("slip_customer " + slip_customer);
+        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍`;
+        
       }
       //Send Log to Discord
       const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
@@ -2265,6 +2267,94 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     res.status(500).send(error);
   }
 });
+
+app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
+  try {
+    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
+    queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
+    let oldData = await queryPromise(queryData, [courserefer]);
+    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
+    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
+    if (results.affectedRows > 0) {
+      //Send Log to Discord
+      let newData = await queryPromise(queryData, [courserefer]);
+
+      //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
+      let logData = {
+        courserefer: courserefer,
+        oldData: {},
+        newData: {},
+        changedFields: {}
+      };
+      for (const key in req.body) {
+        if (req.body.hasOwnProperty(key)) {
+          const newValue = req.body[key];
+          const oldValue = oldData[0][key];
+          if(key !== 'course') {
+            if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
+              const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
+              const newDate = new Date(newValue).setHours(0, 0, 0, 0);
+              if (oldDate !== newDate) {
+                // แปลง format วันที่ให้เป็น YYYY-MM-DD
+                const oldDateString = new Date(oldDate).toISOString().split('T')[0];
+                const newDateString = new Date(newDate).toISOString().split('T')[0];
+                logData.changedFields[key] = { old: oldDateString, new: newDateString };
+              }
+            } else if (newValue !== oldValue) {
+              if(key === 'slip_image_url') {
+                // ถ้าเป็น slip_image_url ให้ escape URL
+                oldValue = oldValue ? encodeURI(oldValue) : '';
+                newValue = newValue ? encodeURI(newValue) : '';
+              }
+              logData.oldData[key] = oldValue;
+              logData.newData[key] = newValue;
+              logData.changedFields[key] = { old: oldValue, new: newValue };
+            }
+          }
+        }
+      }
+      let haveImageString = "";
+      let slip_customer = null
+      if(!req.file) {
+        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦`;
+
+      } else {
+        const slip_customer = fs.createReadStream(req.file.path);
+        console.log("slip_customer " + slip_customer);
+        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍`;
+        
+      }
+      // Log ข้อมูลที่มีการเปลี่ยนแปลง
+      if (Object.keys(logData.changedFields).length > 0) {
+        const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
+        console.log("DEBUG # 0 slip_customer : " + slip_customer + " slip_image_url : " + slip_image_url);
+        if(!slip_customer && slip_image_url) {
+          console.log("DEBUG # 1");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
+        }else{
+          console.log("DEBUG # 2");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
+        }
+      } else {
+        if(slip_image_url) {
+          console.log("DEBUG # 3");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slip_image_url);
+        } else {
+          console.log("DEBUG # 4");
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
+        }
+      }
+
+      res.json({ success: true, message: 'Customer Course updated successfully' });
+    } else {
+      res.json({ success: false, message: 'Error updating Customer Course' });
+    }
+  } catch (error) {
+    console.error('Error in updateCustomerCourse', error.stack);
+    res.status(500).send(error);
+  }
+});
+
 app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, coursestr, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
@@ -2464,88 +2554,88 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
   }
 });
 
-app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
+app.post('/uploadSlipImage', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
-    queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
-    let oldData = await queryPromise(queryData, [courserefer]);
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
-    if (results.affectedRows > 0) {
-      //Send Log to Discord
-      let newData = await queryPromise(queryData, [courserefer]);
-
-      //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
-      let logData = {
-        courserefer: courserefer,
-        oldData: {},
-        newData: {},
-        changedFields: {}
-      };
-      for (const key in req.body) {
-        if (req.body.hasOwnProperty(key)) {
-          const newValue = req.body[key];
-          const oldValue = oldData[0][key];
-          if(key !== 'course') {
-            if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
-              const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
-              const newDate = new Date(newValue).setHours(0, 0, 0, 0);
-              if (oldDate !== newDate) {
-                // แปลง format วันที่ให้เป็น YYYY-MM-DD
-                const oldDateString = new Date(oldDate).toISOString().split('T')[0];
-                const newDateString = new Date(newDate).toISOString().split('T')[0];
-                logData.changedFields[key] = { old: oldDateString, new: newDateString };
-              }
-            } else if (newValue !== oldValue) {
-              if(key === 'slip_image_url') {
-                // ถ้าเป็น slip_image_url ให้ escape URL
-                oldValue = oldValue ? encodeURI(oldValue) : '';
-                newValue = newValue ? encodeURI(newValue) : '';
-              }
-              logData.oldData[key] = oldValue;
-              logData.newData[key] = newValue;
-              logData.changedFields[key] = { old: oldValue, new: newValue };
-            }
-          }
-        }
-      }
-      const slip_customer = req.file;
-      console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
-      let haveImageString = "";
-      if(slip_customer){
-        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
-      } else if (slip_image_url) {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
-      } else {
-        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
-      }
-      // Log ข้อมูลที่มีการเปลี่ยนแปลง
-      if (Object.keys(logData.changedFields).length > 0) {
-        const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        if(!slip_customer && slip_image_url) {
-          console.log("DEBUG # 1");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
-        }else{
-          console.log("DEBUG # 2");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
-        }
-      } else {
-        if(slip_image_url) {
-          console.log("DEBUG # 3");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slip_image_url);
-        } else {
-          console.log("DEBUG # 4");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
-        }
-      }
-
-      res.json({ success: true, message: 'Customer Course updated successfully' });
-    } else {
-      res.json({ success: false, message: 'Error updating Customer Course' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
     }
-  } catch (error) {
-    console.error('Error in updateCustomerCourse', error.stack);
-    res.status(500).send(error);
+    if (!req.user || !req.user.username) { // ตรวจสอบ req.user.username
+        // หากไม่มี req.user.username อาจจะต้องกำหนดค่า default หรือส่ง error
+        console.warn('[uploadSlipImage] req.user.username is missing. Using default or skipping user specific log.');
+        // กำหนดค่า default หากจำเป็น เช่น req.user = { username: 'System' };
+    }
+
+    const fileStream = fs.createReadStream(req.file.path);
+    let originalFileName = req.file.originalname;
+    let fileExtension = originalFileName.split('.').pop();
+    let fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
+    let fileName = `slip_customer_course/${req.file.originalname}`;
+    let params = {
+      Bucket: 'istar', // ชื่อ Space ของคุณ
+      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
+      Body: fileStream,
+      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
+      ContentType: req.file.mimetype // เพิ่ม ContentType เพื่อให้แสดงผลถูกต้อง
+    };
+
+    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
+    let fileExists = true;
+    let fileIndex = 1;
+    let finalFileName = fileName;
+    while (fileExists) {
+      try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
+        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
+        fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // คำนวณใหม่ทุกครั้ง
+        fileExtension = req.file.originalname.split('.').pop();
+        finalFileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        params.Key = finalFileName;
+        fileIndex++;
+      } catch (headErr) {
+        if (headErr.name === 'NotFound') {
+          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
+          fileExists = false;
+        } else {
+          // ถ้าเกิดข้อผิดพลาดอื่นๆ
+          console.error('Error checking file existence:', headErr);
+          throw headErr;
+        }
+      }
+    }
+
+    // อัพโหลดไฟล์ใหม่ (ต้องสร้าง ReadStream ใหม่หากมีการใช้งานไปแล้วในการ check หรือ Body เป็น Buffer)
+    // ในกรณีนี้ `fileStream` ถูกสร้างครั้งเดียวและอาจจะถูก consume หาก HeadObjectCommand อ่าน stream
+    // วิธีที่ปลอดภัยกว่าคือการอ่านไฟล์เข้า Buffer หรือสร้าง Stream ใหม่ทุกครั้งที่ PUT
+    const fileBuffer = fs.readFileSync(req.file.path);
+    params.Body = fileBuffer; // ใช้ Buffer แทน Stream เพื่อความแน่นอน
+
+    const data = await s3Client.send(new PutObjectCommand(params));
+
+    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Failed to delete temporary file:', err);
+    });
+
+    const slipImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+    const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
+
+    // ตรวจสอบว่า req.user และ req.user.username มีค่าหรือไม่
+    const username = req.user && req.user.username ? req.user.username : 'UnknownUser';
+
+    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
+    await queryPromise(query, [slipImageUrl, courserefer]);
+
+    // ส่ง log ไปยัง Discord พร้อมรูปภาพ
+    logCourseToDiscord(
+        'info',
+        `✅ [uploadSlipImage][${username}]`, // ใช้ username ที่ตรวจสอบแล้ว
+        `Uploaded Slip Image for course refer: ${JSON.stringify(courserefer)}\nSlip URL: ${slipImageUrl}`,
+        slipImageUrl // ส่ง URL ของรูปภาพไปยังฟังก์ชัน log
+    );
+    res.json({ url: slipImageUrl });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -2919,91 +3009,6 @@ app.post('/change-password', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error in chenge-password', error.stack);
     res.status(500).send(error);
-  }
-});
-
-app.post('/uploadSlipImage', verifyToken, upload.single('slipImage'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded.' });
-    }
-    if (!req.user || !req.user.username) { // ตรวจสอบ req.user.username
-        // หากไม่มี req.user.username อาจจะต้องกำหนดค่า default หรือส่ง error
-        console.warn('[uploadSlipImage] req.user.username is missing. Using default or skipping user specific log.');
-        // กำหนดค่า default หากจำเป็น เช่น req.user = { username: 'System' };
-    }
-
-    const fileStream = fs.createReadStream(req.file.path);
-    let originalFileName = req.file.originalname;
-    let fileExtension = originalFileName.split('.').pop();
-    let fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
-    let fileName = `slip_customer_course/${req.file.originalname}`;
-    let params = {
-      Bucket: 'istar', // ชื่อ Space ของคุณ
-      Key: fileName, // ชื่อไฟล์ใน Space พร้อม path
-      Body: fileStream,
-      ACL: 'public-read', // ตั้งค่าให้ไฟล์สามารถเข้าถึงได้จากภายนอก
-      ContentType: req.file.mimetype // เพิ่ม ContentType เพื่อให้แสดงผลถูกต้อง
-    };
-
-    // ตรวจสอบว่ามีไฟล์ที่มีชื่อเดียวกันอยู่หรือไม่ และเพิ่มลำดับไฟล์ถ้าชื่อไฟล์ซ้ำ
-    let fileExists = true;
-    let fileIndex = 1;
-    let finalFileName = fileName;
-    while (fileExists) {
-      try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
-        // ถ้ามีไฟล์ที่มีชื่อเดียวกันอยู่แล้ว ให้เพิ่มลำดับไฟล์
-        fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // คำนวณใหม่ทุกครั้ง
-        fileExtension = req.file.originalname.split('.').pop();
-        finalFileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        params.Key = finalFileName;
-        fileIndex++;
-      } catch (headErr) {
-        if (headErr.name === 'NotFound') {
-          // ถ้าไม่พบไฟล์ที่มีชื่อเดียวกัน
-          fileExists = false;
-        } else {
-          // ถ้าเกิดข้อผิดพลาดอื่นๆ
-          console.error('Error checking file existence:', headErr);
-          throw headErr;
-        }
-      }
-    }
-
-    // อัพโหลดไฟล์ใหม่ (ต้องสร้าง ReadStream ใหม่หากมีการใช้งานไปแล้วในการ check หรือ Body เป็น Buffer)
-    // ในกรณีนี้ `fileStream` ถูกสร้างครั้งเดียวและอาจจะถูก consume หาก HeadObjectCommand อ่าน stream
-    // วิธีที่ปลอดภัยกว่าคือการอ่านไฟล์เข้า Buffer หรือสร้าง Stream ใหม่ทุกครั้งที่ PUT
-    const fileBuffer = fs.readFileSync(req.file.path);
-    params.Body = fileBuffer; // ใช้ Buffer แทน Stream เพื่อความแน่นอน
-
-    const data = await s3Client.send(new PutObjectCommand(params));
-
-    // ลบไฟล์ชั่วคราวหลังจากอัพโหลดเสร็จ
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error('Failed to delete temporary file:', err);
-    });
-
-    const slipImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
-    const courserefer = req.body.courserefer; // สมมติว่า courserefer ถูกส่งมาพร้อมกับ request
-
-    // ตรวจสอบว่า req.user และ req.user.username มีค่าหรือไม่
-    const username = req.user && req.user.username ? req.user.username : 'UnknownUser';
-
-    const query = 'UPDATE tcustomer_course SET slip_image_url = ? WHERE courserefer = ?';
-    await queryPromise(query, [slipImageUrl, courserefer]);
-
-    // ส่ง log ไปยัง Discord พร้อมรูปภาพ
-    logCourseToDiscord(
-        'info',
-        `✅ [uploadSlipImage][${username}]`, // ใช้ username ที่ตรวจสอบแล้ว
-        `Uploaded Slip Image for course refer: ${JSON.stringify(courserefer)}\nSlip URL: ${slipImageUrl}`,
-        slipImageUrl // ส่ง URL ของรูปภาพไปยังฟังก์ชัน log
-    );
-    res.json({ url: slipImageUrl });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
 });
 
