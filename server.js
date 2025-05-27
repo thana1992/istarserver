@@ -2617,7 +2617,7 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
                   }
                 }
               }
-            } else if (newValue != oldValue) {
+            } else if (newValue !== oldValue) {
               let oldVal = oldValue;
               let newVal = newValue;
               if (key === 'slip_image_url') {
