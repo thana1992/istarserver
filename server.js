@@ -2479,9 +2479,9 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
         `Created By: ${req.user.username}` + haveImageString;
 
       if(slipImageUrl) {
-        await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage, slipImageUrl);
+        await logCourseToDiscord('info', `✅[addCustomerCourse][${req.user.username}]`, logMessage, slipImageUrl);
       } else {
-        await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
+        await logCourseToDiscord('info', `✅[addCustomerCourse][${req.user.username}]`, logMessage);
       }
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
@@ -2551,6 +2551,9 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
         changedFields: {}
       };
       for (const key in req.body) {
+        if(key === 'coursestr') {
+          continue; // ข้าม key นี้เพราะไม่ต้องการเปรียบเทียบ
+        }
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           let newValue = req.body[key];
           if (key === 'slip_image_url') {
