@@ -2228,7 +2228,7 @@ app.post('/addCustomerCourse', verifyToken, async (req, res) => {
       if(slip_customer){
         haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
       } else {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
       }
       //Send Log to Discord
       const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
@@ -2293,15 +2293,19 @@ app.post('/updateCustomerCourse', verifyToken, async (req, res) => {
         console.log("slip_customer " + slip_customer + "\nslip_image_url " + slip_image_url);
         let haveImageString = "";
         if(slip_customer){
-          haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
+          haveImageString = `\nมีการอัพโหลดรูปภาพ Slip ใหม่👍👍👍`;
         } else if (slip_image_url) {
           haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip เพราะมีการอัพโหลดรูปภาพที่เก็บไว้ในระบบแล้ว 👍👍👍`;
         } else {
-          haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+          haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
         }
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
+        if(!slip_customer && slip_image_url) {
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
+        }else{
+          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
+        }
       } else {
-        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}`);
+        logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
       }
 
       res.json({ success: true, message: 'Customer Course updated successfully' });
