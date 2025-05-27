@@ -2355,6 +2355,56 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
   }
 });
 
+async function uploadSlipImageToS3(reqFile) {
+  if (!reqFile) return { url: null, key: null };
+
+  const fs = require('fs');
+  let originalFileName = reqFile.originalname;
+  let fileExtension = originalFileName.split('.').pop();
+  let fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
+  let fileName = `slip_customer_course/${originalFileName}`;
+  let params = {
+    Bucket: 'istar',
+    Key: fileName,
+    Body: fs.createReadStream(reqFile.path),
+    ACL: 'public-read',
+    ContentType: reqFile.mimetype
+  };
+
+  // ตรวจสอบชื่อซ้ำ
+  let fileExists = true;
+  let fileIndex = 1;
+  while (fileExists) {
+    try {
+      await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
+      fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
+      fileExtension = reqFile.originalname.split('.').pop();
+      fileName = `slip_customer_course/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+      params.Key = fileName;
+      fileIndex++;
+    } catch (headErr) {
+      if (headErr.name === 'NotFound') {
+        fileExists = false;
+      } else {
+        throw headErr;
+      }
+    }
+  }
+
+  // อัปโหลดไฟล์ (ใช้ Buffer เพื่อความชัวร์)
+  const fileBuffer = fs.readFileSync(reqFile.path);
+  params.Body = fileBuffer;
+  await s3Client.send(new PutObjectCommand(params));
+
+  // ลบไฟล์ชั่วคราว
+  fs.unlink(reqFile.path, (err) => {
+    if (err) console.error('Failed to delete temporary file:', err);
+  });
+
+  const slipImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+  return { url: slipImageUrl, key: params.Key };
+}
+
 app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, coursestr, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
@@ -2402,17 +2452,26 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
       values.push(req.user.username);
     }
 
+    let slipImageUrl = null;
+    if (req.file) {
+      const uploadResult = await uploadSlipImageToS3(req.file);
+      slipImageUrl = uploadResult.url;
+      if (slipImageUrl) {
+        fields.push('slip_image_url');
+        values.push(slipImageUrl);
+      }
+    }
+
     const query = `INSERT INTO tcustomer_course (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
       let haveImageString = "";
-      if(!req.file) {
+      if(!slipImageUrl) {
         haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦`;
       } else {
-        const fileStream = fs.createReadStream(req.file.path);
-        console.log("slip_customer " + fileStream);
         haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍`;
+        
       }
       //Send Log to Discord
       const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
@@ -2420,7 +2479,12 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}\n` +
         `Short Note: ${shortnote}\n` +
         `Created By: ${req.user.username}` + haveImageString;
-      await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
+
+      if(slipImageUrl) {
+        await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage, slipImageUrl);
+      } else {
+        await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
+      }
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
