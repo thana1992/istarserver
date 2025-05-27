@@ -2237,7 +2237,7 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
-      const slip_customer = fs.createReadStream(req.file.path);
+      const slip_customer = req.file;
       console.log("slip_customer " + slip_customer);
       let haveImageString = "";
       if(slip_customer){
@@ -2307,7 +2307,7 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
           }
         }
       }
-      const slip_customer = fs.createReadStream(req.file.path);
+      const slip_customer = req.file;
       console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
       let haveImageString = "";
       if(slip_customer){
