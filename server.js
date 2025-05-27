@@ -2316,26 +2316,27 @@ app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
-      const fileStream = fs.createReadStream(req.file.path);
-      console.log("slip_customer " + fileStream);
       let haveImageString = "";
-      if(fileStream){
-        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍👍`;
+      if(!req.file) {
+        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦`;
       } else {
-        haveImageString = `\nยังไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦🤦`;
+        const fileStream = fs.createReadStream(req.file.path);
+        console.log("slip_customer " + fileStream);
+        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍`;
       }
       //Send Log to Discord
       const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
         `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
         `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}\n` +
         `Short Note: ${shortnote}\n` +
-        `Created By: ${req.user.username}\n` + haveImageString;
+        `Created By: ${req.user.username}` + haveImageString;
       await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
       res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
     } else {
       res.json({ success: false, message: 'Error adding Customer Course' });
     }
   } catch (error) {
+    console.log("Error in addCustomerCourse2 : " + JSON.stringify(error));
     console.error('Error in addCustomerCourse', error.stack);
     res.status(500).send(error);
   }
