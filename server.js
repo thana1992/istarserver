@@ -2268,6 +2268,15 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
 app.post('/addCustomerCourse2', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
     const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
+    //convert course from JSON string to object
+    if (typeof course === 'string') {
+      try {
+        course = JSON.parse(course);
+      } catch (error) {
+        console.error('Error parsing course JSON', error);
+        return res.status(400).json({ success: false, message: 'Invalid course data' });
+      }
+    }
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
