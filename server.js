@@ -2201,7 +2201,7 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
 
 app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote, slip_customer } = req.body;
+    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
@@ -2237,6 +2237,7 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
 
     const results = await queryPromise(query, values, true);
     if (results.affectedRows > 0) {
+      const slip_customer = fs.createReadStream(req.file.path);
       console.log("slip_customer " + slip_customer);
       let haveImageString = "";
       if(slip_customer){
@@ -2306,7 +2307,7 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
           }
         }
       }
-
+      const slip_customer = fs.createReadStream(req.file.path);
       console.log("slip_customer " + slip_customer + " , slip_image_url " + slip_image_url);
       let haveImageString = "";
       if(slip_customer){
@@ -2864,6 +2865,7 @@ async function deleteOldProfileImage(studentId) {
 const cron = require('node-cron');
 const { google } = require('googleapis');
 const { warn, log } = require('console');
+const { file } = require('googleapis/build/src/apis/file');
 const drive = google.drive('v3');
 const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
 const auth = new google.auth.GoogleAuth({
