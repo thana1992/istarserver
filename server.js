@@ -2617,9 +2617,13 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
                   }
                 }
               }
-            } else if (newValue !== oldValue) {
+            } else if (newValue != oldValue) {
               let oldVal = oldValue;
               let newVal = newValue;
+              // ถ้าเป็น string 'null' ให้แปลงเป็น null
+              if (oldVal === 'null') oldVal = null;
+              if (newVal === 'null') newVal = null;
+              
               if (key === 'slip_image_url') {
                 oldVal = oldValue ? encodeURI(oldValue) : '';
                 newVal = newValue ? encodeURI(newValue) : '';
