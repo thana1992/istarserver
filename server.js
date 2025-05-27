@@ -2519,8 +2519,8 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       const uploadResult = await uploadSlipImageToS3(req.file, courserefer);
       slipImageUrl = uploadResult.url;
       if (slipImageUrl) {
-        fields.push('slip_image_url');
-        values.push(slipImageUrl);
+        fieldsToUpdate.push('slip_image_url');
+        valuesToUpdate.push(slipImageUrl);
         slip_image_url = slipImageUrl; // Update slip_image_url to the new value
       }
     }
