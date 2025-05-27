@@ -2205,8 +2205,8 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     const courserefer = await generateRefer(course.refercode);
 
     // สร้างคำสั่ง SQL และพารามิเตอร์
-    const fields = ['courserefer', 'courseid', 'paid', 'paydate', 'shortnote'];
-    const values = [courserefer, course.courseid, paid, paydate, shortnote];
+    const fields = ['courserefer', 'courseid', 'paid', 'shortnote'];
+    const values = [courserefer, course.courseid, paid, shortnote];
     
     if (coursetype) {
       fields.push('coursetype');
@@ -2227,6 +2227,10 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     if (period) {
       fields.push('period');
       values.push(period);
+    }
+    if (period) {
+      fields.push('paydate');
+      values.push(paydate);
     }
     if(req.user.username) {
       fields.push('createby');
