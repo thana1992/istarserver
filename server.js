@@ -2623,6 +2623,9 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
               // ถ้าเป็น string 'null' ให้แปลงเป็น null
               if (oldVal === 'null') oldVal = null;
               if (newVal === 'null') newVal = null;
+              if(oldVal == null && newVal == null) {
+                continue; // ถ้าไม่มีการเปลี่ยนแปลงให้ข้าม
+              }
               
               if (key === 'slip_image_url') {
                 oldVal = oldValue ? encodeURI(oldValue) : '';
