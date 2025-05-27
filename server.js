@@ -2499,20 +2499,8 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
     const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
-    let fieldsToUpdate = ['courseid', 'coursetype', 'paid', 'shortnote', 'updateby'];
-    let valuesToUpdate = [courseid, coursetype, paid , shortnote, req.user.username];
-    if (startdate) {
-      fieldsToUpdate.push('startdate');
-      valuesToUpdate.push(startdate);
-    }
-    if (expiredate) {
-      fieldsToUpdate.push('expiredate');
-      valuesToUpdate.push(expiredate);
-    }
-    if (paydate) {
-      fieldsToUpdate.push('paydate');
-      valuesToUpdate.push(paydate);
-    }
+    let fieldsToUpdate = ['courseid', 'coursetype', 'paid', 'startdate', 'expiredate', 'paydate', 'shortnote', 'updateby'];
+    let valuesToUpdate = [courseid, coursetype, paid , startdate, expiredate, paydate, shortnote, req.user.username];
 
     let slipImageUrl = null;
     if (req.file) {
