@@ -2458,6 +2458,7 @@ app.post('/updateCustomerCourse2', verifyToken, upload.single('slipImage'), asyn
       res.json({ success: false, message: 'Error updating Customer Course' });
     }
   } catch (error) {
+    console.log("Error in updateCustomerCourse2 : " + JSON.stringify(error));
     console.error('Error in updateCustomerCourse', error.stack);
     res.status(500).send(error);
   }
