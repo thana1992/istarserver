@@ -741,15 +741,6 @@ async function checkCourseShare(courserefer, studentid) {
 app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, classid, classdate, classtime, courseid, classday, freeflag } = req.body;
-
-    // ตรวจสอบการจองซ้ำในวันเดียวกัน
-    const checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate]);
-
-    if (resCheckDuplicateReservation.length > 0) {
-      return res.json({ success: false, message: 'You have already booked on this day' });
-    }
-
     // ตรวจสอบว่าคลาสเต็มหรือไม่
     const checkClassFullQuery = `
       SELECT 
@@ -777,7 +768,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             tcustomer_course.remaining, 
             tcustomer_course.expiredate, 
             tcustomer_course.period,
-            tcustomer_course.owner
+            tcustomer_course.owner,
+            tcustomer_course.enable_double_booking
           FROM tstudent 
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
@@ -816,6 +808,19 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
             }
 
+            // ตรวจสอบการจองซ้ำในวันเดียวกัน
+            const enable_double_booking = resCheckCourse[0].enable_double_booking || 0; // ใช้ค่าเริ่มต้นเป็น 0 ถ้าไม่พบ
+            let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
+            let params = [studentid, classdate];
+            if(enable_double_booking == 1) {
+              checkDuplicateReservationQuery += ' AND classtime <> ?';
+              params.push(classtime);
+            }
+            const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
+
+            if (resCheckDuplicateReservation.length > 0) {
+              return res.json({ success: false, message: 'You have already booked on this day' });
+            }
           }
 
           // เพิ่มการจองคลาส
@@ -927,14 +932,6 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
   try {
     const { studentid, classid, classdate, classtime, courseid, classday, reservationid, freeflag } = req.body;
 
-    // ตรวจสอบการจองซ้ำในวันเดียวกัน
-    const checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ? AND reservationid <> ?';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate, reservationid]);
-
-    if (resCheckDuplicateReservation.length > 0) {
-      return res.json({ success: false, message: 'You have already booked on this day' });
-    }
-
     // ตรวจสอบว่าคลาสเต็มหรือไม่
     const checkClassFullQuery = `
       SELECT 
@@ -1013,7 +1010,8 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             tcustomer_course.coursetype, 
             tcustomer_course.remaining, 
             tcustomer_course.expiredate, 
-            tcustomer_course.period 
+            tcustomer_course.period,
+            tcustomer_course.enable_double_booking
           FROM tstudent 
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
@@ -1042,9 +1040,19 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             }
           }
 
-          // ตรวจสอบจำนวนคลาสที่เหลือ
-          if (coursetype !== 'Monthly' && remaining <= 0) {
-            return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+          // ตรวจสอบข้อมูลคอร์สของนักเรียน
+          const enable_double_booking = resCheckCourse[0].enable_double_booking || 0; // ใช้ค่าเริ่มต้นเป็น 0 ถ้าไม่พบ
+          // ตรวจสอบการจองซ้ำในวันเดียวกัน
+          let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND reservationid <> ? AND classdate = ? ';
+          let params = [studentid, reservationid, classdate];
+          if(enable_double_booking == 1) {
+            checkDuplicateReservationQuery += ' AND classtime <> ?';
+            params.push(classtime);
+          }
+          
+          const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
+          if (resCheckDuplicateReservation.length > 0) {
+            return res.json({ success: false, message: 'You have already booked on this day' });
           }
 
           // ดึงข้อมูลการจองเดิม
@@ -1220,14 +1228,6 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
   try {
     const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
 
-    // ตรวจสอบการจองซ้ำในวันเดียวกัน
-    const checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
-    const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, [studentid, classdate], true);
-
-    if (resCheckDuplicateReservation.length > 0) {
-      return res.json({ success: false, message: 'You have already booked on this day' });
-    }
-
     // ตรวจสอบว่าคลาสเต็มหรือไม่
     const checkClassFullQuery = `
       SELECT 
@@ -1253,7 +1253,8 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
           tcustomer_course.coursetype, 
           tcustomer_course.remaining, 
           tcustomer_course.expiredate, 
-          tcustomer_course.period 
+          tcustomer_course.period,
+          tcustomer_course.enable_double_booking 
         FROM tstudent 
         INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
         WHERE tstudent.studentid = ?
@@ -1289,6 +1290,21 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
         // ตรวจสอบจำนวนคลาสที่เหลือ
         if (coursetype !== 'Monthly' && remaining <= 0) {
           return res.json({ success: false, message: 'Sorry, you have no remaining classes' });
+        }
+
+        // ตรวจสอบการจองซ้ำในวันเดียวกัน
+        const enable_double_booking = resCheckCourse[0].enable_double_booking || 0; // ใช้ค่าเริ่มต้นเป็น 0 ถ้าไม่พบ
+        let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
+        let params = [studentid, classdate];
+        if(enable_double_booking == 1) {
+          // ถ้า enable_double_booking = 1 ให้ไม่ตรวจสอบการจองซ้ำ
+          checkDuplicateReservationQuery += ' AND classtime <> ?';
+          params.push(classtime);
+        }
+        const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
+
+        if (resCheckDuplicateReservation.length > 0) {
+          return res.json({ success: false, message: 'You have already booked on this day' });
         }
 
         // เพิ่มการจองคลาส
@@ -2405,7 +2421,7 @@ async function uploadSlipImageToS3(reqFile, refer) {
 
 app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
-    const { coursetype, coursestr, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
+    const { coursetype, coursestr, remaining, startdate, expiredate, period, enable_double_booking, paid, paydate, shortnote } = req.body;
     //convert course from JSON string to object
     if (typeof coursestr === 'string') {
       try {
@@ -2436,6 +2452,10 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
     if (expiredate !== undefined && expiredate !== null && expiredate !== 'null' && expiredate !== '') {
       fields.push('expiredate');
       values.push(expiredate);
+    }
+    if (enable_double_booking !== undefined && enable_double_booking !== null && enable_double_booking !== 'null' && enable_double_booking !== '') {
+      fields.push('enable_double_booking');
+      values.push(enable_double_booking);
     }
     if (period) {
       fields.push('period');
@@ -2496,7 +2516,7 @@ app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (r
 
 app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
   try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote } = req.body;
+    const { courserefer, courseid, coursetype, startdate, expiredate, enable_double_booking, paid, paydate, shortnote } = req.body;
     let slip_image_url = req.body.slip_image_url || null; // ใช้ค่า slip_image_url จาก body ถ้ามี
     queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
     let oldData = await queryPromise(queryData, [courserefer]);
@@ -2515,6 +2535,13 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
       valuesToUpdate.push(expiredate);
     } else {
       fieldsToUpdate.push('expiredate');
+      valuesToUpdate.push(null);
+    }
+    if (enable_double_booking !== undefined && enable_double_booking !== null && enable_double_booking !== '' && enable_double_booking !== 'null') {
+      fieldsToUpdate.push('enable_double_booking');
+      valuesToUpdate.push(enable_double_booking);
+    } else {
+      fieldsToUpdate.push('enable_double_booking');
       valuesToUpdate.push(null);
     }
     if (paydate !== undefined && paydate !== null && paydate !== '' && paydate !== 'null') {
