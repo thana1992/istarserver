@@ -813,13 +813,13 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
             let params = [studentid, classdate];
             if(enable_double_booking == 1) {
-              checkDuplicateReservationQuery += ' AND classtime <> ?';
+              checkDuplicateReservationQuery += ' AND classtime = ?';
               params.push(classtime);
             }
             const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
 
             if (resCheckDuplicateReservation.length > 0) {
-              return res.json({ success: false, message: 'You have already booked on this day' });
+              return res.json({ success: false, message: 'มีชื่ออยู่ในคลาสอยู่แล้ว ไม่สามารถจองซ้ำได้' });
             }
           }
 
@@ -1046,13 +1046,13 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND reservationid <> ? AND classdate = ? ';
           let params = [studentid, reservationid, classdate];
           if(enable_double_booking == 1) {
-            checkDuplicateReservationQuery += ' AND classtime <> ?';
+            checkDuplicateReservationQuery += ' AND classtime = ?';
             params.push(classtime);
           }
           
           const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
           if (resCheckDuplicateReservation.length > 0) {
-            return res.json({ success: false, message: 'You have already booked on this day' });
+            return res.json({ success: false, message: 'มีชื่ออยู่ในคลาสอยู่แล้ว ไม่สามารถจองซ้ำได้' });
           }
 
           // ดึงข้อมูลการจองเดิม
