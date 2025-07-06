@@ -1418,6 +1418,8 @@ app.post('/checkDuplicateReservation', verifyToken, async (req, res) => {
 
     if (resCheckDuplicateReservation.length > 0) {
       return res.json({ success: false, message: msg });
+    }else{
+      return res.json({ success: true, message: 'No duplicate reservation found' });
     }
   
   } catch (error) {
