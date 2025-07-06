@@ -812,14 +812,16 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             const enable_double_booking = resCheckCourse[0].enable_double_booking || 0; // ใช้ค่าเริ่มต้นเป็น 0 ถ้าไม่พบ
             let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ?';
             let params = [studentid, classdate];
+            let msg = 'ํYou have already booked on this day';
             if(enable_double_booking == 1) {
               checkDuplicateReservationQuery += ' AND classtime = ?';
               params.push(classtime);
+              msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
             }
             const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
 
             if (resCheckDuplicateReservation.length > 0) {
-              return res.json({ success: false, message: 'มีชื่ออยู่ในคลาสอยู่แล้ว ไม่สามารถจองซ้ำได้' });
+              return res.json({ success: false, message: msg });
             }
           }
 
@@ -1045,14 +1047,16 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           // ตรวจสอบการจองซ้ำในวันเดียวกัน
           let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND reservationid <> ? AND classdate = ? ';
           let params = [studentid, reservationid, classdate];
+          let msg = 'ํYou have already booked on this day';
           if(enable_double_booking == 1) {
             checkDuplicateReservationQuery += ' AND classtime = ?';
             params.push(classtime);
+            msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
           }
           
           const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
           if (resCheckDuplicateReservation.length > 0) {
-            return res.json({ success: false, message: 'มีชื่ออยู่ในคลาสอยู่แล้ว ไม่สามารถจองซ้ำได้' });
+            return res.json({ success: false, message: msg });
           }
 
           // ดึงข้อมูลการจองเดิม
