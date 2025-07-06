@@ -1388,7 +1388,7 @@ app.post('/deleteReservation', verifyToken, async (req, res) => {
 });
 
 app.post('/checkDuplicateReservation', verifyToken, async (req, res) => {
-  const { studentid, classdate } = req.body;
+  const { studentid, classdate, classtime } = req.body;
   try {
     const checkCourseQuery = `
         SELECT 
