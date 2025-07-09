@@ -3269,54 +3269,59 @@ const auth = new google.auth.GoogleAuth({
 
 const folderId = '1G5VdaeIpN36EQgFvoEbIivXK9vCKtAdv'; // ไอดีของโฟลเดอร์ใน Google Drive
 async function uploadOrUpdateLogFile() {
-  console.log('[Process] Log file upload... '+logFileName);
-  const authClient = await auth.getClient();
-  google.options({ auth: authClient });
+  try {
+    console.log('[Process] Log file upload... '+logFileName);
+    const authClient = await auth.getClient();
+    google.options({ auth: authClient });
 
-  // ตรวจสอบว่าไฟล์มีอยู่หรือไม่
-  const res = await drive.files.list({
-    q: `name='${logFileName}' and '${folderId}' in parents`,
-    fields: 'files(id, name)',
-    spaces: 'drive',
-  });
-
-  const files = res.data.files;
-  const fileMetadata = {
-    name: logFileName,
-    parents: [folderId],
-  };
-  const media = {
-    mimeType: 'text/plain',
-    body: fs.createReadStream(logPath+logFileName),
-  };
-
-  if (files.length > 0) {
-    // ถ้าไฟล์มีอยู่แล้ว ให้ทำการอัพเดทไฟล์
-    const fileId = files[0].id;
-    drive.files.update({
-      fileId: fileId,
-      media: media,
-      fields: 'id',
-    }, (err, file) => {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log('[Success] Update Log file and upload '+logFileName);
-      }
+    // ตรวจสอบว่าไฟล์มีอยู่หรือไม่
+    const res = await drive.files.list({
+      q: `name='${logFileName}' and '${folderId}' in parents`,
+      fields: 'files(id, name)',
+      spaces: 'drive',
     });
-  } else {
-    // ถ้าไฟล์ไม่มี ให้ทำการสร้างไฟล์ใหม่
-    drive.files.create({
-      resource: fileMetadata,
-      media: media,
-      fields: 'id',
-    }, (err, file) => {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log('[Success] Create Log file and upload '+logFileName);
-      }
-    });
+
+    const files = res.data.files;
+    const fileMetadata = {
+      name: logFileName,
+      parents: [folderId],
+    };
+    const media = {
+      mimeType: 'text/plain',
+      body: fs.createReadStream(logPath+logFileName),
+    };
+
+    if (files.length > 0) {
+      // ถ้าไฟล์มีอยู่แล้ว ให้ทำการอัพเดทไฟล์
+      const fileId = files[0].id;
+      drive.files.update({
+        fileId: fileId,
+        media: media,
+        fields: 'id',
+      }, (err, file) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log('[Success] Update Log file and upload '+logFileName);
+        }
+      });
+    } else {
+      // ถ้าไฟล์ไม่มี ให้ทำการสร้างไฟล์ใหม่
+      drive.files.create({
+        resource: fileMetadata,
+        media: media,
+        fields: 'id',
+      }, (err, file) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log('[Success] Create Log file and upload '+logFileName);
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Error uploading log file to Google Drive:', err);
+    // ไม่ throw error ออกไป เพื่อไม่ให้ process ล่ม
   }
 }
 
