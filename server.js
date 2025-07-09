@@ -38,7 +38,7 @@ const pool = mysql2.createPool({
 });
 
 // ติดตั้ง package สำหรับ S3 v3
-const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, HeadObjectCommand, ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
 
@@ -51,6 +51,103 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.DO_SPACES_SECRET,
   }
 });
+
+// for save file log
+const morgan = require('morgan');
+const winston = require('winston');
+const fs = require('fs');
+const path = require('path');
+
+// สร้าง timestamp สำหรับชื่อไฟล์ log
+const { format } = require('date-fns/format');
+const timeZone = 'Asia/Bangkok';
+const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
+console.log('timestamp : ' + timestamp);
+const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
+const logPath = './logs/';
+if (!fs.existsSync(logPath)) {
+  fs.mkdirSync(logPath, { recursive: true });
+}
+
+// สร้าง winston logger
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({
+      format: () => {
+        const formattedDate = momentTH().format('YYYY-MM-DD HH:mm:ss.SSS');
+        return `${formattedDate}`;
+      }
+    }),
+    winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: logPath+logFileName })
+  ]
+});
+
+const { warn, log } = require('console');
+async function uploadOrUpdateLogFile() {
+  try {
+    const logFilePath = logPath + logFileName;
+    let fileName = `logs/${logFileName}`;
+    let params = {
+      Bucket: 'istar',
+      Key: fileName,
+      Body: fs.createReadStream(logFilePath),
+      ACL: 'public-read',
+      ContentType: 'text/plain'
+    };
+
+    // อัปโหลดไฟล์ (ใช้ Buffer เพื่อความชัวร์)
+    const fileBuffer = fs.readFileSync(logFilePath);
+    params.Body = fileBuffer;
+    await s3Client.send(new PutObjectCommand(params));
+
+    // (ไม่ต้องลบ log ในเครื่อง)
+    const logUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+    console.log('[Success] Log file uploaded to S3:', logUrl);
+    // คุณสามารถ log ไป Discord หรืออื่นๆ ได้ที่นี่
+  } catch (err) {
+    console.error('Error uploading log file to S3:', err);
+  }
+}
+
+async function deleteOldLogsFromS3() {
+  const bucket = 'istar';
+  const prefix = 'logs/';
+  const now = new Date();
+  const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
+  const threeDaysAgo = new Date(now.setDate(now.getDate() - 3));
+
+  let continuationToken = undefined;
+  let deletedCount = 0;
+
+  do {
+    const listParams = {
+      Bucket: bucket,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    };
+    const listCommand = new ListObjectsV2Command(listParams);
+    const listResult = await s3Client.send(listCommand);
+
+    if (listResult.Contents) {
+      for (const obj of listResult.Contents) {
+        if (obj.LastModified && obj.LastModified < threeDaysAgo) {
+          // ลบไฟล์
+          await s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: obj.Key }));
+          console.log(`Deleted: ${obj.Key}`);
+          deletedCount++;
+        }
+      }
+    }
+    continuationToken = listResult.IsTruncated ? listResult.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  console.log(`Total deleted logs: ${deletedCount}`);
+}
 
 function momentTH(input) {
   return input ? moment(input).tz('Asia/Bangkok') : moment().tz('Asia/Bangkok');
@@ -129,41 +226,6 @@ function maskSensitiveData(data) {
   }
   return maskedData;
 }
-
-// for save file log
-const morgan = require('morgan');
-const winston = require('winston');
-const fs = require('fs');
-const path = require('path');
-
-// สร้าง timestamp สำหรับชื่อไฟล์ log
-const { format } = require('date-fns/format');
-const timeZone = 'Asia/Bangkok';
-const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
-console.log('timestamp : ' + timestamp);
-const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
-const logPath = './logs/';
-if (!fs.existsSync(logPath)) {
-  fs.mkdirSync(logPath, { recursive: true });
-}
-
-// สร้าง winston logger
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({
-      format: () => {
-        const formattedDate = momentTH().format('YYYY-MM-DD HH:mm:ss.SSS');
-        return `${formattedDate}`;
-      }
-    }),
-    winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: logPath+logFileName })
-  ]
-});
 
 // เริ่มด้วย bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -892,7 +954,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             } catch (error) {
               console.error('Error sending notification', error.stack);
             }
-            
+
             await connection.commit();
             if (fullflag == 1) {
               return res.json({ success: true, message: 'จองคลาสสำเร็จ (เป็นการจองคลาสเกิน Maximun)' });
@@ -3133,33 +3195,6 @@ async function deleteOldProfileImage(studentId) {
   await queryPromise(query, [studentId]);
 }
 
-const { warn, log } = require('console');
-async function uploadOrUpdateLogFile() {
-  try {
-    const logFilePath = logPath + logFileName;
-    let fileName = `logs/${logFileName}`;
-    let params = {
-      Bucket: 'istar',
-      Key: fileName,
-      Body: fs.createReadStream(logFilePath),
-      ACL: 'public-read',
-      ContentType: 'text/plain'
-    };
-
-    // อัปโหลดไฟล์ (ใช้ Buffer เพื่อความชัวร์)
-    const fileBuffer = fs.readFileSync(logFilePath);
-    params.Body = fileBuffer;
-    await s3Client.send(new PutObjectCommand(params));
-
-    // (ไม่ต้องลบ log ในเครื่อง)
-    const logUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
-    console.log('[Success] Log file uploaded to S3:', logUrl);
-    // คุณสามารถ log ไป Discord หรืออื่นๆ ได้ที่นี่
-  } catch (err) {
-    console.error('Error uploading log file to S3:', err);
-  }
-}
-
 async function scheduleRestartAtSpecificTime(hour, minute) {
   const now = new Date();
   const nextRestart = new Date();
@@ -3182,7 +3217,9 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log("###################################################################");
   console.log('####################### Server restarting... ######################');
   console.log("###################################################################");
+  await deleteOldLogsFromS3();
   await uploadOrUpdateLogFile();
+
   server.close(() => {
     logSystemToDiscord('info', '✅ Server restarting... ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
     process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
