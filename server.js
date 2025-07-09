@@ -108,7 +108,7 @@ const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
 console.log('timestamp : ' + timestamp);
-const logFileName = `v1-server-${timestamp}.log`;
+const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
 const logPath = './logs/';
 
 // สร้าง winston logger
