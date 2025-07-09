@@ -872,19 +872,15 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
               await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer],true);
             } else {
-              const today = new Date();
-              const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-              if (todayDateOnly > newExpireDate) {
+              if (momentTH(new Date()).isAfter(momentTH(newExpireDate), 'day')) {
                 return res.json({ success: false, message: 'Sorry, your course has expired' });
               }
 
-              console.log('classdate', classdate);
-              console.log('newExpireDate', newExpireDate);
               if (momentTH(classdate).isAfter(momentTH(newExpireDate), 'day')) {
                 console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
                 return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
               } else {
-                console.log('Your course is still valid.');
+                console.log(owner + ' course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
               }
             }
 
@@ -941,9 +937,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
               if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-                var a = momentTH(classdate).format("YYYYMMDD");
-                console.log("classdate : " + classdate);
-                console.log("a : " + a);
+                var a = moment(classdate,"YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
                   month: 'short',
@@ -992,7 +986,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              var a = momentTH(classdate).format("YYYYMMDD");
+              var a = moment(classdate,"YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -1069,7 +1063,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               const studentnickname = results[0].nickname;
               const studentname = results[0].fullname;
               const coursename = results[0].course_shortname;
-              var a = momentTH(classdate).format("YYYYMMDD");
+              var a = moment(classdate,"YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -1124,15 +1118,15 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
             await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
           } else {
-            const today = new Date();
-            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            if (todayDateOnly > newExpireDate) {
+            if (momentTH(new Date()).isAfter(momentTH(newExpireDate), 'day')) {
               return res.json({ success: false, message: 'Sorry, your course has expired' });
             }
 
-            const classDate = new Date(classdate);
-            if (classDate > newExpireDate) {
-              return res.json({ success: false, message: `Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}` });
+            if (momentTH(classdate).isAfter(momentTH(newExpireDate), 'day')) {
+              console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
+              return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
+            } else {
+              console.log(owner + ' course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
             }
           }
 
@@ -1184,7 +1178,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   const studentnickname = results[0].nickname;
                   const studentname = results[0].fullname;
                   const coursename = results[0].course_shortname;
-                  var a = momentTH(classdate).format("YYYYMMDD");
+                  var a = moment(classdate, "YYYYMMDD");
                   const bookdate = new Date(a).toLocaleDateString('th-TH', {
                     year: 'numeric',
                     month: 'short',
@@ -1238,7 +1232,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       const coursename = resultsMsg[0].course_shortname;
       const classdate = resultsMsg[0].classdate;
       const classtime = resultsMsg[0].classtime;
-      var a = momentTH(classdate).format("YYYYMMDD");
+      var a = moment(classdate, "YYYYMMDD");
       const bookdate = new Date(a).toLocaleDateString('th-TH', {
         year: 'numeric',
         month: 'short',
@@ -1390,19 +1384,15 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
           const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
           await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
         } else {
-          const today = new Date();
-          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          if (todayDateOnly > newExpireDate) {
+          if (momentTH(new Date()).isAfter(momentTH(newExpireDate), 'day')) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
           }
 
-          console.log("classDate : " + classdate);
-          console.log("newExpireDate : " + newExpireDate);
           if (momentTH(classdate).isAfter(momentTH(newExpireDate), 'day')) {
-            console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
+            console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
             return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
           } else {
-            console.log('Your course is still valid.');
+            console.log(owner + ' course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
           }
         }
 
@@ -1457,7 +1447,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
             console.log("notifyResults lenght: " + notifyResults.length);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              var a = momentTH(classdate).format("YYYYMMDD");
+              var a = moment(classdate, "YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -2288,12 +2278,12 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
            WHERE r.courserefer = a.courserefer
          )
         END AS userlist
-FROM tcustomer_course a 
-LEFT JOIN tcourseinfo b 
-ON a.courseid = b.courseid 
-WHERE a.finish = 1 
-GROUP BY a.courseid, a.courserefer, b.coursename
-ORDER BY a.createdate desc
+        FROM tcustomer_course a 
+        LEFT JOIN tcourseinfo b 
+        ON a.courseid = b.courseid 
+        WHERE a.finish = 1 
+        GROUP BY a.courseid, a.courserefer, b.coursename
+        ORDER BY a.createdate desc
     `;
 
     const results = await queryPromise(query, null);
@@ -2314,7 +2304,12 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     const query = `SELECT a.*, b.coursename, 
         CASE 
          WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-         ELSE GROUP_CONCAT(s.nickname SEPARATOR ', ')
+         ELSE (
+           SELECT GROUP_CONCAT(DISTINCT s.nickname SEPARATOR ', ')
+           FROM tstudent s
+           JOIN treservation r ON s.studentid = r.studentid
+           WHERE r.courserefer = a.courserefer
+         )
         END AS userlist
         FROM tcustomer_course a 
         LEFT JOIN tcourseinfo b 
