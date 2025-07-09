@@ -3,7 +3,10 @@ require('dotenv').config()
 const express = require('express');
 const axios = require('axios');
 const qs = require('qs');
-const moment = require('moment');
+//const moment = require('moment');
+const moment = require('moment-timezone');
+const thaiDateTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+console.log("DATE moment-timezone " + thaiDateTime); // ได้วันที่ไทยเสมอ
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -50,6 +53,11 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.DO_SPACES_SECRET,
   }
 });
+
+function momentTH(input) {
+  return input ? moment(input).tz('Asia/Bangkok') : moment().tz('Asia/Bangkok');
+}
+
 async function queryPromise(query, params, showlog) {
   let connection;
   try {
@@ -110,6 +118,9 @@ const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })
 console.log('timestamp : ' + timestamp);
 const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
 const logPath = './logs/';
+if (!fs.existsSync(logPath)) {
+  fs.mkdirSync(logPath, { recursive: true });
+}
 
 // สร้าง winston logger
 const logger = winston.createLogger({
@@ -148,7 +159,7 @@ app.use(cors({
 // เพิ่ม middleware logging (request/response)
 app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
 app.use((req, res, next) => {
-  logger.info(`REQUEST: ${req.method} ${req.url}`);
+  //logger.info(`REQUEST: ${req.method} ${req.url}`);
   const originalSend = res.send;
   res.send = function (body) {
     let logBody = body;
@@ -184,7 +195,7 @@ app.use((req, res, next) => {
       logger.warn('Unable to parse response body as JSON', error);
     }
 
-    logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
+    //logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
     const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const username = req.user && req.user.username ? req.user.username : 'Unknown User';
     logToQueue('apicall', `[${timestamp}] [${username}] Request[${req.method}] ${req.url}`);
@@ -381,17 +392,12 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
     ' where a.familyid = ? ' +
     ' and a.delflag = 0';
   try {
-    const results = await queryPromise(query, [familyid])
-      .then((results) => {
-        if (results.length > 0) {
-          res.json({ success: true, message: 'Get FamilyMember successful', results });
-        } else {
-          res.json({ success: true, message: 'Not found FamilyMember', results });
-        }
-      })
-      .catch((error) => {
-        res.status(500).send(error);
-      });
+    const results = await queryPromise(query, [familyid]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get FamilyMember successful', results });
+    } else {
+      res.json({ success: true, message: 'Not found FamilyMember', results });
+    }
   } catch (error) {
     console.error("Error in getFamilyMember", error.stack);
     res.status(500).send(error);
@@ -412,21 +418,16 @@ app.post("/getFamilyList", verifyToken, async (req, res) => {
     ' where a.familyid = ? ';
 
   try {
-    const results = await queryPromise(query, [familyid, familyid])
-      .then((results) => {
-        if (results.length > 0) {
-          res.json({ success: true, message: 'Get Family Member successful', results });
-        } else {
-          res.json({ success: true, message: 'No Family Member', results });
-        }
-      })
-      .catch((error) => {
-        res.status(500).send(error);
-      });
+    const results = await queryPromise(query, [familyid, familyid]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Family Member successful', results });
+    } else {
+      res.json({ success: true, message: 'No Family Member', results });
+    }
   } catch (error) {
-    console.error("Error in getStudent", error.stack);
+    console.error("Error in getFamilyList", error.stack);
     res.status(500).send(error);
-  } 
+  }
 });
 
 app.post('/addStudent', verifyToken, async (req, res) => {
@@ -783,7 +784,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           // ตรวจสอบวันหมดอายุของคอร์ส
           if(owner != 'trial') {
             if (!expiredate) {
-              newExpireDate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+              newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
               const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
               await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
             } else {
@@ -795,9 +796,9 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
               console.log('classdate', classdate);
               console.log('newExpireDate', newExpireDate);
-              if (moment(classdate).isAfter(moment(newExpireDate), 'day')) {
-                console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
-                return res.json({ success: false, message: 'Sorry, your course has expire on ' + moment(expiredate).format('DD/MM/YYYY') });
+              if (momentTH(classdate).isAfter(momentTH(newExpireDate), 'day')) {
+                console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
+                return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
               } else {
                 console.log('Your course is still valid.');
               }
@@ -856,7 +857,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               const notifyResults = await queryPromise(queryNotifyData, [studentid]);
               if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-                var a = moment(classdate, "YYYYMMDD");
+                var a = momentTH(classdate).format("YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
                   month: 'short',
@@ -904,7 +905,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             const notifyResults = await queryPromise(queryNotifyData, [studentid]);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              var a = moment(classdate, "YYYYMMDD");
+              var a = momentTH(classdate).format("YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -976,7 +977,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               const studentnickname = results[0].nickname;
               const studentname = results[0].fullname;
               const coursename = results[0].course_shortname;
-              var a = moment(classdate, "YYYYMMDD");
+              var a = momentTH(classdate).format("YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -1026,7 +1027,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
           // ตรวจสอบวันหมดอายุของคอร์ส
           if (!expiredate) {
-            newExpireDate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+            newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
             const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
             await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
           } else {
@@ -1038,7 +1039,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
             const classDate = new Date(classdate);
             if (classDate > newExpireDate) {
-              return res.json({ success: false, message: `Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}` });
+              return res.json({ success: false, message: `Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}` });
             }
           }
 
@@ -1090,7 +1091,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   const studentnickname = results[0].nickname;
                   const studentname = results[0].fullname;
                   const coursename = results[0].course_shortname;
-                  var a = moment(classdate, "YYYYMMDD");
+                  var a = momentTH(classdate).format("YYYYMMDD");
                   const bookdate = new Date(a).toLocaleDateString('th-TH', {
                     year: 'numeric',
                     month: 'short',
@@ -1138,7 +1139,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       const coursename = resultsMsg[0].course_shortname;
       const classdate = resultsMsg[0].classdate;
       const classtime = resultsMsg[0].classtime;
-      var a = moment(classdate, "YYYYMMDD");
+      var a = momentTH(classdate).format("YYYYMMDD");
       const bookdate = new Date(a).toLocaleDateString('th-TH', {
         year: 'numeric',
         month: 'short',
@@ -1214,18 +1215,17 @@ app.post('/getMemberInfo', verifyToken, async (req, res) => {
 app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
   const { studentid, courserefer } = req.body;
   const query = 'SELECT * FROM treservation WHERE studentid = ? and courserefer = ? order by classdate desc limit 10';
-  await queryPromise(query, [studentid, courserefer])
-    .then((results) => {
-      if (results.length > 0) {
-        res.json({ success: true, message: 'Get Reservation Detail successful', results });
-      } else {
-        res.json({ success: true, message: 'No Reservation Detail' });
-      }
-    })
-    .catch((error) => {
-      res.json({ success: false, message: error.message });
-      console.error('Error in getMemberReservationDetail', error.stack);
-    })
+  try {
+    const results = await queryPromise(query, [studentid, courserefer]);
+    if (results.length > 0) {
+      res.json({ success: true, message: 'Get Reservation Detail successful', results });
+    } else {
+      res.json({ success: true, message: 'No Reservation Detail' });
+    }
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+    console.error('Error in getMemberReservationDetail', error.stack);
+  }
 });
 
 app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
@@ -1271,7 +1271,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
 
         // ตรวจสอบวันหมดอายุของคอร์ส
         if (!expiredate) {
-          newExpireDate = moment(classdate).add(period, 'M').format('YYYY-MM-DD');
+          newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
           const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
           await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
         } else {
@@ -1283,9 +1283,9 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
 
           console.log("classDate : " + classdate);
           console.log("newExpireDate : " + newExpireDate);
-          if (moment(classdate).isAfter(moment(newExpireDate), 'day')) {
+          if (momentTH(classdate).isAfter(momentTH(newExpireDate), 'day')) {
             console.log(`Sorry, your course has expired on ${moment(newExpireDate).format('DD/MM/YYYY')}`);
-            return res.json({ success: false, message: 'Sorry, your course has expire on ' + moment(expiredate).format('DD/MM/YYYY') });
+            return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
           } else {
             console.log('Your course is still valid.');
           }
@@ -1342,7 +1342,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
             console.log("notifyResults lenght: " + notifyResults.length);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              var a = moment(classdate, "YYYYMMDD");
+              var a = momentTH(classdate).format("YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -1565,33 +1565,26 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     WHERE a.classday = ? 
       AND a.courseid = ? 
   `;
-  
   if (req.user.adminflag != '1') {
     query += 'AND a.adminflag = 0 ';
   }
-  
   query += 'GROUP BY a.classid, a.classday, a.classtime, a.maxperson, a.courseid, d.description ';
-  
+
   try {
-    await queryPromise(query, [classdate, classdate, courseid, classday, courseid])
-      .then((results) => {
-        if (results.length > 0) {
-          results.forEach((element, index) => {
-            // ใช้ adjusted_available แทน available 
-            results[index].text = element.classtime + ' ว่าง ' + element.adjusted_available + ' คน';
-            if (element.description) {
-              results[index].text += ' (' + element.description + ')'; // เพิ่ม description
-            }
-            results[index].available = element.adjusted_available; // อัปเดตค่า available
-          });
-          res.json({ success: true, message: 'Get Class Time successful', results });
-        } else {
-          res.json({ success: true, message: 'No Class Time', results: [] });
+    const results = await queryPromise(query, [classdate, classdate, courseid, classday, courseid]);
+    if (results.length > 0) {
+      results.forEach((element, index) => {
+        // ใช้ adjusted_available แทน available 
+        results[index].text = element.classtime + ' ว่าง ' + element.adjusted_available + ' คน';
+        if (element.description) {
+          results[index].text += ' (' + element.description + ')'; // เพิ่ม description
         }
-      })
-      .catch((error) => {
-        res.status(500).send(error);
+        results[index].available = element.adjusted_available; // อัปเดตค่า available
       });
+      res.json({ success: true, message: 'Get Class Time successful', results });
+    } else {
+      res.json({ success: true, message: 'No Class Time', results: [] });
+    }
   } catch (error) {
     console.error('Error in getClassTime', error.stack);
     res.status(500).send(error);
@@ -1948,7 +1941,7 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
 });
 
 app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
-  console.log("getBookingListAdmin [request] : " + JSON.stringify(req.body));
+  //console.log("getBookingListAdmin [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
 
@@ -2072,7 +2065,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       }
     });
 
-    console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
+    //console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
     res.json({ success: true, message: 'Get Booking list successful', bookinglist });
   } catch (error) {
     console.error('Error in getBookingList', error.stack);
@@ -2081,7 +2074,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
 });
 
 app.post('/getBookingList', verifyToken, async (req, res) => {
-  console.log("getBookingList [request] : " + JSON.stringify(req.body));
+  //console.log("getBookingList [request] : " + JSON.stringify(req.body));
   try {
     const { classday, classdate } = req.body;
 
@@ -2132,7 +2125,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       }
     });
 
-    console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
+    //console.log("getBookingList [response] : " + JSON.stringify(bookinglist));
     res.json({ success: true, message: 'Get Booking list successful', bookinglist });
   } catch (error) {
     console.error('Error in getBookingList', error.stack);
@@ -2244,167 +2237,10 @@ app.get('/getCustomerCourseLookup', verifyToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-/*
-app.post('/addCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
-  try {
-    const { coursetype, course, remaining, startdate, expiredate, period, paid, paydate, shortnote } = req.body;
-    const courserefer = await generateRefer(course.refercode);
 
-    // สร้างคำสั่ง SQL และพารามิเตอร์
-    const fields = ['courserefer', 'courseid', 'paid', 'shortnote'];
-    const values = [courserefer, course.courseid, paid, shortnote];
-    
-    if (coursetype) {
-      fields.push('coursetype');
-      values.push(coursetype);
-    }
-    if (remaining !== undefined && remaining !== null && remaining !== 'null' && remaining !== '') {
-      fields.push('remaining');
-      values.push(remaining);
-    }
-    if (startdate) {
-      fields.push('startdate');
-      values.push(startdate);
-    }
-    if (expiredate) {
-      fields.push('expiredate');
-      values.push(expiredate);
-    }
-    if (period) {
-      fields.push('period');
-      values.push(period);
-    }
-    if (period) {
-      fields.push('paydate');
-      values.push(paydate);
-    }
-    if(req.user.username) {
-      fields.push('createby');
-      values.push(req.user.username);
-    }
-
-    const query = `INSERT INTO tcustomer_course (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
-
-    const results = await queryPromise(query, values, true);
-    if (results.affectedRows > 0) {
-      let haveImageString = "";
-      if(!req.file) {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦`;
-
-      } else {
-        const slip_customer = fs.createReadStream(req.file.path);
-        console.log("slip_customer " + slip_customer);
-        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍`;
-        
-      }
-      //Send Log to Discord
-      const logMessage = `${courserefer} : สร้าง Customer Course มีรายละเอียดดังนี้:\n` +
-        `Course ID: ${course.courseid}, Course Type: ${coursetype}, Remaining: ${remaining}\n` +
-        `Start Date: ${startdate}, Expire Date: ${expiredate}, Paid: ${paid}, Pay Date: ${paydate}\n` +
-        `Short Note: ${shortnote}\n` +
-        `Created By: ${req.user.username}` + haveImageString;
-      await logCourseToDiscord('info', `[addCustomerCourse][${req.user.username}]`, logMessage);
-      res.json({ success: true, message: 'Successfully Course No :' + courserefer, courserefer });
-    } else {
-      res.json({ success: false, message: 'Error adding Customer Course' });
-    }
-  } catch (error) {
-    console.error('Error in addCustomerCourse', error.stack);
-    res.status(500).send(error);
-  }
-});
-
-app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async (req, res) => {
-  try {
-    const { courserefer, courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, slip_image_url } = req.body;
-    queryData = 'SELECT * FROM tcustomer_course WHERE courserefer = ?';
-    let oldData = await queryPromise(queryData, [courserefer]);
-    const query = 'UPDATE tcustomer_course SET courseid = ?, coursetype = ?, startdate = ?, expiredate = ?, paid = ?, paydate = ?, shortnote = ?, updateby = ? WHERE courserefer = ?';
-    const results = await queryPromise(query, [courseid, coursetype, startdate, expiredate, paid, paydate, shortnote, req.user.username, courserefer]);
-    if (results.affectedRows > 0) {
-      //Send Log to Discord
-      let newData = await queryPromise(queryData, [courserefer]);
-
-      //เปรียบเทียบข้อมูลที่มีการเปลี่ยนแปลง ระหว่าง oldData และ newData เพื่อ log เฉพาะข้อมูลที่มีการเปลี่ยนแปลง ค่าที่เป็น datetime จะเปรียบเทียบแค่วันที่ ไม่เปรียบเทียบเวลา
-      let logData = {
-        courserefer: courserefer,
-        oldData: {},
-        newData: {},
-        changedFields: {}
-      };
-      for (const key in req.body) {
-        if (req.body.hasOwnProperty(key)) {
-          const newValue = req.body[key];
-          const oldValue = oldData[0][key];
-          if(key !== 'course') {
-            if (key === 'startdate' || key === 'expiredate' || key === 'paydate' || key === 'editdate' || key === 'createdate') {
-              const oldDate = new Date(oldValue).setHours(0, 0, 0, 0);
-              const newDate = new Date(newValue).setHours(0, 0, 0, 0);
-              if (oldDate !== newDate) {
-                // แปลง format วันที่ให้เป็น YYYY-MM-DD
-                const oldDateString = new Date(oldDate).toISOString().split('T')[0];
-                const newDateString = new Date(newDate).toISOString().split('T')[0];
-                logData.changedFields[key] = { old: oldDateString, new: newDateString };
-              }
-            } else if (newValue !== oldValue) {
-              if(key === 'slip_image_url') {
-                // ถ้าเป็น slip_image_url ให้ escape URL
-                oldValue = oldValue ? encodeURI(oldValue) : '';
-                newValue = newValue ? encodeURI(newValue) : '';
-              }
-              logData.oldData[key] = oldValue;
-              logData.newData[key] = newValue;
-              logData.changedFields[key] = { old: oldValue, new: newValue };
-            }
-          }
-        }
-      }
-      let haveImageString = "";
-      let slip_customer = null
-      if(!req.file) {
-        haveImageString = `\nไม่มีการอัพโหลดรูปภาพ Slip 🤦🤦`;
-
-      } else {
-        const slip_customer = fs.createReadStream(req.file.path);
-        console.log("slip_customer " + slip_customer);
-        haveImageString = `\nมีการอัพโหลดรูปภาพ Slip 👍👍`;
-        
-      }
-      // Log ข้อมูลที่มีการเปลี่ยนแปลง
-      if (Object.keys(logData.changedFields).length > 0) {
-        const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
-        console.log("DEBUG # 0 slip_customer : " + slip_customer + " slip_image_url : " + slip_image_url);
-        if(!slip_customer && slip_image_url) {
-          console.log("DEBUG # 1");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slip_image_url);
-        }else{
-          console.log("DEBUG # 2");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
-        }
-      } else {
-        if(slip_image_url) {
-          console.log("DEBUG # 3");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slip_image_url);
-        } else {
-          console.log("DEBUG # 4");
-          logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
-        }
-      }
-
-      res.json({ success: true, message: 'Customer Course updated successfully' });
-    } else {
-      res.json({ success: false, message: 'Error updating Customer Course' });
-    }
-  } catch (error) {
-    console.error('Error in updateCustomerCourse', error.stack);
-    res.status(500).send(error);
-  }
-});
-*/
 async function uploadSlipImageToS3(reqFile, refer) {
   if (!reqFile) return { url: null, key: null };
 
-  const fs = require('fs');
   let originalFileName = reqFile.originalname;
   let fileExtension = originalFileName.split('.').pop();
   let fileName = `slip_customer_course/${refer}.${fileExtension}`;
@@ -3045,7 +2881,7 @@ async function generateRefer(refertype) {
       let referno = results[0].running;
       let referdate = results[0].referdate;
       referno = referno + 1;
-      refer = refertype + "-" + moment(referdate).format('YYYYMMDD') + "-" + pad(4, referno, "0");
+      refer = refertype + "-" + momentTH(referdate).format('YYYYMMDD') + "-" + pad(4, referno, "0");
       const query2 = 'UPDATE trunning SET running = ? WHERE refertype = ? and referdate = curdate()';
       await queryPromise(query2, [referno, refertype]);
     } else {
@@ -3053,7 +2889,7 @@ async function generateRefer(refertype) {
       const query3 = 'INSERT INTO trunning (refertype, referdate, running) VALUES (?, curdate(), 1)';
       await queryPromise(query3, [refertype]);
       let referno = 1;
-      refer = refertype + "-" + moment().format('YYYYMMDD') + "-" + pad(4, referno, "0");
+      refer = refertype + "-" + momentTH().format('YYYYMMDD') + "-" + pad(4, referno, "0");
     }
   } catch (error) {
     console.error('Error in generateRefer', error.stack);
@@ -3131,34 +2967,28 @@ app.post('/request-otp', async (req, res) => {
     //otpStorage[phoneNumber] = otp;
 
     //sendOTP(phoneNumber, otp)
-    createVerification(phoneNumber)
-        .then(message => res.status(200).send({ success: true, message }))
-        .catch(error => res.status(500).send({ success: false, error }));
+    try {
+      const message = await createVerification(phoneNumber);
+      res.status(200).send({ success: true, message });
+    } catch (error) {
+      res.status(500).send({ success: false, error });
+    }
 });
 
 // Endpoint ยืนยัน OTP
 app.post('/verify-otp', async (req, res) => {
     const { sid, otp } = req.body;
-
-    createVerificationCheck(sid, otp)
-        .then(message => {
-          
-          if(message.valid) {
-            const token = jwt.sign({ sid: sid, otp: otp }, SECRET_KEY, { expiresIn: '10m' });
-            res.status(200).send({ success: message.valid, token })
-          }else{
-            res.status(200).send({ success: message.valid, message })
-          }
-        })
-        .catch(error => res.status(500).send({ success: false, error }));
-
-    // ตรวจสอบว่า OTP ตรงกับที่เก็บไว้หรือไม่
-    // if (otpStorage[phoneNumber] && otpStorage[phoneNumber] == otp) {
-    //     delete otpStorage[phoneNumber]; // ลบ OTP หลังการยืนยัน
-    //     res.status(200).send({ success: true, message: 'OTP verified successfully' });
-    // } else {
-    //     res.status(400).send({ success: false, message: 'Invalid OTP' });
-    // }
+    try {
+    const message = await createVerificationCheck(sid, otp);
+    if (message.valid) {
+      const token = jwt.sign({ sid: sid, otp: otp }, SECRET_KEY, { expiresIn: '10m' });
+      res.status(200).send({ success: message.valid, token });
+    } else {
+      res.status(200).send({ success: message.valid, message });
+    }
+  } catch (error) {
+    res.status(500).send({ success: false, error });
+  }
 });
 
 app.post('/checkmobileno', async (req, res) => {
@@ -3259,7 +3089,6 @@ async function deleteOldProfileImage(studentId) {
 const { warn, log } = require('console');
 async function uploadOrUpdateLogFile() {
   try {
-    const fs = require('fs');
     const logFilePath = logPath + logFileName;
     let fileName = `logs/${logFileName}`;
     let params = {
@@ -3269,27 +3098,6 @@ async function uploadOrUpdateLogFile() {
       ACL: 'public-read',
       ContentType: 'text/plain'
     };
-
-    // ตรวจสอบชื่อซ้ำ
-    let fileExists = true;
-    let fileIndex = 1;
-    while (fileExists) {
-      try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
-        // ถ้าซ้ำ ให้เพิ่ม _1, _2, ...
-        const fileExtension = logFileName.split('.').pop();
-        const fileNameWithoutExtension = logFileName.replace(`.${fileExtension}`, '');
-        fileName = `logs/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        params.Key = fileName;
-        fileIndex++;
-      } catch (headErr) {
-        if (headErr.name === 'NotFound') {
-          fileExists = false;
-        } else {
-          throw headErr;
-        }
-      }
-    }
 
     // อัปโหลดไฟล์ (ใช้ Buffer เพื่อความชัวร์)
     const fileBuffer = fs.readFileSync(logFilePath);
@@ -3352,8 +3160,8 @@ cron.schedule('0,55 * * * *', () => {
 const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
-  console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
-  logSystemToDiscord('info', '✅ ['+SERVER_TYPE+'] Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
+  console.log("Start time : " + momentTH().format('YYYY-MM-DD HH:mm:ss.SSS'));
+  logSystemToDiscord('info', '✅ ['+SERVER_TYPE+'] Server started successfully [' + momentTH().format('YYYY-MM-DD HH:mm:ss.SSS') + ']');
 });
 
 // ทำให้ console.log ใช้ winston logger
@@ -3365,5 +3173,4 @@ console.error = (msg, error) => {
   const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
   logger.info('['+timestamp+'] : ' + msg + " : " + error);
   logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + msg);
-  throw error;
 };
