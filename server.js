@@ -942,6 +942,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
                 var a = momentTH(classdate).format("YYYYMMDD");
+                console.log("classdate : " + classdate);
+                console.log("a : " + a);
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
                   month: 'short',
