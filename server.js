@@ -2278,12 +2278,12 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
            WHERE r.courserefer = a.courserefer
          )
         END AS userlist
-FROM tcustomer_course a 
-LEFT JOIN tcourseinfo b 
-ON a.courseid = b.courseid 
-WHERE a.finish = 1 
-GROUP BY a.courseid, a.courserefer, b.coursename
-ORDER BY a.createdate desc
+        FROM tcustomer_course a 
+        LEFT JOIN tcourseinfo b 
+        ON a.courseid = b.courseid 
+        WHERE a.finish = 1 
+        GROUP BY a.courseid, a.courserefer, b.coursename
+        ORDER BY a.createdate desc
     `;
 
     const results = await queryPromise(query, null);
@@ -2304,7 +2304,12 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     const query = `SELECT a.*, b.coursename, 
         CASE 
          WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-         ELSE GROUP_CONCAT(s.nickname SEPARATOR ', ')
+         ELSE (
+           SELECT GROUP_CONCAT(DISTINCT s.nickname SEPARATOR ', ')
+           FROM tstudent s
+           JOIN treservation r ON s.studentid = r.studentid
+           WHERE r.courserefer = a.courserefer
+         )
         END AS userlist
         FROM tcustomer_course a 
         LEFT JOIN tcourseinfo b 
