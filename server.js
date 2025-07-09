@@ -873,15 +873,15 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer],true);
             } else {
               const today = new Date();
-              console.log('today', today);
-              console.log('today2', momentTH(today));
+              console.log('today : '+ today);
+              console.log('today2 : '+ momentTH(today));
               const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
               if (todayDateOnly > newExpireDate) {
                 return res.json({ success: false, message: 'Sorry, your course has expired' });
               }
 
-              console.log('classdate', classdate);
-              console.log('newExpireDate', newExpireDate);
+              console.log('classdate : '+ classdate);
+              console.log('newExpireDate : '+ newExpireDate);
               if (momentTH(classdate).isAfter(momentTH(newExpireDate), 'day')) {
                 console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
                 return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
