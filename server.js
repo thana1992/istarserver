@@ -3269,7 +3269,6 @@ const auth = new google.auth.GoogleAuth({
 
 const folderId = '1G5VdaeIpN36EQgFvoEbIivXK9vCKtAdv'; // ไอดีของโฟลเดอร์ใน Google Drive
 async function uploadOrUpdateLogFile() {
-  try {
     console.log('[Process] Log file upload... '+logFileName);
     const authClient = await auth.getClient();
     google.options({ auth: authClient });
@@ -3294,35 +3293,27 @@ async function uploadOrUpdateLogFile() {
     if (files.length > 0) {
       // ถ้าไฟล์มีอยู่แล้ว ให้ทำการอัพเดทไฟล์
       const fileId = files[0].id;
-      drive.files.update({
-        fileId: fileId,
-        media: media,
-        fields: 'id',
-      }, (err, file) => {
-        if (err) {
-          console.error(err);
-        } else {
-          console.log('[Success] Update Log file and upload '+logFileName);
-        }
-      });
+      try {
+        await drive.files.update({
+          fileId: fileId,
+          media: media,
+          fields: 'id',
+        });
+      } catch (err) {
+        console.error('Error updating log file:', err);
+      }
     } else {
       // ถ้าไฟล์ไม่มี ให้ทำการสร้างไฟล์ใหม่
-      drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id',
-      }, (err, file) => {
-        if (err) {
-          console.error(err);
-        } else {
-          console.log('[Success] Create Log file and upload '+logFileName);
-        }
-      });
+      try {
+        await drive.files.create({
+          resource: fileMetadata,
+          media: media,
+          fields: 'id',
+        });
+      } catch (err) {
+        console.error('Error creating log file:', err);
+      }
     }
-  } catch (err) {
-    console.error('Error uploading log file to Google Drive:', err);
-    // ไม่ throw error ออกไป เพื่อไม่ให้ process ล่ม
-  }
 }
 
 async function scheduleRestartAtSpecificTime(hour, minute) {
