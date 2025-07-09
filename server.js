@@ -152,7 +152,7 @@ app.use(cors({
 // เพิ่ม middleware logging (request/response)
 app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
 app.use((req, res, next) => {
-  //logger.info(`REQUEST: ${req.method} ${req.url}`);
+  logger.info(`REQUEST: ${req.method} ${req.url}`);
   const originalSend = res.send;
   res.send = function (body) {
     let logBody = body;
@@ -188,7 +188,7 @@ app.use((req, res, next) => {
       logger.warn('Unable to parse response body as JSON', error);
     }
 
-    //logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
+    logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
     const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const username = req.user && req.user.username ? req.user.username : 'Unknown User';
     logToQueue('apicall', `[${timestamp}] [${username}] Request[${req.method}] ${req.url}`);
@@ -1155,7 +1155,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
         if (totalBooking <= 0) {
             updateRemainingQuery += ', startdate = NULL, expiredate = NULL ';
         }
-        updateRemainingQuery += 'courserefer = ? and owner <> \'trial\'';
+        updateRemainingQuery += 'WHERE courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
         
         logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
