@@ -108,7 +108,7 @@ const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
 console.log('timestamp : ' + timestamp);
-const logFileName = `v1-server-${timestamp}.log`;
+const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
 const logPath = './logs/';
 
 // สร้าง winston logger
@@ -258,7 +258,7 @@ app.get('/checkToken', (req, res) => {
     console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString() + "\n")
   });
   res.json({ activeSessions });
-  //uploadOrUpdateLogFile();
+  uploadOrUpdateLogFile();
 });
 
 app.post('/login', async (req, res) => {
@@ -3256,67 +3256,55 @@ async function deleteOldProfileImage(studentId) {
   await queryPromise(query, [studentId]);
 }
 
-const cron = require('node-cron');
-/*
-const { google } = require('googleapis');
 const { warn, log } = require('console');
-const { file } = require('googleapis/build/src/apis/file');
-const drive = google.drive('v3');
-const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
-const auth = new google.auth.GoogleAuth({
-  credentials: serviceAccountKey,
-  scopes: ['https://www.googleapis.com/auth/drive.file'],
-});
-
-const folderId = '1G5VdaeIpN36EQgFvoEbIivXK9vCKtAdv'; // ไอดีของโฟลเดอร์ใน Google Drive
 async function uploadOrUpdateLogFile() {
-    console.log('[Process] Log file upload... '+logFileName);
-    const authClient = await auth.getClient();
-    google.options({ auth: authClient });
-
-    // ตรวจสอบว่าไฟล์มีอยู่หรือไม่
-    const res = await drive.files.list({
-      q: `name='${logFileName}' and '${folderId}' in parents`,
-      fields: 'files(id, name)',
-      spaces: 'drive',
-    });
-
-    const files = res.data.files;
-    const fileMetadata = {
-      name: logFileName,
-      parents: [folderId],
-    };
-    const media = {
-      mimeType: 'text/plain',
-      body: fs.createReadStream(logPath+logFileName),
+  try {
+    const fs = require('fs');
+    const logFilePath = logPath + logFileName;
+    let fileName = `logs/${logFileName}`;
+    let params = {
+      Bucket: 'istar',
+      Key: fileName,
+      Body: fs.createReadStream(logFilePath),
+      ACL: 'public-read',
+      ContentType: 'text/plain'
     };
 
-    if (files.length > 0) {
-      // ถ้าไฟล์มีอยู่แล้ว ให้ทำการอัพเดทไฟล์
-      const fileId = files[0].id;
+    // ตรวจสอบชื่อซ้ำ
+    let fileExists = true;
+    let fileIndex = 1;
+    while (fileExists) {
       try {
-        await drive.files.update({
-          fileId: fileId,
-          media: media,
-          fields: 'id',
-        });
-      } catch (err) {
-        console.error('Error updating log file:', err);
-      }
-    } else {
-      // ถ้าไฟล์ไม่มี ให้ทำการสร้างไฟล์ใหม่
-      try {
-        await drive.files.create({
-          resource: fileMetadata,
-          media: media,
-          fields: 'id',
-        });
-      } catch (err) {
-        console.error('Error creating log file:', err);
+        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
+        // ถ้าซ้ำ ให้เพิ่ม _1, _2, ...
+        const fileExtension = logFileName.split('.').pop();
+        const fileNameWithoutExtension = logFileName.replace(`.${fileExtension}`, '');
+        fileName = `logs/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
+        params.Key = fileName;
+        fileIndex++;
+      } catch (headErr) {
+        if (headErr.name === 'NotFound') {
+          fileExists = false;
+        } else {
+          throw headErr;
+        }
       }
     }
+
+    // อัปโหลดไฟล์ (ใช้ Buffer เพื่อความชัวร์)
+    const fileBuffer = fs.readFileSync(logFilePath);
+    params.Body = fileBuffer;
+    await s3Client.send(new PutObjectCommand(params));
+
+    // (ไม่ต้องลบ log ในเครื่อง)
+    const logUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+    console.log('[Success] Log file uploaded to S3:', logUrl);
+    // คุณสามารถ log ไป Discord หรืออื่นๆ ได้ที่นี่
+  } catch (err) {
+    console.error('Error uploading log file to S3:', err);
+  }
 }
-*/
+
 async function scheduleRestartAtSpecificTime(hour, minute) {
   const now = new Date();
   const nextRestart = new Date();
@@ -3342,7 +3330,7 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log('####################### Server restarting... ######################');
   console.log("###################################################################");
   console.log("###################################################################");
-  //await uploadOrUpdateLogFile();
+  await uploadOrUpdateLogFile();
   server.close(() => {
     logSystemToDiscord('info', '✅ Server restarting... ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
     process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
@@ -3354,11 +3342,12 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
 
 // เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 01:30 น.
 scheduleRestartAtSpecificTime(1, 30);
-//uploadOrUpdateLogFile();
+uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 55 นาที
-// cron.schedule('0,55 * * * *', () => {
-//   uploadOrUpdateLogFile() ;
-// });
+const cron = require('node-cron');
+cron.schedule('0,55 * * * *', () => {
+  uploadOrUpdateLogFile() ;
+});
 
 const server = app.listen(port, () => {
   clearActiveSessions();
