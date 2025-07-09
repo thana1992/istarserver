@@ -873,6 +873,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer],true);
             } else {
               const today = new Date();
+              console.log('today', today);
+              console.log('today2', momentTH(today));
               const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
               if (todayDateOnly > newExpireDate) {
                 return res.json({ success: false, message: 'Sorry, your course has expired' });
