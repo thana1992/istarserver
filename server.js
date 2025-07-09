@@ -942,6 +942,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
                 var a = momentTH(classdate).format("YYYYMMDD");
+                var b = moment(classdate,"YYYYMMDD");
                 console.log("classdate : " + classdate);
                 console.log("a : " + a);
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
@@ -949,6 +950,13 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                   month: 'short',
                   day: 'numeric',
                 });
+                const bookdate2 = new Date(b).toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                });
+                console.log("bookdate : " + bookdate);
+                console.log("bookdate2 : " + bookdate2);
 
                 const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
                 logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:calendar_spiral: การจองคลาสสำเร็จ\n${message}`);
