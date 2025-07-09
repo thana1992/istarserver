@@ -2313,9 +2313,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
         END AS userlist
         FROM tcustomer_course a 
         LEFT JOIN tcourseinfo b 
-        ON a.courseid = b.courseid 
-        LEFT JOIN tstudent s 
-        ON a.courserefer = s.courserefer 
+        ON a.courseid = b.courseid
         WHERE a.finish = 0 
         GROUP BY a.courseid, a.courserefer, b.coursename
         ORDER BY a.createdate desc
