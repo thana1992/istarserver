@@ -122,7 +122,7 @@ function logSystemToDiscord(type, title, message) {
                 text: timestamp
             }
         };
-        logToQueue('info', embed);
+        logToQueue(type, embed);
     } catch (error) {
         logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
         console.error('Error logging student to Discord:', error);
@@ -144,7 +144,11 @@ function logLoginToDiscord(type, title, message) {
                 text: timestamp
             }
         };
-        logToQueue('login', embed);
+        if (type === 'error') {
+            logToQueue(type, embed);
+        } else {
+            logToQueue('login', embed);
+        }
     } catch (error) {
         logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
         console.error('Error logging student to Discord:', error);
@@ -172,8 +176,11 @@ function logCourseToDiscord(type, title, message, imageUrl = null) {
                 url: imageUrl
             };
         }
-
-        logToQueue('course', embed);
+        if (type === 'error') {
+            logToQueue(type, embed);
+        } else {
+            logToQueue('course', embed);
+        }
     } catch (error) {
         logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
         console.error('Error logging student to Discord:', error);
@@ -195,7 +202,11 @@ function logBookingToDiscord(type, title, message) {
                 text: timestamp
             }
         };
-        logToQueue('booking', embed);
+        if (type === 'error') {
+            logToQueue(type, embed);
+        } else {
+            logToQueue('booking', embed);
+        }
     } catch (error) {
         logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
         console.error('Error logging student to Discord:', error);
@@ -218,7 +229,11 @@ function logStudentToDiscord(type, title, message) {
                 text: timestamp
             }
         };
-        logToQueue('student', embed);
+        if (type === 'error') {
+            logToQueue(type, embed);
+        } else {
+            logToQueue('student', embed);
+        }
     } catch (error) {
         // จัดการ error ที่อาจเกิดขึ้นภายใน logStudentToDiscord เอง
         const internalErrorMessage = error instanceof Error ? error.message : String(error);

@@ -92,6 +92,33 @@ async function queryPromise(query, params, showlog) {
   }
 }
 
+async function queryPromiseWithConn(connection, query, params, showlog) {
+  try {
+    // Prepare log data for Discord
+    let logData = {
+      query: query.replace(/\n/g, ' '),
+      params: null,
+      result: null
+    };
+
+    logData.params = maskSensitiveData(params);
+
+    await connection.query("SET time_zone = '+07:00';"); // ตั้ง timezone ไทย
+    const [results] = await connection.query(query, params);
+
+    logData.result = Array.isArray(results) ? results.map(maskSensitiveData) : maskSensitiveData(results);
+
+    if (showlog) {
+      console.log("Params : " + JSON.stringify(logData.params));
+      console.log("Results : " + JSON.stringify(logData.result));
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error in queryPromiseWithConn:', error);
+    throw error;
+  }
+}
 
 function maskSensitiveData(data) {
   const maskedData = { ...data };
@@ -1113,8 +1140,10 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 });
 
 app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
+  const { reservationid, studentid, courserefer } = req.body;
+  const connection = await pool.getConnection();
   try {
-    const { reservationid, studentid, courserefer } = req.body;
+    await connection.beginTransaction();
     let message = '';
     const queryNotifyData = `
       SELECT a.nickname, CONCAT(IFNULL(a.firstname, ''), ' ', IFNULL(a.middlename, ''), IF(a.middlename<>'', ' ', ''), IFNULL(a.lastname, '')) AS fullname, a.dateofbirth, 
@@ -1125,7 +1154,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       INNER JOIN tcourseinfo c ON b.courseid = c.courseid
       WHERE a.studentid = ?
     `;
-    const resultsMsg = await queryPromise(queryNotifyData, [reservationid, studentid]);
+    const resultsMsg = await queryPromiseWithConn(connection, queryNotifyData, [reservationid, studentid]);
     if (resultsMsg.length > 0) {
       const studentnickname = resultsMsg[0].nickname;
       const studentname = resultsMsg[0].fullname;
@@ -1142,10 +1171,10 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     }
     
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
-    const results = await queryPromise(query, [reservationid]);
+    const results = await queryPromiseWithConn(connection, query, [reservationid]);
 
     const queryCheckCourseUsing = 'SELECT * FROM tcustomer_course INNER JOIN treservation ON tcustomer_course.courserefer = treservation.courserefer WHERE tcustomer_course.courserefer = ?';
-    const courseUsingResults = await queryPromise(queryCheckCourseUsing, [courserefer]);
+    const courseUsingResults = await queryPromiseWithConn(connection, queryCheckCourseUsing, [courserefer]);
     // ถ้าไม่มีการใช้งานคอร์สนี้อยู่ ให้อัปเดท startdate และ expiredate ของคอร์สนี้ = null
     const totalBooking = courseUsingResults.length;
 
@@ -1156,7 +1185,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
             updateRemainingQuery += ', startdate = NULL, expiredate = NULL ';
         }
         updateRemainingQuery += 'WHERE courserefer = ? and owner <> \'trial\'';
-        await queryPromise(updateRemainingQuery, [courserefer]);
+        await queryPromiseWithConn(connection, updateRemainingQuery, [courserefer]);
         
         logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
         res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
@@ -1164,11 +1193,16 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสไม่สำเร็จ\nReservationid : ${reservationid}\nไม่มีข้อมูลการจอง`);
       res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
+
+    await connection.commit();
   } catch (error) {
+    await connection.rollback();
     console.error("Error in cancelBookingByAdmin", error.stack);
     logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     res.json({ success: false, message: error.message });
     throw error;
+  } finally {
+    connection.release();
   }
 });
 
@@ -3165,6 +3199,9 @@ const server = app.listen(port, () => {
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
+  if (msg === false) {
+    logger.info('DEBUG: false logged', new Error().stack);
+  }
   logger.info(msg);
 };
 
