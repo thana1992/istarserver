@@ -941,23 +941,12 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
               if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-                var a = momentTH(classdate).format("YYYYMMDD");
-                var b = moment(classdate,"YYYYMMDD");
-                console.log("classdate : " + classdate);
-                console.log("a : " + a);
-                console.log("b : " + b);
+                var a = moment(classdate,"YYYYMMDD");
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric',
                 });
-                const bookdate2 = new Date(b).toLocaleDateString('th-TH', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                });
-                console.log("bookdate : " + bookdate);
-                console.log("bookdate2 : " + bookdate2);
 
                 const message = `${course_shortname}\n${nickname} ${fullname}\nอายุ ${calculateAge(dateofbirth)}ปี\nวันที่ ${bookdate} ${classtime}\nโดยแอดมิน ${req.user.username}`
                 logBookingToDiscord('info', `✅ [addBookingByAdmin][${req.user.username}]`, `:calendar_spiral: การจองคลาสสำเร็จ\n${message}`);
@@ -1001,7 +990,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              var a = momentTH(classdate).format("YYYYMMDD");
+              var a = moment(classdate,"YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -1078,7 +1067,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               const studentnickname = results[0].nickname;
               const studentname = results[0].fullname;
               const coursename = results[0].course_shortname;
-              var a = momentTH(classdate).format("YYYYMMDD");
+              var a = moment(classdate,"YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
@@ -1193,7 +1182,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   const studentnickname = results[0].nickname;
                   const studentname = results[0].fullname;
                   const coursename = results[0].course_shortname;
-                  var a = momentTH(classdate).format("YYYYMMDD");
+                  var a = moment(classdate, "YYYYMMDD");
                   const bookdate = new Date(a).toLocaleDateString('th-TH', {
                     year: 'numeric',
                     month: 'short',
@@ -1247,7 +1236,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       const coursename = resultsMsg[0].course_shortname;
       const classdate = resultsMsg[0].classdate;
       const classtime = resultsMsg[0].classtime;
-      var a = momentTH(classdate).format("YYYYMMDD");
+      var a = moment(classdate, "YYYYMMDD");
       const bookdate = new Date(a).toLocaleDateString('th-TH', {
         year: 'numeric',
         month: 'short',
@@ -1466,7 +1455,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
             console.log("notifyResults lenght: " + notifyResults.length);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
-              var a = momentTH(classdate).format("YYYYMMDD");
+              var a = moment(classdate, "YYYYMMDD");
               const bookdate = new Date(a).toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'short',
