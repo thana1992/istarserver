@@ -3165,6 +3165,9 @@ const server = app.listen(port, () => {
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
+  if (msg === false) {
+    logger.info('DEBUG: false logged', new Error().stack);
+  }
   logger.info(msg);
 };
 
