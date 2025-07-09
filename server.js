@@ -258,7 +258,7 @@ app.get('/checkToken', (req, res) => {
     console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString() + "\n")
   });
   res.json({ activeSessions });
-  uploadOrUpdateLogFile();
+  //uploadOrUpdateLogFile();
 });
 
 app.post('/login', async (req, res) => {
@@ -3257,6 +3257,7 @@ async function deleteOldProfileImage(studentId) {
 }
 
 const cron = require('node-cron');
+/*
 const { google } = require('googleapis');
 const { warn, log } = require('console');
 const { file } = require('googleapis/build/src/apis/file');
@@ -3315,7 +3316,7 @@ async function uploadOrUpdateLogFile() {
       }
     }
 }
-
+*/
 async function scheduleRestartAtSpecificTime(hour, minute) {
   const now = new Date();
   const nextRestart = new Date();
