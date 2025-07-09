@@ -870,7 +870,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             if (!expiredate) { // ถ้าไม่มีวันหมดอายุ ให้กำหนดวันหมดอายุใหม่
               newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
               const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
-              await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
+              await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer],true);
             } else {
               const today = new Date();
               const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
