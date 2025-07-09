@@ -945,6 +945,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 var b = moment(classdate,"YYYYMMDD");
                 console.log("classdate : " + classdate);
                 console.log("a : " + a);
+                console.log("b : " + b);
                 const bookdate = new Date(a).toLocaleDateString('th-TH', {
                   year: 'numeric',
                   month: 'short',
