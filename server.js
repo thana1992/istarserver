@@ -3119,13 +3119,10 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log(`Scheduled server restart at ${nextRestart}`);
   await new Promise(resolve => setTimeout(resolve, timeUntilNextRestart));
 
-
-  console.log("###################################################################");
   console.log("###################################################################");
   console.log('############## upload log file before restart server ##############');
   console.log("###################################################################");
   console.log('####################### Server restarting... ######################');
-  console.log("###################################################################");
   console.log("###################################################################");
   await uploadOrUpdateLogFile();
   server.close(() => {
@@ -3139,7 +3136,6 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
 
 // เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 01:30 น.
 scheduleRestartAtSpecificTime(1, 30);
-uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 55 นาที
 const cron = require('node-cron');
 cron.schedule('0,55 * * * *', () => {
@@ -3151,6 +3147,9 @@ const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   console.log("Start time : " + momentTH().format('YYYY-MM-DD HH:mm:ss.SSS'));
   logSystemToDiscord('info', '✅ ['+SERVER_TYPE+'] Server started successfully [' + momentTH().format('YYYY-MM-DD HH:mm:ss.SSS') + ']');
+  setTimeout(() => {
+    uploadOrUpdateLogFile();
+  }, 1000); // รอ 1 วินาทีเพื่อให้ไฟล์ log ถูกสร้าง
 });
 
 // ทำให้ console.log ใช้ winston logger
