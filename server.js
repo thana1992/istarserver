@@ -6,7 +6,7 @@ const qs = require('qs');
 //const moment = require('moment');
 const moment = require('moment-timezone');
 const thaiDateTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
-console.log("DATE" + thaiDateTime); // ได้วันที่ไทยเสมอ
+console.log("DATE moment-timezone " + thaiDateTime); // ได้วันที่ไทยเสมอ
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -3181,8 +3181,8 @@ cron.schedule('0,55 * * * *', () => {
 const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
-  console.log("Start time : " + format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone }));
-  logSystemToDiscord('info', '✅ ['+SERVER_TYPE+'] Server started successfully ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
+  console.log("Start time : " + momentTH().format('YYYY-MM-DD HH:mm:ss.SSS'));
+  logSystemToDiscord('info', '✅ ['+SERVER_TYPE+'] Server started successfully [' + momentTH().format('YYYY-MM-DD HH:mm:ss.SSS') + ']');
 });
 
 // ทำให้ console.log ใช้ winston logger
