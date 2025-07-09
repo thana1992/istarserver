@@ -3099,27 +3099,6 @@ async function uploadOrUpdateLogFile() {
       ContentType: 'text/plain'
     };
 
-    // ตรวจสอบชื่อซ้ำ
-    let fileExists = true;
-    let fileIndex = 1;
-    while (fileExists) {
-      try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
-        // ถ้าซ้ำ ให้เพิ่ม _1, _2, ...
-        const fileExtension = logFileName.split('.').pop();
-        const fileNameWithoutExtension = logFileName.replace(`.${fileExtension}`, '');
-        fileName = `logs/${fileNameWithoutExtension}_${fileIndex}.${fileExtension}`;
-        params.Key = fileName;
-        fileIndex++;
-      } catch (headErr) {
-        if (headErr.name === 'NotFound') {
-          fileExists = false;
-        } else {
-          throw headErr;
-        }
-      }
-    }
-
     // อัปโหลดไฟล์ (ใช้ Buffer เพื่อความชัวร์)
     const fileBuffer = fs.readFileSync(logFilePath);
     params.Body = fileBuffer;
