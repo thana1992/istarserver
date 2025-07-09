@@ -776,7 +776,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
 
           // ตรวจสอบวันหมดอายุของคอร์ส
           if(owner != 'trial') {
-            if (!expiredate) {
+            if (!expiredate) { // ถ้าไม่มีวันหมดอายุ ให้กำหนดวันหมดอายุใหม่
               newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
               const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
               await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
@@ -1143,9 +1143,19 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
     const results = await queryPromise(query, [reservationid]);
+
+    const queryCheckCourseUsing = 'SELECT * FROM tcustomer_course INNER JOIN treservation ON tcustomer_course.courserefer = reservation.courserefer WHERE reservation.courserefer = ?';
+    const courseUsingResults = await queryPromise(queryCheckCourseUsing, [courserefer]);
+    // ถ้าไม่มีการใช้งานคอร์สนี้อยู่ ให้อัปเดท startdate และ expiredate ของคอร์สนี้ = null
+    const totalBooking = courseUsingResults.length;
+
     console.log("parameters : " + reservationid + " " + studentid + " " + courserefer);
     if (results.affectedRows > 0) {
-        const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 WHERE courserefer = ? and owner <> \'trial\'';
+        let updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 ';
+        if (totalBooking <= 0) {
+            updateRemainingQuery += ', startdate = NULL, expiredate = NULL ';
+        }
+        updateRemainingQuery += 'courserefer = ? and owner <> \'trial\'';
         await queryPromise(updateRemainingQuery, [courserefer]);
         
         logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
