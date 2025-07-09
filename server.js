@@ -3164,7 +3164,7 @@ const server = app.listen(port, () => {
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
-  logger.info("log " + msg);
+  logger.info(msg);
 };
 
 console.error = (msg, error) => {
