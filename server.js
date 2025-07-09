@@ -2272,11 +2272,18 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
         CASE 
          WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
          ELSE (
-           SELECT GROUP_CONCAT(DISTINCT s.nickname SEPARATOR ', ')
-           FROM tstudent s
-           JOIN treservation r ON s.studentid = r.studentid
-           WHERE r.courserefer = a.courserefer
-         )
+          SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
+          FROM (
+            SELECT s.nickname
+            FROM tstudent s
+            WHERE s.courserefer = a.courserefer
+            UNION
+            SELECT s2.nickname
+            FROM tstudent s2
+            JOIN treservation r ON s2.studentid = r.studentid
+            WHERE r.courserefer = a.courserefer
+          ) AS allstudents
+        )
         END AS userlist
         FROM tcustomer_course a 
         LEFT JOIN tcourseinfo b 
@@ -2302,27 +2309,27 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   try {
     const { username } = req.body;
     const query = `SELECT a.*, b.coursename,
-                    CASE
-                      WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-                      ELSE (
-                        SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
-                        FROM (
-                          SELECT s.nickname
-                          FROM tstudent s
-                          WHERE s.courserefer = a.courserefer
-                          UNION
-                          SELECT s2.nickname
-                          FROM tstudent s2
-                          JOIN treservation r ON s2.studentid = r.studentid
-                          WHERE r.courserefer = a.courserefer
-                        ) AS allstudents
-                      )
-                    END AS userlist
-                  FROM tcustomer_course a
-                  LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
-                  WHERE a.finish = 0
-                  GROUP BY a.courseid, a.courserefer, b.coursename
-                  ORDER BY a.createdate DESC
+        CASE
+          WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
+          ELSE (
+            SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
+            FROM (
+              SELECT s.nickname
+              FROM tstudent s
+              WHERE s.courserefer = a.courserefer
+              UNION
+              SELECT s2.nickname
+              FROM tstudent s2
+              JOIN treservation r ON s2.studentid = r.studentid
+              WHERE r.courserefer = a.courserefer
+            ) AS allstudents
+          )
+        END AS userlist
+      FROM tcustomer_course a
+      LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
+      WHERE a.finish = 0
+      GROUP BY a.courseid, a.courserefer, b.coursename
+      ORDER BY a.createdate DESC
     `;
 
     const results = await queryPromise(query, null);
