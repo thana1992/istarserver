@@ -760,8 +760,10 @@ async function checkCourseShare(courserefer, studentid) {
 }
 
 app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
+  const { studentid, classid, classdate, classtime, courseid, classday, freeflag } = req.body;
+  const connection = await pool.getConnection();
   try {
-    const { studentid, classid, classdate, classtime, courseid, classday, freeflag } = req.body;
+    await connection.beginTransaction();
     // ตรวจสอบว่าคลาสเต็มหรือไม่
     const checkClassFullQuery = `
       SELECT 
@@ -772,7 +774,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
       WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
       GROUP BY tclassinfo.maxperson
     `;
-    const resCheckClassFull = await queryPromise(checkClassFullQuery, [classdate, classid, classday, classtime]);
+    const resCheckClassFull = await queryPromiseWithConn(connection, checkClassFullQuery, [classdate, classid, classday, classtime]);
 
     if (resCheckClassFull.length > 0) {
       const { maxperson, currentCount } = resCheckClassFull[0];
@@ -795,7 +797,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
         `;
-        const resCheckCourse = await queryPromise(checkCourseQuery, [studentid]);
+        const resCheckCourse = await queryPromiseWithConn(connection, checkCourseQuery, [studentid]);
 
         if (resCheckCourse.length > 0) {
           const { courserefer, coursetype, remaining, expiredate, period, owner } = resCheckCourse[0];
@@ -806,7 +808,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             if (!expiredate) { // ถ้าไม่มีวันหมดอายุ ให้กำหนดวันหมดอายุใหม่
               newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
               const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
-              await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
+              await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
             } else {
               const today = new Date();
               const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -839,7 +841,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               params.push(classtime);
               msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
             }
-            const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
+            const resCheckDuplicateReservation = await queryPromiseWithConn(connection, checkDuplicateReservationQuery, params);
 
             if (resCheckDuplicateReservation.length > 0) {
               return res.json({ success: false, message: msg });
@@ -851,14 +853,14 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer, createby) 
             VALUES (?, ?, ?, ?, ?, ?, ?)
           `;
-          const insertResult = await queryPromise(insertReservationQuery, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
+          const insertResult = await queryPromiseWithConn(connection, insertReservationQuery, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
 
           if (insertResult.affectedRows > 0) {
 
             if(owner != 'trial') {
               // อัปเดตจำนวนคลาสที่เหลือ
               const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-              await queryPromise(updateRemainingQuery, [courserefer]);
+              await queryPromiseWithConn(connection, updateRemainingQuery, [courserefer]);
             }
 
             // ส่งการแจ้งเตือน
@@ -874,7 +876,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 INNER JOIN tcourseinfo ON tcustomer_course.courseid = tcourseinfo.courseid 
                 WHERE tstudent.studentid = ?
               `;
-              const notifyResults = await queryPromise(queryNotifyData, [studentid]);
+              const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
               if (notifyResults.length > 0) {
                 const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
                 var a = momentTH(classdate).format("YYYYMMDD");
@@ -891,6 +893,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               console.error('Error sending notification', error.stack);
             }
             
+            await connection.commit();
             if (fullflag == 1) {
               return res.json({ success: true, message: 'จองคลาสสำเร็จ (เป็นการจองคลาสเกิน Maximun)' });
             } else {
@@ -907,7 +910,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const insertResult = await queryPromise(insertReservationQuery, [studentid, classid, classdate, classtime, courseid, freeflag, req.user.username]);
+        const insertResult = await queryPromiseWithConn(connection, insertReservationQuery, [studentid, classid, classdate, classtime, courseid, freeflag, req.user.username]);
         if (insertResult.affectedRows > 0) {
           // ส่งการแจ้งเตือน
           try {
@@ -922,7 +925,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               INNER JOIN tcourseinfo ON tcustomer_course.courseid = tcourseinfo.courseid 
               WHERE tstudent.studentid = ?
             `;
-            const notifyResults = await queryPromise(queryNotifyData, [studentid]);
+            const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
               var a = momentTH(classdate).format("YYYYMMDD");
@@ -938,6 +941,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
           } catch (error) {
             console.error('Error sending notification', error.stack);
           }
+          await connection.commit();
           return res.json({ success: true, message: 'จองคลาสสำเร็จ' });
         }
       }
@@ -945,16 +949,20 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'No class found' });
     }
   } catch (error) {
+    await connection.rollback();
     logBookingToDiscord('error', `❌ [addBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     console.log("addBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
+  } finally {
+    connection.release();
   }
 });
 
 app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
+  const { studentid, classid, classdate, classtime, courseid, classday, reservationid, freeflag } = req.body;
+  const connection = await pool.getConnection();
   try {
-    const { studentid, classid, classdate, classtime, courseid, classday, reservationid, freeflag } = req.body;
-
+    await connection.beginTransaction();
     // ตรวจสอบว่าคลาสเต็มหรือไม่
     const checkClassFullQuery = `
       SELECT 
@@ -965,7 +973,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
       WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
       GROUP BY tclassinfo.maxperson
     `;
-    const resCheckClassFull = await queryPromise(checkClassFullQuery, [classdate, classid, classday, classtime]);
+    const resCheckClassFull = await queryPromiseWithConn(connection, checkClassFullQuery, [classdate, classid, classday, classtime]);
 
     if (resCheckClassFull.length > 0) {
       const { maxperson, currentCount } = resCheckClassFull[0];
@@ -979,7 +987,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           UPDATE treservation SET classid = ?, classdate = ?, classtime = ?, courseid = ?, updateby = ? WHERE reservationid = ?
         `;
 
-        const insertResult = await queryPromise(insertReservationQuery, [classid, classdate, classtime, courseid, req.user.username, reservationid]);
+        const insertResult = await queryPromiseWithConn(connection, insertReservationQuery, [classid, classdate, classtime, courseid, req.user.username, reservationid]);
         if (insertResult.affectedRows > 0) {
           // ส่งการแจ้งเตือน
           try {
@@ -992,7 +1000,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               INNER JOIN tcourseinfo c ON b.courseid = c.courseid 
               WHERE a.studentid = ?
             `;
-            const results = await queryPromise(queryNotifyData, [studentid]);
+            const results = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
             if (results.length > 0) {
               const studentnickname = results[0].nickname;
               const studentname = results[0].fullname;
@@ -1005,7 +1013,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               });
               // ดึงข้อมูลการจองเดิม
               const queryOldReservation = 'SELECT * FROM treservation WHERE reservationid = ?';
-              const results4 = await queryPromise(queryOldReservation, [reservationid]);
+              const results4 = await queryPromiseWithConn(connection, queryOldReservation, [reservationid]);
               if (results4.length > 0) {
                 const oldClassdate = new Date(results4[0].classdate).toLocaleDateString('th-TH', {
                   year: 'numeric',
@@ -1021,6 +1029,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           } catch (error) {
             console.error('Error sending notification', error.stack);
           }
+          await connection.commit();
           return res.json({ success: true, message: 'แก้ไขข้อมูลการจองคลาสสำเร็จ' });
         } else {
           return res.json({ success: false, message: 'แก้ไขข้อมูลการจองคลาสไม่สำเร็จ' });
@@ -1039,7 +1048,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
         `;
-        const resCheckCourse = await queryPromise(checkCourseQuery, [studentid]);
+        const resCheckCourse = await queryPromiseWithConn(connection, checkCourseQuery, [studentid]);
 
         if (resCheckCourse.length > 0) {
           const { courserefer, coursetype, remaining, expiredate, period } = resCheckCourse[0];
@@ -1049,7 +1058,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
           if (!expiredate) {
             newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
             const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
-            await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
+            await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
           } else {
             const today = new Date();
             const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -1075,14 +1084,14 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
           }
           
-          const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
+          const resCheckDuplicateReservation = await queryPromiseWithConn(connection, checkDuplicateReservationQuery, params);
           if (resCheckDuplicateReservation.length > 0) {
             return res.json({ success: false, message: msg });
           }
 
           // ดึงข้อมูลการจองเดิม
           const queryOldReservation = 'SELECT * FROM treservation WHERE reservationid = ?';
-          const results4 = await queryPromise(queryOldReservation, [reservationid]);
+          const results4 = await queryPromiseWithConn(connection, queryOldReservation, [reservationid]);
           if (results4.length > 0) {
             const oldClassdate = new Date(results4[0].classdate).toLocaleDateString('th-TH', {
               year: 'numeric',
@@ -1093,7 +1102,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
 
             // อัปเดตการจองคลาส
             const query = 'UPDATE treservation SET classid = ?, classdate = ?, classtime = ?, courseid = ?, updateby = ? WHERE reservationid = ?';
-            const insertResult = await queryPromise(query, [classid, classdate, classtime, courseid, req.user.username, reservationid]);
+            const insertResult = await queryPromiseWithConn(connection, query, [classid, classdate, classtime, courseid, req.user.username, reservationid]);
 
             if (insertResult.affectedRows > 0) {
               // ส่งการแจ้งเตือน
@@ -1106,7 +1115,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
                   INNER JOIN tcourseinfo c ON b.courseid = c.courseid 
                   WHERE a.studentid = ?
                 `;
-                const results = await queryPromise(queryNotifyData, [studentid]);
+                const results = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
                 if (results.length > 0) {
                   const studentnickname = results[0].nickname;
                   const studentname = results[0].fullname;
@@ -1124,6 +1133,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               } catch (error) {
                 console.error('Error sending notification', error.stack);
               }
+              await connection.commit();
               return res.json({ success: true, message: 'แก้ไขข้อมูลการจองสำเร็จ' });
             }
           }
@@ -1133,9 +1143,12 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'No class found' });
     }
   } catch (error) {
+    await connection.rollback();
     logBookingToDiscord('error', `❌ [updateBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     console.log("updateBookingByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
+  } finally {
+    connection.release();
   }
 });
 
