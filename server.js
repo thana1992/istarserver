@@ -1144,7 +1144,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
     const results = await queryPromise(query, [reservationid]);
 
-    const queryCheckCourseUsing = 'SELECT * FROM tcustomer_course INNER JOIN treservation ON tcustomer_course.courserefer = reservation.courserefer WHERE reservation.courserefer = ?';
+    const queryCheckCourseUsing = 'SELECT * FROM tcustomer_course INNER JOIN treservation ON tcustomer_course.courserefer = treservation.courserefer WHERE tcustomer_course.courserefer = ?';
     const courseUsingResults = await queryPromise(queryCheckCourseUsing, [courserefer]);
     // ถ้าไม่มีการใช้งานคอร์สนี้อยู่ ให้อัปเดท startdate และ expiredate ของคอร์สนี้ = null
     const totalBooking = courseUsingResults.length;
@@ -1168,6 +1168,7 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     console.error("Error in cancelBookingByAdmin", error.stack);
     logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
     res.json({ success: false, message: error.message });
+    throw error;
   }
 });
 
@@ -3164,7 +3165,7 @@ const server = app.listen(port, () => {
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
-  logger.info("log " + msg);
+  logger.info(msg);
 };
 
 console.error = (msg, error) => {
