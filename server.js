@@ -3341,7 +3341,7 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
   console.log('####################### Server restarting... ######################');
   console.log("###################################################################");
   console.log("###################################################################");
-  await uploadOrUpdateLogFile();
+  //await uploadOrUpdateLogFile();
   server.close(() => {
     logSystemToDiscord('info', '✅ Server restarting... ['+format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone })+']');
     process.exit(0); // รีสตาร์ทแอป (App Platform จะเริ่มโปรเซสใหม่)
@@ -3353,11 +3353,11 @@ async function scheduleRestartAtSpecificTime(hour, minute) {
 
 // เรียกใช้ฟังก์ชันโดยตั้งเวลารีสตาร์ทที่ 01:30 น.
 scheduleRestartAtSpecificTime(1, 30);
-uploadOrUpdateLogFile();
+//uploadOrUpdateLogFile();
 // ตั้งเวลาให้รันทุกๆ 55 นาที
-cron.schedule('0,55 * * * *', () => {
-  uploadOrUpdateLogFile() ;
-});
+// cron.schedule('0,55 * * * *', () => {
+//   uploadOrUpdateLogFile() ;
+// });
 
 const server = app.listen(port, () => {
   clearActiveSessions();
