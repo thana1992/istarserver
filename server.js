@@ -5,8 +5,6 @@ const axios = require('axios');
 const qs = require('qs');
 //const moment = require('moment');
 const moment = require('moment-timezone');
-const thaiDateTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
-console.log("DATE moment-timezone " + thaiDateTime); // ได้วันที่ไทยเสมอ
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -128,13 +126,8 @@ const logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp({
       format: () => {
-        const date = new Date();
-        const formattedDate = date.toLocaleString('th-TH', {
-          timeZone: 'Asia/Bangkok',
-          hour12: false
-        });
-        const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
-        return `${formattedDate}.${milliseconds}`;
+        const formattedDate = momentTH().format('YYYY-MM-DD HH:mm:ss.SSS');
+        return `${formattedDate}`;
       }
     }),
     winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level}: ${message}`)
@@ -2544,18 +2537,14 @@ app.post('/updateCustomerCourse', verifyToken, upload.single('slipImage'), async
       if (Object.keys(logData.changedFields).length > 0) {
         const beautifulChangedFields = JSON.stringify(logData.changedFields, null, 2); // <--- เพิ่ม null, 2 ตรงนี้
         if(!slipImageUrl) {
-          console.log("DEBUG # 1");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString);
         }else{
-          console.log("DEBUG # 2");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `Successfully updated CustomerCourse : ${courserefer}\nChanged Fields :\n\`\`\`json\n${beautifulChangedFields}\n\`\`\`` + haveImageString, slipImageUrl);
         }
       } else {
         if(!slipImageUrl) {
-          console.log("DEBUG # 3");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`, slipImageUrl);
         } else {
-          console.log("DEBUG # 4");
           logCourseToDiscord('info', `✅ [updateCustomerCourse][${req.user.username}]`, `No changes detected for CustomerCourse : ${courserefer}\nBody : ${JSON.stringify(req.body)}\n${haveImageString}`);
         }
       }
@@ -2917,7 +2906,7 @@ async function createVerification(phoneNumber) {
       to: phoneNumber,
     });
 
-  console.log(verification.sid);
+  console.log("verification.sid : " + verification.sid);
   return verification;
 }
 
@@ -2929,7 +2918,7 @@ async function createVerificationCheck(Sid,opt) {
       verificationSid: Sid,
     });
 
-  console.log(verificationCheck.status);
+  console.log("verificationCheck.status : " + verificationCheck.status);
   return verificationCheck;
 }
 const { parsePhoneNumberFromString } = require('libphonenumber-js');
@@ -2960,7 +2949,7 @@ function sendOTP(phoneNumber, otp) {
 app.post('/request-otp', async (req, res) => {
     let phoneNumber = req.body.phoneNumber;
     phoneNumber = formatPhoneNumber(phoneNumber);
-    console.log(phoneNumber);
+    console.log("phoneNumber : " + phoneNumber);
     //const otp = Math.floor(100000 + Math.random() * 900000); // สร้าง OTP 6 หลัก
 
     // เก็บ OTP ไว้ใน otpStorage
@@ -3166,7 +3155,7 @@ const server = app.listen(port, () => {
 
 // ทำให้ console.log ใช้ winston logger
 console.log = (msg) => {
-  logger.info(msg);
+  logger.info("log " + msg);
 };
 
 console.error = (msg, error) => {
@@ -3174,3 +3163,11 @@ console.error = (msg, error) => {
   logger.info('['+timestamp+'] : ' + msg + " : " + error);
   logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + msg);
 };
+
+process.on('unhandledRejection', (reason, promise) => {
+  logSystemToDiscord('error', `❌ [unhandledRejection] ${reason && reason.stack ? reason.stack : reason}`);
+});
+
+process.on('uncaughtException', (err) => {
+  logSystemToDiscord('error', `❌ [uncaughtException] ${err && err.stack ? err.stack : err}`);
+});
