@@ -876,6 +876,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
               console.log('today : '+ today);
               console.log('today2 : '+ momentTH(today));
               const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              console.log('todayDateOnly : '+ todayDateOnly);
+              console.log('newExpireDate : '+ newExpireDate);
               if (todayDateOnly > newExpireDate) {
                 return res.json({ success: false, message: 'Sorry, your course has expired' });
               }
