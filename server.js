@@ -854,7 +854,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             tcustomer_course.expiredate, 
             tcustomer_course.period,
             tcustomer_course.enable_double_booking,
-            tcustomer_course.owner
+            tstudent.nickname
           FROM tstudent 
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
@@ -862,7 +862,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
         const resCheckCourse = await queryPromiseWithConn(connection, checkCourseQuery, [studentid]);
 
         if (resCheckCourse.length > 0) {
-          const { courserefer, coursetype, remaining, expiredate, period, owner } = resCheckCourse[0];
+          const { courserefer, coursetype, remaining, expiredate, period, nickname } = resCheckCourse[0];
           let newExpireDate = expiredate;
 
           // ตรวจสอบวันหมดอายุของคอร์ส
@@ -880,7 +880,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
                 console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
                 return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
               } else {
-                console.log(owner + ' course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
+                console.log(nickname + '\'s course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
               }
             }
 
@@ -1100,7 +1100,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
             tcustomer_course.expiredate, 
             tcustomer_course.period,
             tcustomer_course.enable_double_booking,
-            tcustomer_course.owner
+            tstudent.nickname
           FROM tstudent 
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
@@ -1108,7 +1108,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
         const resCheckCourse = await queryPromiseWithConn(connection, checkCourseQuery, [studentid]);
 
         if (resCheckCourse.length > 0) {
-          const { courserefer, expiredate, period, owner } = resCheckCourse[0];
+          const { courserefer, expiredate, period, nickname } = resCheckCourse[0];
           let newExpireDate = expiredate;
 
           // ตรวจสอบวันหมดอายุของคอร์ส
@@ -1125,7 +1125,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
               console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
               return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
             } else {
-              console.log(owner + ' course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
+              console.log(nickname + '\'s course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
             }
           }
 
@@ -1367,8 +1367,8 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
           tcustomer_course.remaining, 
           tcustomer_course.expiredate, 
           tcustomer_course.period,
-          tcustomer_course.enable_double_booking ,
-          tcustomer_course.owner
+          tcustomer_course.enable_double_booking,
+          tstudent.nickname
         FROM tstudent 
         INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
         WHERE tstudent.studentid = ?
@@ -1376,7 +1376,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
       const resCheckCourse = await queryPromise(checkCourseQuery, [studentid],true);
 
       if (resCheckCourse.length > 0) {
-        const { courserefer, coursetype, remaining, expiredate, period, owner } = resCheckCourse[0];
+        const { courserefer, coursetype, remaining, expiredate, period, nickname } = resCheckCourse[0];
         let newExpireDate = expiredate;
 
         // ตรวจสอบวันหมดอายุของคอร์ส
@@ -1393,7 +1393,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
             console.log(`Sorry, your course has expired on ${momentTH(newExpireDate).format('DD/MM/YYYY')}`);
             return res.json({ success: false, message: 'Sorry, your course has expire on ' + momentTH(expiredate).format('DD/MM/YYYY') });
           } else {
-            console.log(owner + ' course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
+            console.log(nickname + '\'s course is still active until ' + momentTH(newExpireDate).format('DD/MM/YYYY'));
           }
         }
 
