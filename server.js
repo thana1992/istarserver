@@ -853,8 +853,8 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
             tcustomer_course.remaining, 
             tcustomer_course.expiredate, 
             tcustomer_course.period,
-            tcustomer_course.owner,
-            tcustomer_course.enable_double_booking
+            tcustomer_course.enable_double_booking,
+            tcustomer_course.owner
           FROM tstudent 
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
@@ -1097,11 +1097,10 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
         const checkCourseQuery = `
           SELECT 
             tstudent.courserefer, 
-            tcustomer_course.coursetype, 
-            tcustomer_course.remaining, 
             tcustomer_course.expiredate, 
             tcustomer_course.period,
-            tcustomer_course.enable_double_booking
+            tcustomer_course.enable_double_booking,
+            tcustomer_course.owner
           FROM tstudent 
           INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
           WHERE tstudent.studentid = ?
@@ -1109,7 +1108,7 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
         const resCheckCourse = await queryPromiseWithConn(connection, checkCourseQuery, [studentid]);
 
         if (resCheckCourse.length > 0) {
-          const { courserefer, coursetype, remaining, expiredate, period } = resCheckCourse[0];
+          const { courserefer, expiredate, period, owner } = resCheckCourse[0];
           let newExpireDate = expiredate;
 
           // ตรวจสอบวันหมดอายุของคอร์ส
@@ -1368,7 +1367,8 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
           tcustomer_course.remaining, 
           tcustomer_course.expiredate, 
           tcustomer_course.period,
-          tcustomer_course.enable_double_booking 
+          tcustomer_course.enable_double_booking ,
+          tcustomer_course.owner
         FROM tstudent 
         INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
         WHERE tstudent.studentid = ?
@@ -1376,7 +1376,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
       const resCheckCourse = await queryPromise(checkCourseQuery, [studentid],true);
 
       if (resCheckCourse.length > 0) {
-        const { courserefer, coursetype, remaining, expiredate, period } = resCheckCourse[0];
+        const { courserefer, coursetype, remaining, expiredate, period, owner } = resCheckCourse[0];
         let newExpireDate = expiredate;
 
         // ตรวจสอบวันหมดอายุของคอร์ส
