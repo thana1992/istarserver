@@ -1338,9 +1338,10 @@ app.post('/getMemberReservationDetail', verifyToken, async (req, res) => {
 });
 
 app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
+  const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
+  const connection = await pool.getConnection();
   try {
-    const { courseid, classid, classday, classdate, classtime, studentid } = req.body;
-
+    await connection.beginTransaction();
     // ตรวจสอบว่าคลาสเต็มหรือไม่
     const checkClassFullQuery = `
       SELECT 
@@ -1372,7 +1373,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
         INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
         WHERE tstudent.studentid = ?
       `;
-      const resCheckCourse = await queryPromise(checkCourseQuery, [studentid]);
+      const resCheckCourse = await queryPromise(checkCourseQuery, [studentid],true);
 
       if (resCheckCourse.length > 0) {
         const { courserefer, coursetype, remaining, expiredate, period } = resCheckCourse[0];
@@ -1382,7 +1383,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
         if (!expiredate) {
           newExpireDate = momentTH(classdate).add(period, 'M').format('YYYY-MM-DD');
           const updateExpireDateQuery = 'UPDATE tcustomer_course SET startdate = ?, expiredate = ? WHERE courserefer = ?';
-          await queryPromise(updateExpireDateQuery, [classdate, newExpireDate, courserefer]);
+          await queryPromiseWithConn(connection, updateExpireDateQuery, [classdate, newExpireDate, courserefer],true);
         } else {
           if (momentTH(new Date()).isAfter(momentTH(newExpireDate), 'day')) {
             return res.json({ success: false, message: 'Sorry, your course has expired' });
@@ -1422,7 +1423,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
           INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, courserefer, createby) 
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        const insertResult = await queryPromise(insertReservationQuery, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
+        const insertResult = await queryPromiseWithConn(connection, insertReservationQuery, [studentid, classid, classdate, classtime, courseid, courserefer, req.user.username]);
 
         if (insertResult.affectedRows > 0) {
           // อัปเดตจำนวนคลาสที่เหลือ
@@ -1461,6 +1462,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
             logBookingToDiscord('error', `❌ [addBookingByCustomer][${req.user.username}]`, 'Error sending notification', error.message);
             console.error('Error sending notification', error.stack);
           }
+          await connection.commit();
           return res.json({ success: true, message: 'Booking added successfully' });
         }
       }
@@ -1468,9 +1470,12 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
 
     return res.json({ success: false, message: 'Error in processing booking' });
   } catch (error) {
+    await connection.rollback();
     logBookingToDiscord('error', `❌ [addBookingByCustomer][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error create booking: ${error.message}`)
     console.log("addBookingByCustomer error : " + JSON.stringify(error));
     res.status(500).send(error);
+  } finally {
+    connection.release();
   }
 });
 
