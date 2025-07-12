@@ -190,6 +190,7 @@ async function queryPromise(query, params, showlog) {
 }
 
 async function queryPromiseWithConn(connection, query, params, showlog) {
+  console.log("Query : " + query);
   try {
     // Prepare log data for Discord
     let logData = {
@@ -1242,30 +1243,30 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     }
     
     const query = 'DELETE FROM treservation WHERE reservationid = ?';
-    const results = await queryPromiseWithConn(connection, query, [reservationid]);
-
-    const queryCheckCourseUsing = 'SELECT * FROM tcustomer_course INNER JOIN treservation ON tcustomer_course.courserefer = treservation.courserefer WHERE tcustomer_course.courserefer = ?';
-    const courseUsingResults = await queryPromiseWithConn(connection, queryCheckCourseUsing, [courserefer]);
-    // ถ้าไม่มีการใช้งานคอร์สนี้อยู่ ให้อัปเดท startdate และ expiredate ของคอร์สนี้ = null
-    const totalBooking = courseUsingResults.length;
+    const results = await queryPromiseWithConn(connection, query, [reservationid], true);
 
     console.log("parameters : " + reservationid + " " + studentid + " " + courserefer);
     if (results.affectedRows > 0) {
-        let updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 ';
-        if (totalBooking <= 0) {
-            updateRemainingQuery += ', startdate = NULL, expiredate = NULL ';
-        }
-        updateRemainingQuery += 'WHERE courserefer = ? and owner <> \'trial\'';
-        await queryPromiseWithConn(connection, updateRemainingQuery, [courserefer]);
-        
-        logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
-        res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
+      const queryCheckCourseUsing = 'SELECT * FROM tcustomer_course INNER JOIN treservation ON tcustomer_course.courserefer = treservation.courserefer WHERE tcustomer_course.courserefer = ?';
+      const courseUsingResults = await queryPromiseWithConn(connection, queryCheckCourseUsing, [courserefer], true);
+      // ถ้าไม่มีการใช้งานคอร์สนี้อยู่ ให้อัปเดท startdate และ expiredate ของคอร์สนี้ = null
+      const totalBooking = courseUsingResults.length;
+      console.log("totalBooking : " + totalBooking);
+
+      let updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining + 1 ';
+      if (totalBooking <= 0) {
+          updateRemainingQuery += ', startdate = NULL, expiredate = NULL ';
+      }
+      updateRemainingQuery += 'WHERE courserefer = ? and owner <> \'trial\'';
+      await queryPromiseWithConn(connection, updateRemainingQuery, [courserefer], true);
+      
+      logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
+      await connection.commit();
+      return res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
     } else {
       logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสไม่สำเร็จ\nReservationid : ${reservationid}\nไม่มีข้อมูลการจอง`);
-      res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
+      return res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
-
-    await connection.commit();
   } catch (error) {
     await connection.rollback();
     console.error("Error in cancelBookingByAdmin", error.stack);
