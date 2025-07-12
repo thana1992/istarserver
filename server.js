@@ -63,7 +63,7 @@ const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
 console.log('timestamp : ' + timestamp);
-const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
+const logFileName = `${SERVER_TYPE}-${format(new Date(), 'yyyy-MM-dd', { timeZone })}.log`; // log รายวัน
 const logPath = './logs/';
 if (!fs.existsSync(logPath)) {
   fs.mkdirSync(logPath, { recursive: true });
@@ -83,7 +83,7 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: logPath+logFileName })
+    new winston.transports.File({ filename: logPath + logFileName }) // default คือ append
   ]
 });
 
@@ -242,7 +242,7 @@ app.use(cors({
 // เพิ่ม middleware logging (request/response)
 app.use(morgan('combined', { stream: fs.createWriteStream(path.join(__dirname, logPath+logFileName), { flags: 'a' }) }));
 app.use((req, res, next) => {
-  logger.info(`REQUEST: ${req.method} ${req.url}`);
+  logger.info(`-----> REQUEST : ${req.url} : ---> BODY : ${JSON.stringify(req.body)}`);
   const originalSend = res.send;
   res.send = function (body) {
     let logBody = body;
@@ -1269,10 +1269,9 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
     }
   } catch (error) {
     await connection.rollback();
-    console.error("Error in cancelBookingByAdmin", error.stack);
     logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student: ${error.message}`);
-    res.json({ success: false, message: error.message });
-    throw error;
+    console.error('Error in cancelBookingByAdmin', error.stack);
+    return res.json({ success: false, message: error.message });
   } finally {
     connection.release();
   }
@@ -1353,7 +1352,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
       WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
       GROUP BY tclassinfo.maxperson
     `;
-    const resCheckClassFull = await queryPromise(checkClassFullQuery, [classdate, classid, classday, classtime], true);
+    const resCheckClassFull = await queryPromiseWithConn(connection, checkClassFullQuery, [classdate, classid, classday, classtime], true);
 
     if (resCheckClassFull.length > 0) {
       const { maxperson, currentCount } = resCheckClassFull[0];
@@ -1375,7 +1374,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
         INNER JOIN tcustomer_course ON tstudent.courserefer = tcustomer_course.courserefer 
         WHERE tstudent.studentid = ?
       `;
-      const resCheckCourse = await queryPromise(checkCourseQuery, [studentid],true);
+      const resCheckCourse = await queryPromiseWithConn(connection, checkCourseQuery, [studentid],true);
 
       if (resCheckCourse.length > 0) {
         const { courserefer, coursetype, remaining, expiredate, period, nickname } = resCheckCourse[0];
@@ -1414,7 +1413,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
           params.push(classtime);
           msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
         }
-        const resCheckDuplicateReservation = await queryPromise(checkDuplicateReservationQuery, params);
+        const resCheckDuplicateReservation = await queryPromiseWithConn(connection, checkDuplicateReservationQuery, params);
 
         if (resCheckDuplicateReservation.length > 0) {
           return res.json({ success: false, message: msg });
@@ -1430,7 +1429,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
         if (insertResult.affectedRows > 0) {
           // อัปเดตจำนวนคลาสที่เหลือ
           const updateRemainingQuery = 'UPDATE tcustomer_course SET remaining = remaining - 1 WHERE courserefer = ?';
-          await queryPromise(updateRemainingQuery, [courserefer]);
+          await queryPromiseWithConn(connection, updateRemainingQuery, [courserefer]);
 
           // ส่งการแจ้งเตือน
           
@@ -1446,7 +1445,7 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
               INNER JOIN tcourseinfo ON tcustomer_course.courseid = tcourseinfo.courseid 
               WHERE tstudent.studentid = ?
             `;
-            const notifyResults = await queryPromise(queryNotifyData, [studentid]);
+            const notifyResults = await queryPromiseWithConn(connection, queryNotifyData, [studentid]);
             console.log("notifyResults lenght: " + notifyResults.length);
             if (notifyResults.length > 0) {
               const { nickname, fullname, dateofbirth, course_shortname } = notifyResults[0];
@@ -1475,7 +1474,8 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
     await connection.rollback();
     logBookingToDiscord('error', `❌ [addBookingByCustomer][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error create booking: ${error.message}`)
     console.log("addBookingByCustomer error : " + JSON.stringify(error));
-    res.status(500).send(error);
+    console.error('Error in addBookingByCustomer', error.stack);
+    return res.status(500).send(error);
   } finally {
     connection.release();
   }
