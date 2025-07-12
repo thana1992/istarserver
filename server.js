@@ -1846,8 +1846,10 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
+  const { active } = req.body;
+  console.log("getStudentList active : " + active);
   try {
-    const query = `
+    let query = `
       SELECT 
         a.studentid, 
         a.familyid, 
@@ -1877,9 +1879,18 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
       LEFT JOIN tcourseinfo t ON b.courseid = t.courseid 
       LEFT JOIN tfamily c ON a.familyid = c.familyid 
       LEFT JOIN tuser d ON c.username = d.username 
-      WHERE a.delflag = 0 
-      ORDER BY a.createdate DESC
+      WHERE a.delflag = 0
     `;
+
+    // เพิ่ม filter เฉพาะ active
+    if (active === true || active === 'true' || active === 1 || active === '1') {
+      query += `
+        AND a.courserefer IS NOT NULL
+        AND (b.expiredate IS NULL OR b.expiredate >= CURDATE())
+      `;
+    }
+
+    query += ' ORDER BY a.createdate DESC';
     const results = await queryPromise(query);
 
     if (results.length > 0) {
