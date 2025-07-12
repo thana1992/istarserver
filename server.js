@@ -1261,13 +1261,12 @@ app.post("/cancelBookingByAdmin", verifyToken, async (req, res) => {
       await queryPromiseWithConn(connection, updateRemainingQuery, [courserefer], true);
       
       logBookingToDiscord('info', `✅ [cancelBookingByAdmin][${req.user.username}]`, `:put_litter_in_its_place: ยกเลิกการจองคลาสสำเร็จ\nReservationid : ${reservationid}\n${message}`);
-      res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
+      await connection.commit();
+      return res.json({ success: true, message: 'ยกเลิกการจองสำเร็จ' });
     } else {
       logBookingToDiscord('error', `❌ [cancelBookingByAdmin][${req.user.username}]`, `ยกเลิกการจองคลาสไม่สำเร็จ\nReservationid : ${reservationid}\nไม่มีข้อมูลการจอง`);
-      res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
+      return res.json({ success: false, message: 'ไม่มีข้อมูลการจอง' });
     }
-
-    await connection.commit();
   } catch (error) {
     await connection.rollback();
     console.error("Error in cancelBookingByAdmin", error.stack);
