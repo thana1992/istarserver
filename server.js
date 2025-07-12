@@ -1846,7 +1846,7 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
-  const { active } = req.body;
+  const { active } = req.query;
   console.log("getStudentList active : " + active);
   try {
     let query = `
