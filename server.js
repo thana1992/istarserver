@@ -63,7 +63,7 @@ const { format } = require('date-fns/format');
 const timeZone = 'Asia/Bangkok';
 const timestamp = format(new Date(), 'yyyy-MM-dd\'T\'HH-mm-ssXXX', { timeZone });
 console.log('timestamp : ' + timestamp);
-const logFileName = `${SERVER_TYPE}-${timestamp}.log`;
+const logFileName = `${SERVER_TYPE}-${format(new Date(), 'yyyy-MM-dd', { timeZone })}.log`; // log รายวัน
 const logPath = './logs/';
 if (!fs.existsSync(logPath)) {
   fs.mkdirSync(logPath, { recursive: true });
@@ -83,7 +83,7 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: logPath+logFileName })
+    new winston.transports.File({ filename: logPath + logFileName }) // default คือ append
   ]
 });
 
