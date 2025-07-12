@@ -175,8 +175,8 @@ async function queryPromise(query, params, showlog) {
     logData.result = Array.isArray(results) ? results.map(maskSensitiveData) : maskSensitiveData(results);
 
     // Log the data to Discord only once
+    console.log("Params : " + JSON.stringify(logData.params));
     if (showlog) {
-      console.log("Params : " + JSON.stringify(logData.params));
       console.log("Results : " + JSON.stringify(logData.result));
     }
 
