@@ -2031,15 +2031,23 @@ app.post("/refreshCardDashboard", verifyToken, async (req, res) => {
         (SELECT count(*) FROM tstudent WHERE delflag = 0) AS totalStudents,
         (SELECT count(*) FROM treservation WHERE classdate = ?) AS totalBookingToday,
         (SELECT count(*) FROM treservation WHERE classdate = ?) AS totalBookingTomorrow,
-        (SELECT count(*) FROM jstudent) AS totalWaitingNewStudents
+        (SELECT count(*) FROM jstudent) AS totalWaitingNewStudents,
+        (SELECT count(*) FROM tstudent s
+          JOIN tcustomer_course c ON s.courserefer = c.courserefer
+          WHERE s.delflag = 0
+            AND s.courserefer IS NOT NULL
+            AND (c.expiredate IS NULL OR c.expiredate >= CURDATE())
+        ) AS totalActiveStudents
     `;
     const results = await queryPromise(query, [today, tomorrow], false);
+
 
     if (results.length > 0) {
       datacard.totalStudents = results[0].totalStudents;
       datacard.totalBookingToday = results[0].totalBookingToday;
       datacard.totalBookingTomorrow = results[0].totalBookingTomorrow;
       datacard.totalWaitingNewStudents = results[0].totalWaitingNewStudents;
+      datacard.totalActiveStudents = results[0].totalActiveStudents;
     }
 
     // Send the response after all queries are completed
