@@ -281,7 +281,9 @@ app.use((req, res, next) => {
     logger.info(`-----> RESPONSE : ${req.url} : ---> ${logBody}`);
     const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
     const username = req.user && req.user.username ? req.user.username : 'Unknown User';
-    logToQueue('apicall', `[${timestamp}] [${username}] Request[${req.method}] ${req.url}`);
+    // printBody if url is checlmobileno
+    let printBody = req.url === '/checkmobileno' ? JSON.stringify(req.body) : "";
+    logToQueue('apicall', `[${timestamp}] [${username}] [${req.method}] [${req.url}] ${printBody}`);
     // Send the original body to the client
     originalSend.call(res, body);
   };
@@ -388,11 +390,11 @@ app.post('/login', async (req, res) => {
         }
 
       } else {
-        logLoginToDiscord('error', '❌ [Login]', `User ${username} failed to log in. Invalid password.`);
+        logLoginToDiscord('info', '❌ [Login]', `User ${username} failed to log in. Invalid password.`);
         return res.json({ success: false, message: 'password is invalid' });
       }
     } else {
-      logLoginToDiscord('error', '❌ [Login]', `User ${username} failed to log in. Invalid username.`);
+      logLoginToDiscord('info', '❌ [Login]', `User ${username} failed to log in. Invalid username.`);
       return res.json({ success: false, message: 'username invalid' });
     }
   } catch (error) {
