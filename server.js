@@ -189,7 +189,7 @@ async function queryPromise(query, params, showlog) {
   }
 }
 
-async function queryPromise(connection, query, params, showlog) {
+async function queryPromiseWithConn(connection, query, params, showlog) {
   console.log("Query : " + query);
   try {
     // Prepare log data for Discord
