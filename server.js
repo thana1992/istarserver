@@ -360,7 +360,7 @@ app.get('/checkToken', (req, res) => {
 });
 
 function updateTstudent() {
-  const query = 'UPDATE tstudent SET delflag = 0 where studentid = ?studentid';
+  const query = 'UPDATE tstudent SET delflag = 0 where studentid = ?';
   let params = ['S-20250508-0001']
   queryPromise(query, params)
     .then(() => {
