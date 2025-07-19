@@ -354,22 +354,9 @@ app.get('/checkToken', (req, res) => {
     console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString() + "\n")
   });
   res.json({ activeSessions });
-  updateTstudent();
   uploadOrUpdateLogFile();
 
 });
-
-function updateTstudent() {
-  const query = 'UPDATE tstudent SET delflag = 0 where studentid = ?';
-  let params = ['S-20250508-0001']
-  queryPromise(query, params)
-    .then(() => {
-      console.log('tstudent updated successfully');
-    })
-    .catch((error) => {
-      console.error('Error updating tstudent:', error);
-    });
-}
 
 app.post('/login', async (req, res) => {
   console.log("login : " + JSON.stringify(req.body));
