@@ -1684,6 +1684,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
     query += 'AND a.adminflag = 0 ';
   }
   query += 'GROUP BY a.classid, a.classday, a.classtime, a.maxperson, a.courseid, d.description ';
+  query += 'ORDER BY a.classtime';
 
   try {
     const results = await queryPromise(query, [classdate, classdate, courseid, classday, courseid]);
@@ -1693,6 +1694,9 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
         results[index].text = element.classtime + ' ว่าง ' + element.adjusted_available + ' คน';
         if (element.description) {
           results[index].text += ' (' + element.description + ')'; // เพิ่ม description
+        }
+        if (element.remark) {
+          results[index].text += ' (' + element.remark + ')'; // เพิ่ม remark
         }
         results[index].available = element.adjusted_available; // อัปเดตค่า available
       });
