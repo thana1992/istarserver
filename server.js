@@ -567,8 +567,6 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
     const results = await queryPromise(getQuery, [studentIds]);
 
     if (results.length > 0) {
-      const insertStudentQueries = [];
-      const deleteStudentQueries = [];
 
       for (const result of results) {
         const studentid = await generateRefer('S');
@@ -579,14 +577,13 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
           LEFT JOIN tfamily a ON a.familyid = jstudent.familyid 
           WHERE jstudent.studentid = ?
         `;
-        insertStudentQueries.push(queryPromise(insertStudentQuery, [studentid, result.studentid]));
-
-        const deleteStudentQuery = 'DELETE FROM jstudent WHERE studentid = ?';
-        deleteStudentQueries.push(queryPromise(deleteStudentQuery, [result.studentid]));
+        const insRes = await queryPromise(insertStudentQuery, [studentid, result.studentid]);
+        console.log("insRes : " + JSON.stringify(insRes));
+        if( insRes.affectedRows > 0) {
+          const deleteStudentQuery = 'DELETE FROM jstudent WHERE studentid = ?';
+          await queryPromise(deleteStudentQuery, [result.studentid]);
+        }
       }
-
-      await Promise.all(insertStudentQueries);
-      await Promise.all(deleteStudentQueries);
       logStudentToDiscord('info', `✅ [Approve Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n Successfully approved new student(s): ${JSON.stringify(studentIds)}`);
       res.json({ success: true, message: 'Family member approve successfully' });
     } else {
