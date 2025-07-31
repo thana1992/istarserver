@@ -832,7 +832,7 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
       SELECT 
         tclassinfo.maxperson, 
         COUNT(treservation.classid) AS currentCount,
-        tclassinfo.enddate
+        tclassinfo.enddate 
       FROM tclassinfo 
       LEFT JOIN treservation ON tclassinfo.classid = treservation.classid AND treservation.classdate = ? 
       WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
@@ -1353,7 +1353,8 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
     const checkClassFullQuery = `
       SELECT 
         tclassinfo.maxperson, 
-        COUNT(treservation.classid) AS currentCount 
+        COUNT(treservation.classid) AS currentCount,
+        tclassinfo.enddate 
       FROM tclassinfo 
       LEFT JOIN treservation ON tclassinfo.classid = treservation.classid AND treservation.classdate = ? 
       WHERE tclassinfo.classid = ? AND tclassinfo.classday = ? AND tclassinfo.classtime = ? 
@@ -1365,6 +1366,12 @@ app.post('/addBookingByCustomer', verifyToken, async (req, res) => {
       const { maxperson, currentCount } = resCheckClassFull[0];
       if (currentCount >= maxperson) {
         return res.json({ success: false, message: 'Sorry, this class is full' });
+      }
+
+      // ตรวจสอบวันหมดอายุของคลาส
+      const classEndDate = resCheckClassFull[0].enddate;
+      if (classEndDate && momentTH(classdate).isAfter(momentTH(classEndDate), 'day')) {
+        return res.json({ success: false, message: 'Sorry, From ' + momentTH(classEndDate).format('DD/MM/YYYY') + ', this class will be discontinued.' });
       }
 
       // ตรวจสอบข้อมูลคอร์สของนักเรียน
