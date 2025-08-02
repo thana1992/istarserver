@@ -561,7 +561,10 @@ app.post('/approveNewStudent', verifyToken, async (req, res) => {
   try {
     const { apprObj } = req.body;
     console.log("apprObj : " + JSON.stringify(apprObj));
-
+    if( !Array.isArray(apprObj) || apprObj.length === 0) {
+      logStudentToDiscord('error', `❌ [Approve Student][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ ไม่ได้เลือกนักเรียนสำหรับการอนุมัติ.`);
+      return res.json({ success: false, message: 'Please select at least one student for approval.' });
+    }
     const studentIds = apprObj.map(item => item.studentid);
     const getQuery = 'SELECT * FROM jstudent WHERE studentid IN (?)';
     const results = await queryPromise(getQuery, [studentIds]);
