@@ -63,8 +63,7 @@ async function processQueue(urlType) {
                 await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
                 queueForUrl.unshift(message); // ใส่กลับไปในคิว
             } else {
-                logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + err.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
-                console.error("❌ Error sending to Discord:", err);
+                console.error(urlType + " : processQueue ไม่สามารถส่ง log ไปยัง Discord ได้ " + err.message + " : ", err);
             }
         }
 
@@ -124,8 +123,7 @@ function logSystemToDiscord(type, title, message) {
         };
         logToQueue(type, embed);
     } catch (error) {
-        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
-        console.error('Error logging student to Discord:', error);
+        console.error(type + " : logSystemToDiscord ไม่สามารถส่ง log ไปยัง Discord ได้ " + error.message + " : ", error);
         throw error; // Re-throw the error after logging it
     }
 }
@@ -150,8 +148,7 @@ function logLoginToDiscord(type, title, message) {
             logToQueue('login', embed);
         }
     } catch (error) {
-        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
-        console.error('Error logging student to Discord:', error);
+        console.error(type + " : logLoginToDiscord ไม่สามารถส่ง log ไปยัง Discord ได้ " + error.message + " : ", error);
         throw error; // Re-throw the error after logging it
     }
 }
@@ -182,8 +179,7 @@ function logCourseToDiscord(type, title, message, imageUrl = null) {
             logToQueue('course', embed);
         }
     } catch (error) {
-        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
-        console.error('Error logging student to Discord:', error);
+        console.error(type + " : logCourseToDiscord ไม่สามารถส่ง log ไปยัง Discord ได้ " + error.message + " : ", error);
     }
 }
 
@@ -208,8 +204,7 @@ function logBookingToDiscord(type, title, message) {
             logToQueue('booking', embed);
         }
     } catch (error) {
-        logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + error.message, 'ไม่สามารถส่ง log student ไปยัง Discord ได้');
-        console.error('Error logging student to Discord:', error);
+        console.error(type + " : logBookingToDiscord ไม่สามารถส่ง log ไปยัง Discord ได้ " + error.message + " : ", error);
         throw error; // Re-throw the error after logging it
     }
 }

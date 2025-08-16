@@ -3313,7 +3313,7 @@ console.log = (msg) => {
 console.error = (msg, error) => {
   const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
   logger.info('['+timestamp+'] : ' + msg + " : " + error);
-  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด : ' + msg);
+  logSystemToDiscord('error', '❌ เกิดข้อผิดพลาด', msg);
 };
 
 process.on('unhandledRejection', (reason, promise) => {
