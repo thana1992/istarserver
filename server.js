@@ -1693,6 +1693,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
       AND d.courseid = ? 
     WHERE a.classday = ? 
       AND a.courseid = ? 
+      AND a.startdate <= ? AND a.enddate >= ?
   `;
   if (req.user.adminflag != '1') {
     query += 'AND a.adminflag = 0 ';
@@ -1701,7 +1702,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
   query += 'ORDER BY a.classtime';
 
   try {
-    const results = await queryPromise(query, [classdate, classdate, courseid, classday, courseid]);
+    const results = await queryPromise(query, [classdate, classdate, courseid, classday, courseid, classdate, classdate]);
     if (results.length > 0) {
       results.forEach((element, index) => {
         // ใช้ adjusted_available แทน available 
@@ -2124,7 +2125,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
-      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate < ? AND a.enddate > ?
+      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate <= ? AND a.enddate >= ?
       ORDER BY a.classtime, r.classtime ASC
     `;
     const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
@@ -2249,7 +2250,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
-      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate < ? AND a.enddate > ?
+      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate <= ? AND a.enddate >= ?
       ORDER BY a.classtime, r.classtime ASC
     `;
     const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
