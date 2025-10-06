@@ -2124,7 +2124,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
-      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate < ? AND a.enddate > ?
+      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate <= ? AND a.enddate >= ?
       ORDER BY a.classtime, r.classtime ASC
     `;
     const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
@@ -2249,7 +2249,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
-      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate < ? AND a.enddate > ?
+      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate <= ? AND a.enddate >= ?
       ORDER BY a.classtime, r.classtime ASC
     `;
     const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
