@@ -1693,6 +1693,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
       AND d.courseid = ? 
     WHERE a.classday = ? 
       AND a.courseid = ? 
+      AND a.startdate <= ? AND a.enddate >= ?
   `;
   if (req.user.adminflag != '1') {
     query += 'AND a.adminflag = 0 ';
@@ -1701,7 +1702,7 @@ app.post('/getClassTime', verifyToken, async (req, res) => {
   query += 'ORDER BY a.classtime';
 
   try {
-    const results = await queryPromise(query, [classdate, classdate, courseid, classday, courseid]);
+    const results = await queryPromise(query, [classdate, classdate, courseid, classday, courseid, classdate, classdate]);
     if (results.length > 0) {
       results.forEach((element, index) => {
         // ใช้ adjusted_available แทน available 
