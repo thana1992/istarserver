@@ -2124,10 +2124,10 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
-      WHERE a.classday = ? AND a.enableflag = 1
+      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate < ? AND a.enddate > ?
       ORDER BY a.classtime, r.classtime ASC
     `;
-    const results = await queryPromise(query, [classdate, classday], true);
+    const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
 
     // Process results to create booking list
     const getName = async (nickname, currnent_courserefer, booking_courserefer, checkedin, color, remaining, freeflag, coursetype, expiredate, paid) => {
@@ -2249,10 +2249,10 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
-      WHERE a.classday = ? AND a.enableflag = 1
+      WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate < ? AND a.enddate > ?
       ORDER BY a.classtime, r.classtime ASC
     `;
-    const results = await queryPromise(query, [classdate, classday]);
+    const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
 
     // Process results to create booking list
     const bookinglist = results.reduce((acc, row) => {
