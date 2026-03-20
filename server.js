@@ -973,8 +973,17 @@ app.post('/addBookingByAdmin', verifyToken, async (req, res) => {
         } else {
           return res.json({ success: false, message: 'Not found customer\'s course' });
         }
-      }else {
+      } else {
         // เรียนฟรี
+        // ตรวจสอบการจองซ้ำใน class เดียวกัน
+        let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ? AND classtime = ?';
+        let params = [studentid, classdate, classtime];
+        let msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
+        const resCheckDuplicateReservation = await queryPromise( checkDuplicateReservationQuery, params);
+        if (resCheckDuplicateReservation.length > 0) {
+          return res.json({ success: false, message: msg });
+        }
+        
         const insertReservationQuery = `
           INSERT INTO treservation (studentid, classid, classdate, classtime, courseid, freeflag, createby) 
           VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -1052,6 +1061,15 @@ app.post('/updateBookingByAdmin', verifyToken, async (req, res) => {
       }
 
       if(freeflag == 1) {
+        // ตรวจสอบการจองซ้ำใน class เดียวกัน
+        let checkDuplicateReservationQuery = 'SELECT * FROM treservation WHERE studentid = ? AND classdate = ? AND classtime = ? AND reservationid <> ?';
+        let params = [studentid, classdate, classtime, reservationid];
+        let msg = 'มีชื่ออยู่ในคลาสนี้อยู่แล้ว ไม่สามารถจองซ้ำได้';
+        const resCheckDuplicateReservation = await queryPromise( checkDuplicateReservationQuery, params);
+        if (resCheckDuplicateReservation.length > 0) {
+          return res.json({ success: false, message: msg });
+        }
+
         // แก้ไขข้อมูลการจอง (เรียนฟรี)
         const insertReservationQuery = `
           UPDATE treservation SET classid = ?, classdate = ?, classtime = ?, courseid = ?, updateby = ? WHERE reservationid = ?
