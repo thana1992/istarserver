@@ -446,13 +446,14 @@ app.post('/register', async (req, res) => {
       } else {
         return res.json({ success: false, message: 'Invalid register code' });
       }
-      // Insert new user
-      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy]);
-
-      // Create associated family
+      // Create family first to get the authoritative familyid
       const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-      await queryPromise(createFamilyQuery, [username]);
+      const familyResult = await queryPromise(createFamilyQuery, [username]);
+      const familyid = familyResult.insertId;
+
+      // Insert new user with the same familyid
+      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy, familyid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy, familyid]);
 
       return res.json({ success: true, message: 'User registered successfully' });
     }
