@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn '$t\\\\\\(' /c/iStarApp/istarapp_dev/src/components '--include=*.vue')",
+      "Bash(grep -rn '\\\\$t\\(' /c/iStarApp/istarapp_dev/src/components '--include=*.vue')",
+      "Bash(node -e \"require\\('./src/i18n.js'\\)\")",
+      "Bash(python3 -c ' *)",
+      "PowerShell($content = Get-Content 'c:\\\\iStarApp\\\\istarapp_dev\\\\src\\\\i18n.js' -Raw; $opens = \\($content.ToCharArray\\(\\) | Where-Object { $_ -eq '{' } | Measure-Object\\).Count; $closes = \\($content.ToCharArray\\(\\) | Where-Object { $_ -eq '}' } | Measure-Object\\).Count; \"Opens: $opens, Closes: $closes, Balance: $\\($opens - $closes\\)\")"
+    ]
+  }
+}

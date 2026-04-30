@@ -1886,58 +1886,54 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
-  const { active } = req.query;
+  const { active, page = 1, itemsPerPage = 20, search = '' } = req.query;
   console.log("getStudentList active : " + active);
+
+  const pageNum = parseInt(page) || 1;
+  const limitRaw = parseInt(itemsPerPage);
+  const limit = limitRaw === -1 ? null : (limitRaw || 20);
+  const offset = limit !== null ? (pageNum - 1) * limit : 0;
+
   try {
-    let query = `
-      SELECT 
-        a.studentid, 
-        a.familyid, 
-        a.firstname, 
-        a.middlename, 
-        a.lastname, 
-        a.nickname, 
-        a.gender, 
-        a.dateofbirth, 
-        a.courserefer, 
-        a.courserefer2, 
-        a.shortnote, 
-        CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,'')) AS fullname, 
-        CASE 
-          WHEN b.coursetype = 'Monthly' THEN 'รายเดือน' 
-          WHEN b.coursetype IS NULL THEN 'ไม่มีคอร์ส' 
-          ELSE CONCAT(b.remaining, ' ครั้ง') 
-        END AS remaining_label, 
-        b.remaining, 
-        b.expiredate, 
-        t.coursename, 
-        d.mobileno, 
-        a.shortnote, 
-        a.level 
-      FROM tstudent a 
-      LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer 
-      LEFT JOIN tcourseinfo t ON b.courseid = t.courseid 
-      LEFT JOIN tfamily c ON a.familyid = c.familyid 
-      LEFT JOIN tuser d ON c.username = d.username 
-      WHERE a.delflag = 0
-    `;
+    let whereClause = `WHERE a.delflag = 0`;
+    const queryParams = [];
 
-    // เพิ่ม filter เฉพาะ active
     if (active === true || active === 'true' || active === 1 || active === '1') {
-      query += `
-        AND a.courserefer IS NOT NULL
-        AND (b.expiredate IS NULL OR b.expiredate >= CURDATE())
-      `;
+      whereClause += ` AND a.courserefer IS NOT NULL AND (b.expiredate IS NULL OR b.expiredate >= CURDATE())`;
     }
 
-    query += ' ORDER BY a.createdate DESC';
-    const results = await queryPromise(query);
-
-    if (results.length > 0) {
-      res.json({ success: true, message: 'Get Student list successful', results });
-    } else {
-      res.json({ success: true, message: 'No Student list', results });
+    if (search) {
+      whereClause += ` AND (a.firstname LIKE ? OR a.lastname LIKE ? OR a.nickname LIKE ?)`;
+      queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
+
+    const selectCols = `
+        a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname,
+        a.gender, a.dateofbirth, a.courserefer, a.courserefer2, a.shortnote,
+        CONCAT(IFNULL(a.firstname,''), ' ', IFNULL(a.middlename,''), IF(a.middlename<>'', ' ',''), IFNULL(a.lastname,'')) AS fullname,
+        CASE
+          WHEN b.coursetype = 'Monthly' THEN 'รายเดือน'
+          WHEN b.coursetype IS NULL THEN 'ไม่มีคอร์ส'
+          ELSE CONCAT(b.remaining, ' ครั้ง')
+        END AS remaining_label,
+        b.remaining, b.expiredate, t.coursename, d.mobileno, a.level`;
+
+    const joins = `
+      FROM tstudent a
+      LEFT JOIN tcustomer_course b ON a.courserefer = b.courserefer
+      LEFT JOIN tcourseinfo t ON b.courseid = t.courseid
+      LEFT JOIN tfamily c ON a.familyid = c.familyid
+      LEFT JOIN tuser d ON c.username = d.username`;
+
+    const [[{ total }], results] = await Promise.all([
+      queryPromise(`SELECT COUNT(*) AS total ${joins} ${whereClause}`, queryParams),
+      queryPromise(
+        `SELECT ${selectCols} ${joins} ${whereClause} ORDER BY a.createdate DESC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        limit !== null ? [...queryParams, limit, offset] : queryParams
+      ),
+    ]);
+
+    res.json({ success: true, message: 'Get Student list successful', results, total });
   } catch (error) {
     console.error("Error in getStudentList", error.stack);
     res.status(500).send(error);
@@ -2333,77 +2329,94 @@ function calculateAge(dateOfBirth) {
 
 app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
   try {
-    const { username } = req.body;
-    const query = `SELECT a.*, b.coursename, 
-        CASE 
+    const { username, page = 1, itemsPerPage = 20, search = '' } = req.body;
+
+    const pageNum = parseInt(page) || 1;
+    const limitRaw = parseInt(itemsPerPage);
+    const limit = limitRaw === -1 ? null : (limitRaw || 20);
+    const offset = limit !== null ? (pageNum - 1) * limit : 0;
+    const searchParam = `%${search}%`;
+
+    const userlistExpr = `CASE
          WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
          ELSE (
           SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
           FROM (
-            SELECT s.nickname
-            FROM tstudent s
-            WHERE s.courserefer = a.courserefer
+            SELECT s.nickname FROM tstudent s WHERE s.courserefer = a.courserefer
             UNION
-            SELECT s2.nickname
-            FROM tstudent s2
-            JOIN treservation r ON s2.studentid = r.studentid
-            WHERE r.courserefer = a.courserefer
+            SELECT s2.nickname FROM tstudent s2 JOIN treservation r ON s2.studentid = r.studentid WHERE r.courserefer = a.courserefer
           ) AS allstudents
         )
-        END AS userlist
-        FROM tcustomer_course a 
-        LEFT JOIN tcourseinfo b 
-        ON a.courseid = b.courseid 
-        WHERE a.finish = 1 
-        GROUP BY a.courseid, a.courserefer, b.coursename
-        ORDER BY a.createdate desc
-    `;
+        END`;
 
-    const results = await queryPromise(query, null);
-    if (results.length > 0) {
-      res.json({ success: true, message: 'Get Customer Course List successful', results });
-    } else {
-      res.json({ success: true, message: 'No Customer Course List' });
-    }
+    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistExpr}) LIKE ?)` : '';
+    const havingParams = search ? [searchParam, searchParam] : [];
+
+    const innerQuery = `
+      SELECT a.*, b.coursename, (${userlistExpr}) AS userlist
+      FROM tcustomer_course a
+      LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
+      WHERE a.finish = 1
+      GROUP BY a.courseid, a.courserefer, b.coursename
+      ${havingClause}`;
+
+    const [[{ total }], results] = await Promise.all([
+      queryPromise(`SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`, havingParams),
+      queryPromise(
+        `${innerQuery} ORDER BY a.createdate DESC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        limit !== null ? [...havingParams, limit, offset] : havingParams
+      ),
+    ]);
+
+    res.json({ success: true, message: 'Get Customer Course List successful', results, total });
   } catch (error) {
-    console.error('Error in getCustomerCourseList', error.stack);
+    console.error('Error in getFinishedCustomerCourseList', error.stack);
     res.status(500).send(error);
   }
 });
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   try {
-    const { username } = req.body;
-    const query = `SELECT a.*, b.coursename,
-        CASE
+    const { username, page = 1, itemsPerPage = 20, search = '' } = req.body;
+
+    const pageNum = parseInt(page) || 1;
+    const limitRaw = parseInt(itemsPerPage);
+    const limit = limitRaw === -1 ? null : (limitRaw || 20);
+    const offset = limit !== null ? (pageNum - 1) * limit : 0;
+    const searchParam = `%${search}%`;
+
+    const userlistExpr = `CASE
           WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
           ELSE (
             SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
             FROM (
-              SELECT s.nickname
-              FROM tstudent s
-              WHERE s.courserefer = a.courserefer
+              SELECT s.nickname FROM tstudent s WHERE s.courserefer = a.courserefer
               UNION
-              SELECT s2.nickname
-              FROM tstudent s2
-              JOIN treservation r ON s2.studentid = r.studentid
-              WHERE r.courserefer = a.courserefer
+              SELECT s2.nickname FROM tstudent s2 JOIN treservation r ON s2.studentid = r.studentid WHERE r.courserefer = a.courserefer
             ) AS allstudents
           )
-        END AS userlist
+        END`;
+
+    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistExpr}) LIKE ?)` : '';
+    const havingParams = search ? [searchParam, searchParam] : [];
+
+    const innerQuery = `
+      SELECT a.*, b.coursename, (${userlistExpr}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       WHERE a.finish = 0
       GROUP BY a.courseid, a.courserefer, b.coursename
-      ORDER BY a.createdate DESC
-    `;
+      ${havingClause}`;
 
-    const results = await queryPromise(query, null);
-    if (results.length > 0) {
-      res.json({ success: true, message: 'Get Customer Course List successful', results });
-    } else {
-      res.json({ success: true, message: 'No Customer Course List' });
-    }
+    const [[{ total }], results] = await Promise.all([
+      queryPromise(`SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`, havingParams),
+      queryPromise(
+        `${innerQuery} ORDER BY a.createdate DESC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        limit !== null ? [...havingParams, limit, offset] : havingParams
+      ),
+    ]);
+
+    res.json({ success: true, message: 'Get Customer Course List successful', results, total });
   } catch (error) {
     console.error('Error in getCustomerCourseList', error.stack);
     res.status(500).send(error);
