@@ -3318,6 +3318,37 @@ cron.schedule('0,55 * * * *', () => {
   uploadOrUpdateLogFile() ;
 });
 
+app.post('/getAppSettings', async (req, res) => {
+  try {
+    const results = await queryPromise("SELECT setting_value FROM settings WHERE setting_key = 'uiTheme'");
+    const uiTheme = results.length > 0 ? results[0].setting_value : 'neumorphic';
+    return res.json({ success: true, uiTheme });
+  } catch (error) {
+    console.error('Error in getAppSettings', error.stack);
+    return res.status(500).send(error);
+  }
+});
+
+app.post('/saveAppSettings', verifyToken, async (req, res) => {
+  if (req.user.adminflag !== 1) {
+    return res.status(403).json({ success: false, message: 'Permission denied' });
+  }
+  const { uiTheme } = req.body;
+  if (!['neumorphic', 'playful'].includes(uiTheme)) {
+    return res.status(400).json({ success: false, message: 'Invalid uiTheme value' });
+  }
+  try {
+    await queryPromise(
+      "INSERT INTO settings (setting_key, setting_value) VALUES ('uiTheme', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+      [uiTheme]
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error in saveAppSettings', error.stack);
+    return res.status(500).send(error);
+  }
+});
+
 const server = app.listen(port, () => {
   clearActiveSessions();
   console.log(`Server is running on port ${port}`);
