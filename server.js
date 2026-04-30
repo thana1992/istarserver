@@ -3334,7 +3334,7 @@ app.post('/saveAppSettings', verifyToken, async (req, res) => {
     return res.status(403).json({ success: false, message: 'Permission denied' });
   }
   const { uiTheme } = req.body;
-  if (!['neumorphic', 'playful'].includes(uiTheme)) {
+  if (!['neumorphic', 'playful','halloween','christmas','new'].includes(uiTheme)) {
     return res.status(400).json({ success: false, message: 'Invalid uiTheme value' });
   }
   try {
