@@ -10,12 +10,14 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const pad = require('pad')
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
 const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
-const activeSessions = [];
-const blacklistSessions = [];
+const activeSessions = new Map(); // key: username, value: decoded token
+const blacklistSessions = new Set();
 const { logToQueue, logSystemToDiscord, logLoginToDiscord, logBookingToDiscord, logCourseToDiscord, logStudentToDiscord } = require('./logToDiscord'); // import function ที่แยกไว้
 const mysql2 = require('mysql2/promise');
 const { stringify } = require('querystring');
@@ -34,13 +36,24 @@ const pool = mysql2.createPool({
   database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 30,
-  queueLimit: 0,
+  queueLimit: 100,
+  timezone: '+07:00',
 });
 
 // ติดตั้ง package สำหรับ S3 v3
 const { S3Client, PutObjectCommand, HeadObjectCommand, ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // กำหนดที่เก็บไฟล์ชั่วคราว
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG and GIF are allowed.'));
+    }
+  }
+}); // กำหนดที่เก็บไฟล์ชั่วคราว
 
 // สร้าง S3 Client
 const s3Client = new S3Client({
@@ -168,7 +181,6 @@ async function queryPromise(query, params, showlog) {
     logData.params = maskSensitiveData(params);
 
     connection = await pool.getConnection();
-    await connection.query("SET time_zone = '+07:00';"); // ตั้งค่าเขตเวลาเป็นเวลาของไทย (UTC+7)
     const [results] = await connection.query(query, params);
     
     // Mask results if showlog is true
@@ -201,7 +213,6 @@ async function queryPromiseWithConn(connection, query, params, showlog) {
 
     logData.params = maskSensitiveData(params);
 
-    await connection.query("SET time_zone = '+07:00';"); // ตั้ง timezone ไทย
     const [results] = await connection.query(query, params);
 
     logData.result = Array.isArray(results) ? results.map(maskSensitiveData) : maskSensitiveData(results);
@@ -234,9 +245,8 @@ app.use(bodyParser.json({ limit: '5mb' }));
 
 // ตั้งค่า CORS (เลือกใช้ `cors` หรือ `res.header`)
 app.use(cors({
-  origin: '*', // ปรับ origin ตามความเหมาะสม
+  origin: process.env.CORS_ORIGIN || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
 }));
 
 // เพิ่ม middleware logging (request/response)
@@ -290,11 +300,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// เพิ่ม header สำหรับ response (หากจำเป็น)
+// Security headers
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // ถ้าจำเป็นต้องใช้
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('X-Frame-Options', 'DENY');
   next();
 });
 
@@ -307,7 +316,7 @@ const verifyToken = (req, res, next) => {
       return res.status(401).json({ message: 'No token provided' });
     }
 
-    if (blacklistSessions.includes(token)) {
+    if (blacklistSessions.has(token)) {
       return res.status(401).json({ message: 'Token has been revoked' });
     }
 
@@ -316,13 +325,8 @@ const verifyToken = (req, res, next) => {
         return res.status(401).json({ message: 'Session expried please login again' });
       }
 
-      // Check if the user is already in activeSessions
-      const existingUser = activeSessions.find((user) => user.username === decoded.username);
-
-      if (!existingUser) {
-        // Add the decoded user information to the activeSessions array
-        activeSessions.push(decoded);
-      }
+      // Update activeSessions Map
+      activeSessions.set(decoded.username, decoded);
       // Attach the decoded user information to the request for use in route handlers
       req.user = decoded;
       next();
@@ -346,14 +350,13 @@ app.post('/verifyToken', verifyToken, (req, res) => {
   res.json({ success: true, message: 'verifyToken successfully' });
 });
 
-app.get('/checkToken', (req, res) => {
-  // Token is valid, return information about the token
-  activeSessions.forEach(item => {
-    let iat = new Date(item.iat * 1000)
-    let exp = new Date(item.exp * 1000)
-    console.log(item.username + " : " + iat.toISOString + " : " + exp.toISOString() + "\n")
+app.get('/checkToken', verifyToken, (req, res) => {
+  activeSessions.forEach((item) => {
+    const iat = new Date(item.iat * 1000);
+    const exp = new Date(item.exp * 1000);
+    console.log(item.username + " : " + iat.toISOString() + " : " + exp.toISOString() + "\n");
   });
-  res.json({ activeSessions });
+  res.json({ activeSessions: [...activeSessions.values()] });
   uploadOrUpdateLogFile();
 
 });
@@ -366,7 +369,6 @@ app.post('/login', async (req, res) => {
     const results = await queryPromise(query, [username.toLowerCase()]);
     if (results.length > 0) {
       const storedPassword = results[0].userpassword;
-      //console.log("storedPassword : " + storedPassword);
       if (storedPassword === password) {
         //res.status(200).json({ message: "Login successful" });
         const user = results[0];
@@ -407,15 +409,12 @@ app.post('/login', async (req, res) => {
 
 app.post('/logout', verifyToken, (req, res) => {
   // Remove the user from activeSessions
-  const userIndex = activeSessions.findIndex((user) => user.username === req.user.username);
-  if (userIndex !== -1) {
-    activeSessions.splice(userIndex, 1);
-  }
+  activeSessions.delete(req.user.username);
   
   const token = req.headers.authorization.split(' ')[1];
   console.log("token : " + token);
   // เพิ่ม token เข้าไปใน blacklist
-  blacklistSessions.push(token);
+  blacklistSessions.add(token);
 
   // Optionally, you can add more cleanup logic here
   logLoginToDiscord('info', '✅ [Logout]', `User ${req.user.username} logged out successfully.`);
@@ -447,13 +446,14 @@ app.post('/register', async (req, res) => {
       } else {
         return res.json({ success: false, message: 'Invalid register code' });
       }
-      // Insert new user
-      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy]);
-
-      // Create associated family
+      // Create family first to get the authoritative familyid
       const createFamilyQuery = 'INSERT INTO tfamily (username) VALUES (?)';
-      await queryPromise(createFamilyQuery, [username]);
+      const familyResult = await queryPromise(createFamilyQuery, [username]);
+      const familyid = familyResult.insertId;
+
+      // Insert new user with the same familyid
+      const insertUserQuery = 'INSERT INTO tuser (username, userpassword, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy, familyid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      await queryPromise(insertUserQuery, [username, password, firstname, middlename, lastname, address, email, mobileno, usertype, acceptPrivacyPolicy, familyid]);
 
       return res.json({ success: true, message: 'User registered successfully' });
     }
@@ -2144,7 +2144,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
       WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate <= ? AND a.enddate >= ?
-      ORDER BY a.classtime, r.classtime ASC
+      ORDER BY a.classtime, r.reservationid ASC
     `;
     const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
 
@@ -2269,7 +2269,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       LEFT JOIN tstudent c ON r.studentid = c.studentid
       LEFT JOIN tcustomer_course cc ON r.courserefer = cc.courserefer
       WHERE a.classday = ? AND a.enableflag = 1 AND a.startdate <= ? AND a.enddate >= ?
-      ORDER BY a.classtime, r.classtime ASC
+      ORDER BY a.classtime, r.reservationid ASC
     `;
     const results = await queryPromise(query, [classdate, classday, classdate, classdate], true);
 
@@ -3032,7 +3032,7 @@ app.post('/holidays', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/holidays/:id', async (req, res) => {
+app.put('/holidays/:id', verifyToken, async (req, res) => {
   const { holidaydate, description } = req.body;
   const { id } = req.params;
   try {
@@ -3044,7 +3044,7 @@ app.put('/holidays/:id', async (req, res) => {
   }
 });
 
-app.delete('/holidays/:id', async (req, res) => {
+app.delete('/holidays/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     await queryPromise('DELETE FROM tholiday WHERE id = ?', [id]);
@@ -3083,10 +3083,8 @@ async function generateRefer(refertype) {
 }
 
 function clearActiveSessions() {
-  console.log("clearActiveSessions() : " + JSON.stringify(activeSessions));
-  while (activeSessions.length > 0) {
-    activeSessions.pop();
-  }
+  console.log("clearActiveSessions() : " + activeSessions.size + " sessions");
+  activeSessions.clear();
 }
 
 const twilio = require('twilio');
@@ -3191,18 +3189,27 @@ app.post('/checkmobileno', async (req, res) => {
 });
 
 app.post('/change-password', verifyToken, async (req, res) => {
-  const { username, password } = req.body;
-  const query = 'UPDATE tuser SET userpassword = ? WHERE username = ?';
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ success: false, message: 'oldPassword and newPassword are required' });
+  }
   try {
-    const results = await queryPromise(query, [password, username]);
+    const userResults = await queryPromise('SELECT userpassword FROM tuser WHERE username = ?', [req.user.username]);
+    if (userResults.length === 0) {
+      return res.status(400).json({ success: false, message: 'User not found' });
+    }
+    if (userResults[0].userpassword !== oldPassword) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+    const results = await queryPromise('UPDATE tuser SET userpassword = ? WHERE username = ?', [newPassword, req.user.username]);
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Password changed successfully' });
     } else {
       res.json({ success: false, message: 'Error changing password' });
     }
   } catch (error) {
-    console.error('Error in chenge-password', error.stack);
-    res.status(500).send(error);
+    console.error('Error in change-password', error.stack);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
