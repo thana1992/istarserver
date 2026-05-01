@@ -350,7 +350,7 @@ app.post('/verifyToken', verifyToken, (req, res) => {
   res.json({ success: true, message: 'verifyToken successfully' });
 });
 
-app.get('/checkToken', verifyToken, (req, res) => {
+app.get('/checkToken', (req, res) => {
   activeSessions.forEach((item) => {
     const iat = new Date(item.iat * 1000);
     const exp = new Date(item.exp * 1000);
