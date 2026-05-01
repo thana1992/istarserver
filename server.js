@@ -2350,7 +2350,7 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
 
     const userlistCol = `CASE
       WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-      ELSE IFNULL(ul.computed_userlist, '')
+      ELSE IFNULL(ANY_VALUE(ul.computed_userlist), '')
     END`;
 
     const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistCol}) LIKE ?)` : '';
@@ -2409,7 +2409,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
 
     const userlistCol = `CASE
       WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-      ELSE IFNULL(ul.computed_userlist, '')
+      ELSE IFNULL(ANY_VALUE(ul.computed_userlist), '')
     END`;
 
     const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistCol}) LIKE ?)` : '';
