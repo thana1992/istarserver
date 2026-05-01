@@ -2337,31 +2337,42 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
     const offset = limit !== null ? (pageNum - 1) * limit : 0;
     const searchParam = `%${search}%`;
 
-    const userlistExpr = `CASE
-         WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-         ELSE (
-          SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
-          FROM (
-            SELECT s.nickname FROM tstudent s WHERE s.courserefer = a.courserefer
-            UNION
-            SELECT s2.nickname FROM tstudent s2 JOIN treservation r ON s2.studentid = r.studentid WHERE r.courserefer = a.courserefer
-          ) AS allstudents
-        )
-        END`;
+    // Derived table computes userlist for all courserefs once (vs. correlated subquery per row)
+    const userlistDerived = `(
+      SELECT courserefer, GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ') AS computed_userlist
+      FROM (
+        SELECT s.courserefer, s.nickname FROM tstudent s
+        UNION ALL
+        SELECT r.courserefer, s2.nickname FROM treservation r JOIN tstudent s2 ON s2.studentid = r.studentid
+      ) ul_src
+      GROUP BY courserefer
+    ) ul`;
 
-    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistExpr}) LIKE ?)` : '';
+    const userlistCol = `CASE
+      WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
+      ELSE IFNULL(ul.computed_userlist, '')
+    END`;
+
+    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistCol}) LIKE ?)` : '';
     const havingParams = search ? [searchParam, searchParam] : [];
 
     const innerQuery = `
-      SELECT a.*, b.coursename, (${userlistExpr}) AS userlist
+      SELECT a.*, b.coursename, (${userlistCol}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
+      LEFT JOIN ${userlistDerived} ON ul.courserefer = a.courserefer
       WHERE a.finish = 1
       GROUP BY a.courseid, a.courserefer, b.coursename
       ${havingClause}`;
 
+    // Fast count when no search: skip userlist computation entirely
+    const countQuery = search
+      ? `SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`
+      : `SELECT COUNT(DISTINCT a.courseid) AS total FROM tcustomer_course a WHERE a.finish = 1`;
+    const countParams = search ? havingParams : [];
+
     const [[{ total }], results] = await Promise.all([
-      queryPromise(`SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`, havingParams),
+      queryPromise(countQuery, countParams),
       queryPromise(
         `${innerQuery} ORDER BY a.createdate DESC, a.courserefer ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
         limit !== null ? [...havingParams, limit, offset] : havingParams
@@ -2385,31 +2396,42 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     const offset = limit !== null ? (pageNum - 1) * limit : 0;
     const searchParam = `%${search}%`;
 
-    const userlistExpr = `CASE
-          WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
-          ELSE (
-            SELECT GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ')
-            FROM (
-              SELECT s.nickname FROM tstudent s WHERE s.courserefer = a.courserefer
-              UNION
-              SELECT s2.nickname FROM tstudent s2 JOIN treservation r ON s2.studentid = r.studentid WHERE r.courserefer = a.courserefer
-            ) AS allstudents
-          )
-        END`;
+    // Derived table computes userlist for all courserefs once (vs. correlated subquery per row)
+    const userlistDerived = `(
+      SELECT courserefer, GROUP_CONCAT(DISTINCT nickname SEPARATOR ', ') AS computed_userlist
+      FROM (
+        SELECT s.courserefer, s.nickname FROM tstudent s
+        UNION ALL
+        SELECT r.courserefer, s2.nickname FROM treservation r JOIN tstudent s2 ON s2.studentid = r.studentid
+      ) ul_src
+      GROUP BY courserefer
+    ) ul`;
 
-    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistExpr}) LIKE ?)` : '';
+    const userlistCol = `CASE
+      WHEN a.courserefer LIKE '%ทดลองเรียน%' OR a.courserefer LIKE '%รายครั้ง%' THEN ''
+      ELSE IFNULL(ul.computed_userlist, '')
+    END`;
+
+    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistCol}) LIKE ?)` : '';
     const havingParams = search ? [searchParam, searchParam] : [];
 
     const innerQuery = `
-      SELECT a.*, b.coursename, (${userlistExpr}) AS userlist
+      SELECT a.*, b.coursename, (${userlistCol}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
+      LEFT JOIN ${userlistDerived} ON ul.courserefer = a.courserefer
       WHERE a.finish = 0
       GROUP BY a.courseid, a.courserefer, b.coursename
       ${havingClause}`;
 
+    // Fast count when no search: skip userlist computation entirely
+    const countQuery = search
+      ? `SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`
+      : `SELECT COUNT(DISTINCT a.courseid) AS total FROM tcustomer_course a WHERE a.finish = 0`;
+    const countParams = search ? havingParams : [];
+
     const [[{ total }], results] = await Promise.all([
-      queryPromise(`SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`, havingParams),
+      queryPromise(countQuery, countParams),
       queryPromise(
         `${innerQuery} ORDER BY a.createdate DESC, a.courserefer ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
         limit !== null ? [...havingParams, limit, offset] : havingParams
