@@ -1928,7 +1928,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
     const [[{ total }], results] = await Promise.all([
       queryPromise(`SELECT COUNT(*) AS total ${joins} ${whereClause}`, queryParams),
       queryPromise(
-        `SELECT ${selectCols} ${joins} ${whereClause} ORDER BY a.createdate DESC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        `SELECT ${selectCols} ${joins} ${whereClause} ORDER BY a.createdate DESC, a.studentid ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
         limit !== null ? [...queryParams, limit, offset] : queryParams
       ),
     ]);
@@ -2363,7 +2363,7 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
     const [[{ total }], results] = await Promise.all([
       queryPromise(`SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`, havingParams),
       queryPromise(
-        `${innerQuery} ORDER BY a.createdate DESC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        `${innerQuery} ORDER BY a.createdate DESC, a.courserefer ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
         limit !== null ? [...havingParams, limit, offset] : havingParams
       ),
     ]);
@@ -2411,7 +2411,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     const [[{ total }], results] = await Promise.all([
       queryPromise(`SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`, havingParams),
       queryPromise(
-        `${innerQuery} ORDER BY a.createdate DESC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        `${innerQuery} ORDER BY a.createdate DESC, a.courserefer ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
         limit !== null ? [...havingParams, limit, offset] : havingParams
       ),
     ]);

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/iStarApp/istarapp_dev/src/components/center/**)"
+    ]
+  }
+}
