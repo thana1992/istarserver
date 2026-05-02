@@ -2368,7 +2368,7 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
     // Fast count when no search: skip userlist computation entirely
     const countQuery = search
       ? `SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`
-      : `SELECT COUNT(DISTINCT a.courseid) AS total FROM tcustomer_course a WHERE a.finish = 1`;
+      : `SELECT COUNT(*) AS total FROM tcustomer_course a WHERE a.finish = 1`;
     const countParams = search ? havingParams : [];
 
     const [[{ total }], results] = await Promise.all([
@@ -2427,7 +2427,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     // Fast count when no search: skip userlist computation entirely
     const countQuery = search
       ? `SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`
-      : `SELECT COUNT(DISTINCT a.courseid) AS total FROM tcustomer_course a WHERE a.finish = 0`;
+      : `SELECT COUNT(*) AS total FROM tcustomer_course a WHERE a.finish = 0`;
     const countParams = search ? havingParams : [];
 
     const [[{ total }], results] = await Promise.all([
