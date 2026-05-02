@@ -2394,7 +2394,13 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
 
     // baseQuery has no search filter — search is applied in outer WHERE on the computed alias
     const baseQuery = `
-      SELECT a.*, b.coursename, (${userlistCol}) AS userlist
+      SELECT a.*, b.coursename,
+        CASE
+          WHEN a.coursetype = 'Monthly' THEN 'รายเดือน'
+          WHEN a.coursetype IS NULL THEN 'ไม่มีคอร์ส'
+          ELSE CONCAT(a.remaining, ' ครั้ง')
+        END AS remaining_label,
+        (${userlistCol}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN ${userlistDerived} ON ul.courserefer = a.courserefer
@@ -2474,7 +2480,13 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
 
     // baseQuery has no search filter — search is applied in outer WHERE on the computed alias
     const baseQuery = `
-      SELECT a.*, b.coursename, (${userlistCol}) AS userlist
+      SELECT a.*, b.coursename,
+        CASE
+          WHEN a.coursetype = 'Monthly' THEN 'รายเดือน'
+          WHEN a.coursetype IS NULL THEN 'ไม่มีคอร์ส'
+          ELSE CONCAT(a.remaining, ' ครั้ง')
+        END AS remaining_label,
+        (${userlistCol}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN ${userlistDerived} ON ul.courserefer = a.courserefer
