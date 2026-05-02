@@ -1895,22 +1895,32 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
   const offset = limit !== null ? (pageNum - 1) * limit : 0;
 
   const colMap = {
-    fullname:        'fullname',
-    nickname:        'a.nickname',
-    gender:          'a.gender',
-    dateofbirth:     'a.dateofbirth',
-    level:           'a.level',
-    coursename:      't.coursename',
-    remaining_label: 'b.remaining',
-    expiredate:      'b.expiredate',
+    fullname:    'fullname',
+    nickname:    'a.nickname',
+    gender:      'a.gender',
+    level:       'a.level',
+    coursename:  't.coursename',
+    expiredate:  'b.expiredate',
   };
   let orderClause = 'a.createdate DESC, a.studentid ASC';
   try {
     const sortArr = JSON.parse(sortByRaw);
     if (Array.isArray(sortArr) && sortArr.length > 0) {
       const parts = sortArr
-        .filter(s => colMap[s.key])
-        .map(s => `${colMap[s.key]} ${s.order === 'desc' ? 'DESC' : 'ASC'}`);
+        .filter(s => colMap[s.key] || s.key === 'dateofbirth' || s.key === 'remaining_label')
+        .map(s => {
+          const dir = s.order === 'desc' ? 'DESC' : 'ASC';
+          if (s.key === 'dateofbirth') {
+            // age and dateofbirth are inverse: sort age ASC → dateofbirth DESC
+            const invertedDir = s.order === 'asc' ? 'DESC' : 'ASC';
+            return `a.dateofbirth IS NULL ASC, a.dateofbirth ${invertedDir}`;
+          }
+          if (s.key === 'remaining_label') {
+            // sort by numeric value: ไม่มีคอร์ส(-1) < 0ครั้ง < Nครั้ง < รายเดือน(9999)
+            return `CASE WHEN b.coursetype = 'Monthly' THEN 9999 WHEN b.remaining IS NULL THEN -1 ELSE b.remaining END ${dir}`;
+          }
+          return `${colMap[s.key]} ${dir}`;
+        });
       if (parts.length) orderClause = parts.join(', ');
     }
   } catch (e) {}
