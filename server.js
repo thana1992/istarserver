@@ -2374,13 +2374,18 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
       coursetype:  'a.coursetype',
       startdate:   'a.startdate',
       expiredate:  'a.expiredate',
-      remaining:   'a.remaining',
     };
     let orderClause = 'a.createdate DESC, a.courserefer ASC';
     if (Array.isArray(sortBy) && sortBy.length > 0) {
       const parts = sortBy
-        .filter(s => colMap[s.key])
-        .map(s => `${colMap[s.key]} ${s.order === 'desc' ? 'DESC' : 'ASC'}`);
+        .filter(s => colMap[s.key] || s.key === 'remaining_label')
+        .map(s => {
+          const dir = s.order === 'desc' ? 'DESC' : 'ASC';
+          if (s.key === 'remaining_label') {
+            return `CASE WHEN a.coursetype = 'Monthly' THEN 9999 WHEN a.remaining IS NULL THEN -1 ELSE a.remaining END ${dir}`;
+          }
+          return `${colMap[s.key]} ${dir}`;
+        });
       if (parts.length) orderClause = parts.join(', ');
     }
     // outer wrapper (search case) needs unqualified names — strip table alias prefix
@@ -2460,13 +2465,18 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
       coursetype:  'a.coursetype',
       startdate:   'a.startdate',
       expiredate:  'a.expiredate',
-      remaining:   'a.remaining',
     };
     let orderClause = 'a.createdate DESC, a.courserefer ASC';
     if (Array.isArray(sortBy) && sortBy.length > 0) {
       const parts = sortBy
-        .filter(s => colMap[s.key])
-        .map(s => `${colMap[s.key]} ${s.order === 'desc' ? 'DESC' : 'ASC'}`);
+        .filter(s => colMap[s.key] || s.key === 'remaining_label')
+        .map(s => {
+          const dir = s.order === 'desc' ? 'DESC' : 'ASC';
+          if (s.key === 'remaining_label') {
+            return `CASE WHEN a.coursetype = 'Monthly' THEN 9999 WHEN a.remaining IS NULL THEN -1 ELSE a.remaining END ${dir}`;
+          }
+          return `${colMap[s.key]} ${dir}`;
+        });
       if (parts.length) orderClause = parts.join(', ');
     }
     // outer wrapper (search case) needs unqualified names — strip table alias prefix
