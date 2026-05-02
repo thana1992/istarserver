@@ -1886,13 +1886,34 @@ app.post("/studentLookup", verifyToken, async (req, res) => {
 });
 
 app.get("/getStudentList", verifyToken, async (req, res) => {
-  const { active, page = 1, itemsPerPage = 20, search = '' } = req.query;
+  const { active, page = 1, itemsPerPage = 20, search = '', sortBy: sortByRaw = '[]' } = req.query;
   console.log("getStudentList active : " + active);
 
   const pageNum = parseInt(page) || 1;
   const limitRaw = parseInt(itemsPerPage);
   const limit = limitRaw === -1 ? null : (limitRaw || 20);
   const offset = limit !== null ? (pageNum - 1) * limit : 0;
+
+  const colMap = {
+    fullname:        'fullname',
+    nickname:        'a.nickname',
+    gender:          'a.gender',
+    dateofbirth:     'a.dateofbirth',
+    level:           'a.level',
+    coursename:      't.coursename',
+    remaining_label: 'b.remaining',
+    expiredate:      'b.expiredate',
+  };
+  let orderClause = 'a.createdate DESC, a.studentid ASC';
+  try {
+    const sortArr = JSON.parse(sortByRaw);
+    if (Array.isArray(sortArr) && sortArr.length > 0) {
+      const parts = sortArr
+        .filter(s => colMap[s.key])
+        .map(s => `${colMap[s.key]} ${s.order === 'desc' ? 'DESC' : 'ASC'}`);
+      if (parts.length) orderClause = parts.join(', ');
+    }
+  } catch (e) {}
 
   try {
     let whereClause = `WHERE a.delflag = 0`;
@@ -1928,7 +1949,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
     const [[{ total }], results] = await Promise.all([
       queryPromise(`SELECT COUNT(*) AS total ${joins} ${whereClause}`, queryParams),
       queryPromise(
-        `SELECT ${selectCols} ${joins} ${whereClause} ORDER BY a.createdate DESC, a.studentid ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
+        `SELECT ${selectCols} ${joins} ${whereClause} ORDER BY ${orderClause}${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
         limit !== null ? [...queryParams, limit, offset] : queryParams
       ),
     ]);
@@ -2329,13 +2350,31 @@ function calculateAge(dateOfBirth) {
 
 app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
   try {
-    const { username, page = 1, itemsPerPage = 20, search = '' } = req.body;
+    const { username, page = 1, itemsPerPage = 20, search = '', sortBy = [] } = req.body;
 
     const pageNum = parseInt(page) || 1;
     const limitRaw = parseInt(itemsPerPage);
     const limit = limitRaw === -1 ? null : (limitRaw || 20);
     const offset = limit !== null ? (pageNum - 1) * limit : 0;
     const searchParam = `%${search}%`;
+
+    const colMap = {
+      courserefer: 'a.courserefer',
+      coursename:  'b.coursename',
+      coursetype:  'a.coursetype',
+      startdate:   'a.startdate',
+      expiredate:  'a.expiredate',
+      remaining:   'a.remaining',
+    };
+    let orderClause = 'a.createdate DESC, a.courserefer ASC';
+    if (Array.isArray(sortBy) && sortBy.length > 0) {
+      const parts = sortBy
+        .filter(s => colMap[s.key])
+        .map(s => `${colMap[s.key]} ${s.order === 'desc' ? 'DESC' : 'ASC'}`);
+      if (parts.length) orderClause = parts.join(', ');
+    }
+    // outer wrapper (search case) needs unqualified names — strip table alias prefix
+    const outerOrderClause = orderClause.replace(/\b[a-z]\./g, '');
 
     // Derived table computes userlist for all courserefs once (vs. correlated subquery per row)
     const userlistDerived = `(
@@ -2353,30 +2392,33 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
       ELSE IFNULL(ANY_VALUE(ul.computed_userlist), '')
     END`;
 
-    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistCol}) LIKE ?)` : '';
-    const havingParams = search ? [searchParam, searchParam] : [];
-
-    const innerQuery = `
+    // baseQuery has no search filter — search is applied in outer WHERE on the computed alias
+    const baseQuery = `
       SELECT a.*, b.coursename, (${userlistCol}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN ${userlistDerived} ON ul.courserefer = a.courserefer
       WHERE a.finish = 1
-      GROUP BY a.courseid, a.courserefer, b.coursename
-      ${havingClause}`;
+      GROUP BY a.courseid, a.courserefer, b.coursename`;
 
-    // Fast count when no search: skip userlist computation entirely
-    const countQuery = search
-      ? `SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`
-      : `SELECT COUNT(*) AS total FROM tcustomer_course a WHERE a.finish = 1`;
-    const countParams = search ? havingParams : [];
+    let countQuery, countParams, dataQuery, dataParams;
+    if (search) {
+      // Wrap baseQuery and filter on computed aliases — avoids HAVING + derived-table scope error
+      const wrapped = `SELECT * FROM (${baseQuery}) AS subq WHERE (coursename LIKE ? OR userlist LIKE ?)`;
+      countQuery = `SELECT COUNT(*) AS total FROM (${baseQuery}) AS subq WHERE (coursename LIKE ? OR userlist LIKE ?)`;
+      countParams = [searchParam, searchParam];
+      dataQuery = `${wrapped} ORDER BY ${outerOrderClause}${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`;
+      dataParams = limit !== null ? [searchParam, searchParam, limit, offset] : [searchParam, searchParam];
+    } else {
+      countQuery = `SELECT COUNT(*) AS total FROM tcustomer_course a WHERE a.finish = 1`;
+      countParams = [];
+      dataQuery = `${baseQuery} ORDER BY ${orderClause}${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`;
+      dataParams = limit !== null ? [limit, offset] : [];
+    }
 
     const [[{ total }], results] = await Promise.all([
       queryPromise(countQuery, countParams),
-      queryPromise(
-        `${innerQuery} ORDER BY a.createdate DESC, a.courserefer ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
-        limit !== null ? [...havingParams, limit, offset] : havingParams
-      ),
+      queryPromise(dataQuery, dataParams),
     ]);
 
     res.json({ success: true, message: 'Get Customer Course List successful', results, total });
@@ -2388,13 +2430,31 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
 
 app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
   try {
-    const { username, page = 1, itemsPerPage = 20, search = '' } = req.body;
+    const { username, page = 1, itemsPerPage = 20, search = '', sortBy = [] } = req.body;
 
     const pageNum = parseInt(page) || 1;
     const limitRaw = parseInt(itemsPerPage);
     const limit = limitRaw === -1 ? null : (limitRaw || 20);
     const offset = limit !== null ? (pageNum - 1) * limit : 0;
     const searchParam = `%${search}%`;
+
+    const colMap = {
+      courserefer: 'a.courserefer',
+      coursename:  'b.coursename',
+      coursetype:  'a.coursetype',
+      startdate:   'a.startdate',
+      expiredate:  'a.expiredate',
+      remaining:   'a.remaining',
+    };
+    let orderClause = 'a.createdate DESC, a.courserefer ASC';
+    if (Array.isArray(sortBy) && sortBy.length > 0) {
+      const parts = sortBy
+        .filter(s => colMap[s.key])
+        .map(s => `${colMap[s.key]} ${s.order === 'desc' ? 'DESC' : 'ASC'}`);
+      if (parts.length) orderClause = parts.join(', ');
+    }
+    // outer wrapper (search case) needs unqualified names — strip table alias prefix
+    const outerOrderClause = orderClause.replace(/\b[a-z]\./g, '');
 
     // Derived table computes userlist for all courserefs once (vs. correlated subquery per row)
     const userlistDerived = `(
@@ -2412,30 +2472,33 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
       ELSE IFNULL(ANY_VALUE(ul.computed_userlist), '')
     END`;
 
-    const havingClause = search ? `HAVING (b.coursename LIKE ? OR (${userlistCol}) LIKE ?)` : '';
-    const havingParams = search ? [searchParam, searchParam] : [];
-
-    const innerQuery = `
+    // baseQuery has no search filter — search is applied in outer WHERE on the computed alias
+    const baseQuery = `
       SELECT a.*, b.coursename, (${userlistCol}) AS userlist
       FROM tcustomer_course a
       LEFT JOIN tcourseinfo b ON a.courseid = b.courseid
       LEFT JOIN ${userlistDerived} ON ul.courserefer = a.courserefer
       WHERE a.finish = 0
-      GROUP BY a.courseid, a.courserefer, b.coursename
-      ${havingClause}`;
+      GROUP BY a.courseid, a.courserefer, b.coursename`;
 
-    // Fast count when no search: skip userlist computation entirely
-    const countQuery = search
-      ? `SELECT COUNT(*) AS total FROM (${innerQuery}) AS subq`
-      : `SELECT COUNT(*) AS total FROM tcustomer_course a WHERE a.finish = 0`;
-    const countParams = search ? havingParams : [];
+    let countQuery, countParams, dataQuery, dataParams;
+    if (search) {
+      // Wrap baseQuery and filter on computed aliases — avoids HAVING + derived-table scope error
+      const wrapped = `SELECT * FROM (${baseQuery}) AS subq WHERE (coursename LIKE ? OR userlist LIKE ?)`;
+      countQuery = `SELECT COUNT(*) AS total FROM (${baseQuery}) AS subq WHERE (coursename LIKE ? OR userlist LIKE ?)`;
+      countParams = [searchParam, searchParam];
+      dataQuery = `${wrapped} ORDER BY ${outerOrderClause}${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`;
+      dataParams = limit !== null ? [searchParam, searchParam, limit, offset] : [searchParam, searchParam];
+    } else {
+      countQuery = `SELECT COUNT(*) AS total FROM tcustomer_course a WHERE a.finish = 0`;
+      countParams = [];
+      dataQuery = `${baseQuery} ORDER BY ${orderClause}${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`;
+      dataParams = limit !== null ? [limit, offset] : [];
+    }
 
     const [[{ total }], results] = await Promise.all([
       queryPromise(countQuery, countParams),
-      queryPromise(
-        `${innerQuery} ORDER BY a.createdate DESC, a.courserefer ASC${limit !== null ? ' LIMIT ? OFFSET ?' : ''}`,
-        limit !== null ? [...havingParams, limit, offset] : havingParams
-      ),
+      queryPromise(dataQuery, dataParams),
     ]);
 
     res.json({ success: true, message: 'Get Customer Course List successful', results, total });
