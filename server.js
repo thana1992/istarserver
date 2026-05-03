@@ -1921,7 +1921,7 @@ app.get("/getStudentList", verifyToken, async (req, res) => {
           }
           return `${colMap[s.key]} ${dir}`;
         });
-      if (parts.length) orderClause = parts.join(', ');
+      if (parts.length) orderClause = `${parts.join(', ')}, a.studentid ASC`;
     }
   } catch (e) {}
 
@@ -2386,7 +2386,7 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
           }
           return `${colMap[s.key]} ${dir}`;
         });
-      if (parts.length) orderClause = parts.join(', ');
+      if (parts.length) orderClause = `${parts.join(', ')}, a.courserefer ASC`;
     }
     // outer wrapper (search case) needs unqualified names — strip table alias prefix
     const outerOrderClause = orderClause.replace(/\b[a-z]\./g, '');
@@ -2477,7 +2477,7 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
           }
           return `${colMap[s.key]} ${dir}`;
         });
-      if (parts.length) orderClause = parts.join(', ');
+      if (parts.length) orderClause = `${parts.join(', ')}, a.courserefer ASC`;
     }
     // outer wrapper (search case) needs unqualified names — strip table alias prefix
     const outerOrderClause = orderClause.replace(/\b[a-z]\./g, '');
