@@ -2378,10 +2378,10 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
     let orderClause = 'a.createdate DESC, a.courserefer ASC';
     if (Array.isArray(sortBy) && sortBy.length > 0) {
       const parts = sortBy
-        .filter(s => colMap[s.key] || s.key === 'remaining_label')
+        .filter(s => colMap[s.key] || s.key === 'remaining_label' || s.key === 'remaining')
         .map(s => {
           const dir = s.order === 'desc' ? 'DESC' : 'ASC';
-          if (s.key === 'remaining_label') {
+          if (s.key === 'remaining_label' || s.key === 'remaining') {
             return `CASE WHEN a.coursetype = 'Monthly' THEN 9999 WHEN a.remaining IS NULL THEN -1 ELSE a.remaining END ${dir}`;
           }
           return `${colMap[s.key]} ${dir}`;
@@ -2469,10 +2469,10 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     let orderClause = 'a.createdate DESC, a.courserefer ASC';
     if (Array.isArray(sortBy) && sortBy.length > 0) {
       const parts = sortBy
-        .filter(s => colMap[s.key] || s.key === 'remaining_label')
+        .filter(s => colMap[s.key] || s.key === 'remaining_label' || s.key === 'remaining')
         .map(s => {
           const dir = s.order === 'desc' ? 'DESC' : 'ASC';
-          if (s.key === 'remaining_label') {
+          if (s.key === 'remaining_label' || s.key === 'remaining') {
             return `CASE WHEN a.coursetype = 'Monthly' THEN 9999 WHEN a.remaining IS NULL THEN -1 ELSE a.remaining END ${dir}`;
           }
           return `${colMap[s.key]} ${dir}`;
