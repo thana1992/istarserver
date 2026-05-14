@@ -2145,15 +2145,16 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
 
     // Query to get all necessary data in one go
     const query = `
-      SELECT 
-        a.classtime, 
-        a.courseid, 
-        CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label, 
+      SELECT
+        a.classtime,
+        a.courseid,
+        CONCAT(a.classtime, ' (', b.course_shortname, ')') as class_label,
         a.classid,
         c.nickname,
         c.studentid,
         c.shortnote,
         c.courserefer as currnent_courserefer,
+        r.reservationid,
         r.courserefer as booking_courserefer,
         r.checkedin,
         r.freeflag,
@@ -2164,7 +2165,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
         cc.remaining,
         cc.paid,
         cc.coursetype
-        
+
       FROM tclassinfo a
       JOIN tcourseinfo b ON a.courseid = b.courseid AND b.enableflag = 1
       LEFT JOIN treservation r ON a.classid = r.classid AND r.classdate = ?
@@ -2250,7 +2251,7 @@ app.post('/getBookingListAdmin', verifyToken, async (req, res) => {
     
       if (nickname) {
         const obj = await getName(nickname, row.currnent_courserefer, row.booking_courserefer, row.checkedin, row.color, row.remaining, row.freeflag, row.coursetype, row.expiredate, row.paid);
-        acc[classLabel].push({ name: obj.nickname, studentid: row.studentid, msg: obj.msg });
+        acc[classLabel].push({ name: obj.nickname, studentid: row.studentid, reservationid: row.reservationid, msg: obj.msg });
       }
     
       return acc;
