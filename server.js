@@ -2378,10 +2378,10 @@ app.post('/getFinishedCustomerCourseList', verifyToken, async (req, res) => {
     let orderClause = 'a.createdate DESC, a.courserefer ASC';
     if (Array.isArray(sortBy) && sortBy.length > 0) {
       const parts = sortBy
-        .filter(s => colMap[s.key] || s.key === 'remaining_label')
+        .filter(s => colMap[s.key] || s.key === 'remaining_label' || s.key === 'remaining')
         .map(s => {
           const dir = s.order === 'desc' ? 'DESC' : 'ASC';
-          if (s.key === 'remaining_label') {
+          if (s.key === 'remaining_label' || s.key === 'remaining') {
             return `CASE WHEN a.coursetype = 'Monthly' THEN 9999 WHEN a.remaining IS NULL THEN -1 ELSE a.remaining END ${dir}`;
           }
           return `${colMap[s.key]} ${dir}`;
@@ -2469,10 +2469,10 @@ app.post('/getCustomerCourseList', verifyToken, async (req, res) => {
     let orderClause = 'a.createdate DESC, a.courserefer ASC';
     if (Array.isArray(sortBy) && sortBy.length > 0) {
       const parts = sortBy
-        .filter(s => colMap[s.key] || s.key === 'remaining_label')
+        .filter(s => colMap[s.key] || s.key === 'remaining_label' || s.key === 'remaining')
         .map(s => {
           const dir = s.order === 'desc' ? 'DESC' : 'ASC';
-          if (s.key === 'remaining_label') {
+          if (s.key === 'remaining_label' || s.key === 'remaining') {
             return `CASE WHEN a.coursetype = 'Monthly' THEN 9999 WHEN a.remaining IS NULL THEN -1 ELSE a.remaining END ${dir}`;
           }
           return `${colMap[s.key]} ${dir}`;
@@ -3340,6 +3340,155 @@ app.post('/change-password', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error in change-password', error.stack);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// =====================================================================
+// EditProfile endpoints (see docs/edit-profile-api-spec.md)
+// NOTE: endpoint /uploadUserProfileImage requires column `profile_image_url`
+// on tuser. Run this migration before deploying:
+//   ALTER TABLE tuser ADD COLUMN profile_image_url VARCHAR(500) DEFAULT NULL AFTER mobileno;
+// =====================================================================
+
+app.post('/getUserProfile', verifyToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (username !== req.user.username) {
+      return res.json({ success: false, message: 'Unauthorized access' });
+    }
+    const results = await queryPromise(
+      `SELECT username, firstname, middlename, lastname, email, mobileno, address, profile_image_url, usertype
+       FROM tuser WHERE username = ? LIMIT 1`,
+      [username]
+    );
+    if (results.length === 0) {
+      return res.json({ success: false, message: 'ไม่พบข้อมูลผู้ใช้' });
+    }
+    res.json({ success: true, user: results[0] });
+  } catch (error) {
+    console.error('Error in getUserProfile', error.stack);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+app.post('/updateUserProfile', verifyToken, async (req, res) => {
+  try {
+    const { username, email, mobileno, address } = req.body;
+    if (username !== req.user.username) {
+      return res.json({ success: false, message: 'Unauthorized access' });
+    }
+
+    const emailVal = (email || '').trim();
+    const mobileVal = (mobileno || '').trim();
+    const addressVal = (address || '').trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      return res.json({ success: false, message: 'รูปแบบอีเมลไม่ถูกต้อง' });
+    }
+    if (emailVal.length > 50) {
+      return res.json({ success: false, message: 'อีเมลยาวเกิน 50 ตัวอักษร' });
+    }
+    const digitCount = (mobileVal.match(/\d/g) || []).length;
+    if (digitCount < 8 || digitCount > 15 || !/^[\d\-\+\s]+$/.test(mobileVal)) {
+      return res.json({ success: false, message: 'เบอร์โทรศัพท์ไม่ถูกต้อง' });
+    }
+    if (mobileVal.length > 20) {
+      return res.json({ success: false, message: 'เบอร์โทรศัพท์ยาวเกิน 20 ตัวอักษร' });
+    }
+    if (addressVal.length > 200) {
+      return res.json({ success: false, message: 'ที่อยู่ยาวเกิน 200 ตัวอักษร' });
+    }
+
+    const dupe = await queryPromise(
+      'SELECT username FROM tuser WHERE email = ? AND username <> ? LIMIT 1',
+      [emailVal, username]
+    );
+    if (dupe.length > 0) {
+      return res.json({ success: false, message: 'อีเมลนี้ถูกใช้แล้ว' });
+    }
+
+    await queryPromise(
+      'UPDATE tuser SET email = ?, mobileno = ?, address = ? WHERE username = ?',
+      [emailVal, mobileVal, addressVal, username]
+    );
+    res.json({ success: true, message: 'บันทึกข้อมูลสำเร็จ' });
+  } catch (error) {
+    console.error('Error in updateUserProfile', error.stack);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+app.post('/changePassword', verifyToken, async (req, res) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+    if (username !== req.user.username) {
+      return res.json({ success: false, message: 'Unauthorized access' });
+    }
+    if (!currentPassword || !newPassword) {
+      return res.json({ success: false, message: 'กรุณากรอกรหัสผ่านให้ครบ' });
+    }
+    const userResults = await queryPromise(
+      'SELECT userpassword FROM tuser WHERE username = ?',
+      [username]
+    );
+    if (userResults.length === 0) {
+      return res.json({ success: false, message: 'ไม่พบข้อมูลผู้ใช้' });
+    }
+    if (userResults[0].userpassword !== currentPassword) {
+      return res.json({ success: false, message: 'รหัสผ่านปัจจุบันไม่ถูกต้อง' });
+    }
+    // newPassword is already SHA256-hashed by the frontend
+    await queryPromise(
+      'UPDATE tuser SET userpassword = ? WHERE username = ?',
+      [newPassword, username]
+    );
+    res.json({ success: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ' });
+  } catch (error) {
+    console.error('Error in changePassword', error.stack);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+app.post('/uploadUserProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (username !== req.user.username) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.json({ success: false, message: 'Unauthorized access' });
+    }
+    if (!req.file) {
+      return res.json({ success: false, message: 'ไม่พบไฟล์รูปภาพ' });
+    }
+    if (req.file.size > 4 * 1024 * 1024) {
+      fs.unlink(req.file.path, () => {});
+      return res.json({ success: false, message: 'ขนาดไฟล์เกิน 4MB' });
+    }
+
+    const fileExtension = (req.file.originalname.split('.').pop() || 'jpg').toLowerCase();
+    const params = {
+      Bucket: 'istar',
+      Key: `user_profile_image/user-${username}.${fileExtension}`,
+      Body: fs.readFileSync(req.file.path),
+      ACL: 'public-read',
+      ContentType: req.file.mimetype,
+    };
+    await s3Client.send(new PutObjectCommand(params));
+
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Failed to delete temporary file:', err);
+    });
+
+    const profileImageUrl = `https://${params.Bucket}.sgp1.digitaloceanspaces.com/${params.Key}`;
+    await queryPromise(
+      'UPDATE tuser SET profile_image_url = ? WHERE username = ?',
+      [profileImageUrl, username]
+    );
+
+    res.json({ success: true, url: profileImageUrl });
+  } catch (error) {
+    console.error('Error in uploadUserProfileImage', error.stack);
+    if (req.file) fs.unlink(req.file.path, () => {});
+    res.status(500).json({ success: false, message: 'อัปโหลดไฟล์ไม่สำเร็จ' });
   }
 });
 
