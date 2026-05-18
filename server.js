@@ -2277,6 +2277,38 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   try {
     const { classday, classdate } = req.body;
 
+    // Access guard: block if previous login (excluding current session) > 1 year ago
+    // AND no family member has an unexpired course.
+    // Assumes llogin has a `createdate` timestamp column (matches tuser convention).
+    const username = req.user.username;
+    const [prevLoginRows, activeCourseRows] = await Promise.all([
+      queryPromise(
+        'SELECT createdate FROM llogin WHERE username = ? ORDER BY createdate DESC LIMIT 1 OFFSET 1',
+        [username]
+      ),
+      queryPromise(`
+        SELECT COUNT(*) AS cnt
+        FROM tstudent s
+        JOIN tcustomer_course cc
+          ON s.courserefer = cc.courserefer OR s.courserefer2 = cc.courserefer
+        JOIN tuser u ON s.familyid = u.familyid
+        WHERE u.username = ?
+          AND (cc.expiredate IS NULL OR cc.expiredate >= CURDATE())
+      `, [username]),
+    ]);
+
+    const prevLogin = prevLoginRows[0]?.createdate;
+    const activeCourses = activeCourseRows[0]?.cnt || 0;
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    if (prevLogin && new Date(prevLogin) < oneYearAgo && activeCourses === 0) {
+      return res.json({
+        success: false,
+        message: 'บัญชีไม่ได้ใช้งานนานเกิน 1 ปี และไม่มีคอร์สที่ยังใช้งานได้ กรุณาติดต่อเจ้าหน้าที่'
+      });
+    }
+
     // Query to get all necessary data in one go
     const query = `
       SELECT 
