@@ -2279,11 +2279,10 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
 
     // Access guard: block if previous login (excluding current session) > 1 year ago
     // AND no family member has an unexpired course.
-    // Assumes llogin has a `createdate` timestamp column (matches tuser convention).
     const username = req.user.username;
     const [prevLoginRows, activeCourseRows] = await Promise.all([
       queryPromise(
-        'SELECT createdate FROM llogin WHERE username = ? ORDER BY createdate DESC LIMIT 1 OFFSET 1',
+        'SELECT `timestamp` AS prev_login FROM llogin WHERE username = ? ORDER BY `timestamp` DESC LIMIT 1 OFFSET 1',
         [username]
       ),
       queryPromise(`
@@ -2297,7 +2296,7 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
       `, [username]),
     ]);
 
-    const prevLogin = prevLoginRows[0]?.createdate;
+    const prevLogin = prevLoginRows[0]?.prev_login;
     const activeCourses = activeCourseRows[0]?.cnt || 0;
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
