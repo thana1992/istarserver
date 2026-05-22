@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/iStarApp/istarapp_dev/src/components/center/**)"
+      "Read(//c/iStarApp/istarapp_dev/src/components/center/**)",
+      "Bash(ls c:/iStarApp/istarapp_dev/docs/ 2>/dev/null; ls c:/iStarApp/istarserver_dev/docs/ 2>/dev/null)",
+      "Read(//c/iStarApp/istarapp_dev/docs/**)",
+      "Bash(grep -rn \"getBookingList\\\\b\" c:/iStarApp/istarapp_dev/src/ --include=\"*.vue\" --include=\"*.js\")",
+      "Read(//c/iStarApp/istarapp_dev/src/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\iStarApp\\istarapp_dev\\docs"
     ]
   }
 }

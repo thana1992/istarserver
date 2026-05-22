@@ -380,6 +380,33 @@ app.post('/login', async (req, res) => {
           usertype: user.usertype,
           familyid: user.familyid,
         }
+
+        // Compute access_restricted BEFORE inserting current login record,
+        // so MAX(timestamp) reflects the previous login (not this session).
+        const [prevLoginRows, activeCourseRows] = await Promise.all([
+          queryPromise(
+            'SELECT MAX(`timestamp`) AS prev_login FROM llogin WHERE username = ?',
+            [user.username]
+          ),
+          queryPromise(`
+            SELECT COUNT(*) AS cnt
+            FROM tstudent s
+            JOIN tcustomer_course cc
+              ON s.courserefer = cc.courserefer OR s.courserefer2 = cc.courserefer
+            WHERE s.familyid = ?
+              AND (cc.expiredate IS NULL OR cc.expiredate >= CURDATE())
+          `, [user.familyid]),
+        ]);
+        const prevLogin = prevLoginRows[0]?.prev_login;
+        const activeCourses = activeCourseRows[0]?.cnt || 0;
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const restricted = prevLogin && new Date(prevLogin) < oneYearAgo && activeCourses === 0 ? 1 : 0;
+        await queryPromise(
+          'UPDATE tuser SET access_restricted = ? WHERE username = ?',
+          [restricted, user.username]
+        );
+
         const logquery = 'INSERT INTO llogin (username) VALUES (?)';
         await queryPromise(logquery, [user.username]);
         console.log("username : " + user.username);
@@ -2277,31 +2304,14 @@ app.post('/getBookingList', verifyToken, async (req, res) => {
   try {
     const { classday, classdate } = req.body;
 
-    // Access guard: block if previous login (excluding current session) > 1 year ago
-    // AND no family member has an unexpired course.
-    const username = req.user.username;
-    const [prevLoginRows, activeCourseRows] = await Promise.all([
-      queryPromise(
-        'SELECT `timestamp` AS prev_login FROM llogin WHERE username = ? ORDER BY `timestamp` DESC LIMIT 1 OFFSET 1',
-        [username]
-      ),
-      queryPromise(`
-        SELECT COUNT(*) AS cnt
-        FROM tstudent s
-        JOIN tcustomer_course cc
-          ON s.courserefer = cc.courserefer OR s.courserefer2 = cc.courserefer
-        JOIN tuser u ON s.familyid = u.familyid
-        WHERE u.username = ?
-          AND (cc.expiredate IS NULL OR cc.expiredate >= CURDATE())
-      `, [username]),
-    ]);
-
-    const prevLogin = prevLoginRows[0]?.prev_login;
-    const activeCourses = activeCourseRows[0]?.cnt || 0;
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-    if (prevLogin && new Date(prevLogin) < oneYearAgo && activeCourses === 0) {
+    // Access guard: block if user was flagged at login (access_restricted set in /login).
+    // Flag is recomputed every login, so logout+login does NOT bypass — uses MAX(timestamp)
+    // before INSERTing the current session's record.
+    const userRows = await queryPromise(
+      'SELECT access_restricted FROM tuser WHERE username = ?',
+      [req.user.username]
+    );
+    if (userRows[0]?.access_restricted === 1) {
       return res.json({
         success: false,
         message: 'บัญชีไม่ได้ใช้งานนานเกิน 1 ปี และไม่มีคอร์สที่ยังใช้งานได้ กรุณาติดต่อเจ้าหน้าที่'
