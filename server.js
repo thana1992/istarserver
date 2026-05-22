@@ -381,8 +381,10 @@ app.post('/login', async (req, res) => {
           familyid: user.familyid,
         }
 
-        // Compute access_restricted BEFORE inserting current login record,
-        // so MAX(timestamp) reflects the previous login (not this session).
+        // Compute access_restricted BEFORE inserting current login record.
+        // Sticky semantics: once flagged, only an active course can clear it.
+        // (Otherwise logout+login would reset MAX(timestamp) to a few minutes ago
+        //  and bypass the >1-year check.)
         const [prevLoginRows, activeCourseRows] = await Promise.all([
           queryPromise(
             'SELECT MAX(`timestamp`) AS prev_login FROM llogin WHERE username = ?',
@@ -399,9 +401,20 @@ app.post('/login', async (req, res) => {
         ]);
         const prevLogin = prevLoginRows[0]?.prev_login;
         const activeCourses = activeCourseRows[0]?.cnt || 0;
+        const currentlyRestricted = user.access_restricted === 1;
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const restricted = prevLogin && new Date(prevLogin) < oneYearAgo && activeCourses === 0 ? 1 : 0;
+
+        let restricted;
+        if (activeCourses > 0) {
+          restricted = 0;  // Active course always unblocks
+        } else if (currentlyRestricted) {
+          restricted = 1;  // Stays restricted until they get a course
+        } else if (prevLogin && new Date(prevLogin) < oneYearAgo) {
+          restricted = 1;  // First time triggering the restriction
+        } else {
+          restricted = 0;  // New user or active within last year
+        }
         await queryPromise(
           'UPDATE tuser SET access_restricted = ? WHERE username = ?',
           [restricted, user.username]
