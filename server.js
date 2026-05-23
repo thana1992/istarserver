@@ -3373,24 +3373,22 @@ app.post('/checkmobileno', async (req, res) => {
   }
 });
 
+// Forgot-password flow: token comes from /verify-otp (carries {sid, otp}, no username),
+// so identity has already been proven via OTP — no oldPassword needed; username from body.
 app.post('/change-password', verifyToken, async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-  if (!oldPassword || !newPassword) {
-    return res.status(400).json({ success: false, message: 'oldPassword and newPassword are required' });
+  const { username, newPassword } = req.body;
+  if (!username || !newPassword) {
+    return res.json({ success: false, message: 'username and newPassword are required' });
   }
   try {
-    const userResults = await queryPromise('SELECT userpassword FROM tuser WHERE username = ?', [req.user.username]);
-    if (userResults.length === 0) {
-      return res.status(400).json({ success: false, message: 'User not found' });
-    }
-    if (userResults[0].userpassword !== oldPassword) {
-      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
-    }
-    const results = await queryPromise('UPDATE tuser SET userpassword = ? WHERE username = ?', [newPassword, req.user.username]);
+    const results = await queryPromise(
+      'UPDATE tuser SET userpassword = ? WHERE username = ?',
+      [newPassword, username]
+    );
     if (results.affectedRows > 0) {
       res.json({ success: true, message: 'Password changed successfully' });
     } else {
-      res.json({ success: false, message: 'Error changing password' });
+      res.json({ success: false, message: 'User not found' });
     }
   } catch (error) {
     console.error('Error in change-password', error.stack);
