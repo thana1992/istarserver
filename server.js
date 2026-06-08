@@ -505,9 +505,18 @@ app.post('/register', async (req, res) => {
 
 app.post("/getFamilyMember", verifyToken, async (req, res) => {
   const { familyid } = req.body;
+  // `total` = the original purchased quota for a Limited course, reconstructed as
+  // remaining + consumed paid sessions. There is no stored "total" column: `remaining` starts at
+  // the purchased amount and is decremented per paid booking / restored on cancel. Paid bookings
+  // record `courserefer` (free bookings do not), so COUNT(treservation WHERE courserefer = ...)
+  // counts exactly the sessions that were deducted from `remaining`. NULL for Monthly (unlimited,
+  // no finite quota); for trial owners sessions are never deducted, so total = remaining.
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
     ' b.courserefer, c.coursename, c.course_shortname, b.courseid, ' +
     ' b.coursetype, b.remaining, b.expiredate, ' +
+    ' CASE WHEN b.coursetype = \'Monthly\' THEN NULL ' +
+    '      WHEN b.owner = \'trial\' THEN b.remaining ' +
+    '      ELSE b.remaining + (SELECT COUNT(*) FROM treservation r WHERE r.courserefer = b.courserefer AND (r.freeflag IS NULL OR r.freeflag <> 1)) END AS total, ' +
     ' CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF( a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname ' +
     ' from tstudent a ' +
     ' left join tcustomer_course b ' +
@@ -3426,7 +3435,7 @@ app.post('/getUserProfile', verifyToken, async (req, res) => {
 
 app.post('/updateUserProfile', verifyToken, async (req, res) => {
   try {
-    const { username, email, mobileno, address } = req.body;
+    const { username, firstname, middlename, lastname, email, mobileno, address } = req.body;
     if (username !== req.user.username) {
       return res.json({ success: false, message: 'Unauthorized access' });
     }
@@ -3460,9 +3469,33 @@ app.post('/updateUserProfile', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'อีเมลนี้ถูกใช้แล้ว' });
     }
 
+    // Build the UPDATE dynamically. firstname/middlename/lastname are OPTIONAL: an older
+    // frontend may not send them at all — in that case we must NOT overwrite the stored value
+    // with NULL/''. We only touch a name column when it is actually present in the request body
+    // (`!== undefined`), so sending an empty string still clears it intentionally, while omitting
+    // it preserves the existing value.
+    const setClauses = ['email = ?', 'mobileno = ?', 'address = ?'];
+    const updateParams = [emailVal, mobileVal, addressVal];
+
+    const nameFields = [
+      ['firstname', firstname],
+      ['middlename', middlename],
+      ['lastname', lastname],
+    ];
+    for (const [column, rawValue] of nameFields) {
+      if (rawValue === undefined) continue; // not sent by this client -> keep existing value
+      const nameVal = String(rawValue).trim();
+      if (nameVal.length > 100) {
+        return res.json({ success: false, message: 'ชื่อ-นามสกุลยาวเกิน 100 ตัวอักษร' });
+      }
+      setClauses.push(`${column} = ?`); // column names come from the fixed list above, not user input
+      updateParams.push(nameVal);
+    }
+    updateParams.push(username);
+
     await queryPromise(
-      'UPDATE tuser SET email = ?, mobileno = ?, address = ? WHERE username = ?',
-      [emailVal, mobileVal, addressVal, username]
+      `UPDATE tuser SET ${setClauses.join(', ')} WHERE username = ?`,
+      updateParams
     );
     res.json({ success: true, message: 'บันทึกข้อมูลสำเร็จ' });
   } catch (error) {
@@ -3542,6 +3575,53 @@ app.post('/uploadUserProfileImage', verifyToken, upload.single('profileImage'), 
     console.error('Error in uploadUserProfileImage', error.stack);
     if (req.file) fs.unlink(req.file.path, () => {});
     res.status(500).json({ success: false, message: 'อัปโหลดไฟล์ไม่สำเร็จ' });
+  }
+});
+
+// Mirrors /uploadUserProfileImage: removes the user's profile photo from storage and clears
+// profile_image_url. Storage cleanup is best-effort — if the object is already gone we still
+// clear the DB so the UI reflects "no photo".
+app.post('/deleteUserProfileImage', verifyToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (username !== req.user.username) {
+      return res.json({ success: false, message: 'Unauthorized access' });
+    }
+
+    const rows = await queryPromise(
+      'SELECT profile_image_url FROM tuser WHERE username = ? LIMIT 1',
+      [username]
+    );
+    if (rows.length === 0) {
+      return res.json({ success: false, message: 'ไม่พบข้อมูลผู้ใช้' });
+    }
+
+    const currentUrl = rows[0].profile_image_url;
+    if (currentUrl) {
+      // Derive the Space object key from the stored public URL
+      // (https://istar.sgp1.digitaloceanspaces.com/<key>).
+      const marker = '.digitaloceanspaces.com/';
+      const idx = currentUrl.indexOf(marker);
+      const key = idx >= 0 ? currentUrl.substring(idx + marker.length) : null;
+      if (key) {
+        try {
+          await s3Client.send(new DeleteObjectCommand({ Bucket: 'istar', Key: key }));
+        } catch (e) {
+          // Object missing / storage hiccup — don't fail the request over cleanup.
+          console.error('Failed to delete profile image object:', e.message);
+        }
+      }
+    }
+
+    await queryPromise(
+      'UPDATE tuser SET profile_image_url = NULL WHERE username = ?',
+      [username]
+    );
+
+    res.json({ success: true, message: 'ลบรูปโปรไฟล์สำเร็จ' });
+  } catch (error) {
+    console.error('Error in deleteUserProfileImage', error.stack);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
