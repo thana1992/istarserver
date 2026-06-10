@@ -239,6 +239,27 @@ function maskSensitiveData(data) {
   return maskedData;
 }
 
+// ตรวจความเป็นเจ้าของ: studentid อยู่ในครอบครัวของ username หรือไม่ (กัน IDOR)
+// ใช้ร่วมกันโดย endpoint ที่ "ลูกค้า" แก้ข้อมูล/รูปของสมาชิกในครอบครัวตัวเอง
+// คืน { myFamilyId, table, owned } — table = 'tstudent'/'jstudent'/undefined (ไม่พบ), owned=true เมื่อ familyid ตรงกัน
+async function resolveStudentFamily(username, studentid) {
+  const [userRows, stuRows] = await Promise.all([
+    queryPromise('SELECT familyid FROM tuser WHERE username = ?', [username]),
+    queryPromise(
+      "SELECT familyid, 'tstudent' AS srctable FROM tstudent WHERE studentid = ? AND delflag = 0 " +
+      "UNION SELECT familyid, 'jstudent' AS srctable FROM jstudent WHERE studentid = ?",
+      [studentid, studentid]
+    ),
+  ]);
+  const myFamilyId = userRows[0] && userRows[0].familyid;
+  const stuRow = stuRows[0];
+  return {
+    myFamilyId,
+    table: stuRow && stuRow.srctable,
+    owned: !!(myFamilyId && stuRow && String(stuRow.familyid) === String(myFamilyId)),
+  };
+}
+
 // เริ่มด้วย bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
 // ใช้ morgan เพื่อบันทึก log
@@ -851,35 +872,20 @@ app.post('/updateStudentByFamily', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'studentid is required' });
     }
 
-    // 1) หา familyid ของ "ผู้เรียก" จาก token.username (token ไม่มี familyid)
-    const userRows = await queryPromise('SELECT familyid FROM tuser WHERE username = ?', [req.user.username]);
-    const myFamilyId = userRows[0] && userRows[0].familyid;
+    // 1) หา familyid ผู้เรียก + ตารางของสมาชิก พร้อมเช็คความเป็นเจ้าของในครั้งเดียว (กัน IDOR)
+    //    (token ไม่มี familyid จึง lookup จาก tuser ด้วย username)
+    const { myFamilyId, table, owned } = await resolveStudentFamily(req.user.username, studentid);
     if (!myFamilyId) {
       return res.status(403).json({ success: false, message: 'ไม่พบครอบครัวของผู้ใช้' });
-    }
-
-    // 2) หาว่าสมาชิกอยู่ตารางไหน (tstudent=อนุมัติแล้ว / jstudent=รออนุมัติ) + เช็คว่าเป็นของครอบครัวที่ถูกต้อง (กัน IDOR)
-    let table = null;
-    const inMain = await queryPromise('SELECT familyid FROM tstudent WHERE studentid = ? AND delflag = 0', [studentid]);
-    if (inMain.length) {
-      table = 'tstudent';
-      if (String(inMain[0].familyid) !== String(myFamilyId)) {
-        return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์แก้ไขสมาชิกคนนี้' });
-      }
-    } else {
-      const inPending = await queryPromise('SELECT familyid FROM jstudent WHERE studentid = ?', [studentid]);
-      if (inPending.length) {
-        table = 'jstudent';
-        if (String(inPending[0].familyid) !== String(myFamilyId)) {
-          return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์แก้ไขสมาชิกคนนี้' });
-        }
-      }
     }
     if (!table) {
       return res.json({ success: false, message: 'ไม่พบสมาชิก' });
     }
+    if (!owned) {
+      return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์แก้ไขสมาชิกคนนี้' });
+    }
 
-    // 3) อัปเดตเฉพาะฟิลด์โปรไฟล์ที่ปลอดภัย — ไม่แตะ level / familyid / courserefer
+    // 2) อัปเดตเฉพาะฟิลด์โปรไฟล์ที่ปลอดภัย — ไม่แตะ level / familyid / courserefer
     //    (jstudent ไม่มีคอลัมน์ updateby จึงใส่เฉพาะตอน tstudent)
     const updateby = table === 'tstudent' ? ', updateby = ?' : '';
     const sql =
@@ -3687,16 +3693,10 @@ app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), asyn
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded.' });
     }
-    const studentId0 = req.body.studentid;
     // staff (adminflag=1: head/admin/coach) แก้รูปใครก็ได้; "ลูกค้า" แก้ได้เฉพาะสมาชิกในครอบครัวตัวเอง
     if (req.user.adminflag != 1) {
-      const fam = await queryPromise('SELECT familyid FROM tuser WHERE username = ?', [req.user.username]);
-      const myFamilyId = fam[0] && fam[0].familyid;
-      const stu = await queryPromise(
-        'SELECT familyid FROM tstudent WHERE studentid = ? UNION SELECT familyid FROM jstudent WHERE studentid = ?',
-        [studentId0, studentId0]
-      );
-      if (!myFamilyId || !stu.length || String(stu[0].familyid) !== String(myFamilyId)) {
+      const { owned } = await resolveStudentFamily(req.user.username, req.body.studentid);
+      if (!owned) {
         fs.unlink(req.file.path, () => {});   // ลบไฟล์ temp ที่ multer เขียนไว้
         return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์อัปโหลดรูปของสมาชิกคนนี้' });
       }
