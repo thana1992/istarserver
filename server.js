@@ -3461,14 +3461,6 @@ app.post('/updateUserProfile', verifyToken, async (req, res) => {
       return res.json({ success: false, message: 'ที่อยู่ยาวเกิน 200 ตัวอักษร' });
     }
 
-    const dupe = await queryPromise(
-      'SELECT username FROM tuser WHERE email = ? AND username <> ? LIMIT 1',
-      [emailVal, username]
-    );
-    if (dupe.length > 0) {
-      return res.json({ success: false, message: 'อีเมลนี้ถูกใช้แล้ว' });
-    }
-
     // Build the UPDATE dynamically. firstname/middlename/lastname are OPTIONAL: an older
     // frontend may not send them at all — in that case we must NOT overwrite the stored value
     // with NULL/''. We only touch a name column when it is actually present in the request body
