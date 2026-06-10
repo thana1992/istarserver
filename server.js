@@ -239,6 +239,27 @@ function maskSensitiveData(data) {
   return maskedData;
 }
 
+// ตรวจความเป็นเจ้าของ: studentid อยู่ในครอบครัวของ username หรือไม่ (กัน IDOR)
+// ใช้ร่วมกันโดย endpoint ที่ "ลูกค้า" แก้ข้อมูล/รูปของสมาชิกในครอบครัวตัวเอง
+// คืน { myFamilyId, table, owned } — table = 'tstudent'/'jstudent'/undefined (ไม่พบ), owned=true เมื่อ familyid ตรงกัน
+async function resolveStudentFamily(username, studentid) {
+  const [userRows, stuRows] = await Promise.all([
+    queryPromise('SELECT familyid FROM tuser WHERE username = ?', [username]),
+    queryPromise(
+      "SELECT familyid, 'tstudent' AS srctable FROM tstudent WHERE studentid = ? AND delflag = 0 " +
+      "UNION SELECT familyid, 'jstudent' AS srctable FROM jstudent WHERE studentid = ?",
+      [studentid, studentid]
+    ),
+  ]);
+  const myFamilyId = userRows[0] && userRows[0].familyid;
+  const stuRow = stuRows[0];
+  return {
+    myFamilyId,
+    table: stuRow && stuRow.srctable,
+    owned: !!(myFamilyId && stuRow && String(stuRow.familyid) === String(myFamilyId)),
+  };
+}
+
 // เริ่มด้วย bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
 // ใช้ morgan เพื่อบันทึก log
@@ -542,13 +563,17 @@ app.post("/getFamilyMember", verifyToken, async (req, res) => {
 app.post("/getFamilyList", verifyToken, async (req, res) => {
   const { familyid } = req.body;
   const query = 'select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
+    '   a.profile_image_url, a.school, a.level, t.coursename, t.course_shortname, ' +
+    ' CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'0\' journal ' +
     ' from tstudent a ' +
+    ' left join tcustomer_course b on a.courserefer = b.courserefer and b.finish = 0 ' +
+    ' left join tcourseinfo t on b.courseid = t.courseid ' +
     ' where a.familyid = ? ' +
-    ' and delflag = 0 '+
+    ' and a.delflag = 0 '+
     ' UNION ALL ' +
     ' select a.studentid, a.familyid, a.firstname, a.middlename, a.lastname, a.nickname, a.gender, a.dateofbirth, ' +
-    ' CONCAT(IFNULL(firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
+    '   NULL as profile_image_url, a.school, NULL as level, NULL as coursename, NULL as course_shortname, ' +
+    ' CONCAT(IFNULL(a.firstname, \'\'), \' \', IFNULL(a.middlename, \'\'), IF(a.middlename<>\'\', \' \', \'\'), IFNULL( a.lastname, \'\'), \' (\', a.nickname,\')\') fullname, \'1\' journal ' +
     ' from jstudent a ' +
     ' where a.familyid = ? ';
 
@@ -836,6 +861,51 @@ app.post('/updateStudentByAdmin', verifyToken, async (req, res) => {
     logStudentToDiscord('error', `❌ [updateStudentByAdmin][${req.user.username}]`, `Body : ${JSON.stringify(req.body)}\n ❌ Error updating student : ${error.message}`);
     console.log("updateStudentByAdmin error : " + JSON.stringify(error));
     res.status(500).send(error);
+  }
+});
+
+// แก้ไขข้อมูลนักเรียนโดย "ผู้ปกครอง" เอง — แก้ได้เฉพาะข้อมูล + รูป ของนักเรียนในครอบครัวตัวเองเท่านั้น
+app.post('/updateStudentByFamily', verifyToken, async (req, res) => {
+  try {
+    const { studentid, firstname, middlename, lastname, nickname, gender, dateofbirth, school } = req.body;
+    if (!studentid) {
+      return res.json({ success: false, message: 'studentid is required' });
+    }
+
+    // 1) หา familyid ผู้เรียก + ตารางของสมาชิก พร้อมเช็คความเป็นเจ้าของในครั้งเดียว (กัน IDOR)
+    //    (token ไม่มี familyid จึง lookup จาก tuser ด้วย username)
+    const { myFamilyId, table, owned } = await resolveStudentFamily(req.user.username, studentid);
+    if (!myFamilyId) {
+      return res.status(403).json({ success: false, message: 'ไม่พบครอบครัวของผู้ใช้' });
+    }
+    if (!table) {
+      return res.json({ success: false, message: 'ไม่พบสมาชิก' });
+    }
+    if (!owned) {
+      return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์แก้ไขสมาชิกคนนี้' });
+    }
+
+    // 2) อัปเดตเฉพาะฟิลด์โปรไฟล์ที่ปลอดภัย — ไม่แตะ level / familyid / courserefer
+    //    (jstudent ไม่มีคอลัมน์ updateby จึงใส่เฉพาะตอน tstudent)
+    const updateby = table === 'tstudent' ? ', updateby = ?' : '';
+    const sql =
+      `UPDATE ${table}
+          SET firstname = ?, middlename = ?, lastname = ?, nickname = ?, gender = ?, dateofbirth = ?, school = ?${updateby}
+        WHERE studentid = ? AND familyid = ?`;
+    const params = table === 'tstudent'
+      ? [firstname, middlename, lastname, nickname, gender, dateofbirth, school, req.user.username, studentid, myFamilyId]
+      : [firstname, middlename, lastname, nickname, gender, dateofbirth, school, studentid, myFamilyId];
+
+    await queryPromise(sql, params);
+    logStudentToDiscord('info', `✅ [updateStudentByFamily][${req.user.username}]`,
+      `Updated ${table} : ${studentid}\nBody : ${JSON.stringify(req.body)}`);
+    // row ผ่านการเช็คเจ้าของ+มีอยู่จริงแล้ว → ถือว่าสำเร็จ (affectedRows อาจ=0 ถ้าไม่มีค่าใดเปลี่ยน)
+    return res.json({ success: true, message: 'แก้ไขข้อมูลสำเร็จ' });
+  } catch (error) {
+    logStudentToDiscord('error', `❌ [updateStudentByFamily][${req.user.username}]`,
+      `Body : ${JSON.stringify(req.body)}\n❌ ${error.message}`);
+    console.error('Error in updateStudentByFamily', error.stack);
+    return res.status(500).send(error);
   }
 });
 
@@ -3619,6 +3689,18 @@ app.post('/deleteUserProfileImage', verifyToken, async (req, res) => {
 
 app.post('/uploadProfileImage', verifyToken, upload.single('profileImage'), async (req, res) => {
   try {
+    // ---- เพิ่ม: ตรวจไฟล์ + สิทธิ์เจ้าของ (กัน IDOR) ----
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    // staff (adminflag=1: head/admin/coach) แก้รูปใครก็ได้; "ลูกค้า" แก้ได้เฉพาะสมาชิกในครอบครัวตัวเอง
+    if (req.user.adminflag != 1) {
+      const { owned } = await resolveStudentFamily(req.user.username, req.body.studentid);
+      if (!owned) {
+        fs.unlink(req.file.path, () => {});   // ลบไฟล์ temp ที่ multer เขียนไว้
+        return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์อัปโหลดรูปของสมาชิกคนนี้' });
+      }
+    }
     const fileStream = fs.createReadStream(req.file.path);
     let fileName = `profile_image/${req.file.originalname}`;
     let params = {
