@@ -3742,11 +3742,11 @@ app.post('/getAppSettings', async (req, res) => {
 });
 
 app.post('/saveAppSettings', verifyToken, async (req, res) => {
-  if (req.user.adminflag !== 1) {
+  if (req.user.adminflag !== 1 && req.user.usertype !== 0) {
     return res.status(403).json({ success: false, message: 'Permission denied' });
   }
   const { uiTheme } = req.body;
-  if (!['neumorphic', 'playful','halloween','christmas','new'].includes(uiTheme)) {
+  if (!['default', 'mothersday', 'loykrathong'].includes(uiTheme)) {
     return res.status(400).json({ success: false, message: 'Invalid uiTheme value' });
   }
   try {
