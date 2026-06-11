@@ -62,10 +62,19 @@ Uploads go to **DigitalOcean Spaces** (S3-compatible, `@aws-sdk/client-s3`, buck
 
 ## Deployment
 
-Two targets, no CI tests:
-- **Vercel** — `vercel.json` routes all requests to `server.js`.
-- **DigitalOcean App Platform** — `.github/workflows/do-test-window.yml` un-archives the dev app + deploys on push to `main`/`master`, keeps it live ~1h, then re-archives to stop billing. A new push resets the timer.
+This repo is the **production** source.
 
+- **Vercel** — `vercel.json` routes all requests to `server.js`. (istarserver only)
+- **DigitalOcean App Platform** — production app `istar-app`
+  (https://istar-gymnastics.com) auto-deploys from branch `main` via DO's native
+  GitHub auto-deploy. **No GitHub Actions and no `DIGITALOCEAN_ACCESS_TOKEN`
+  secret are needed here.** Prod runs continuously (always on) — there is no
+  wake/start step.
+- The `do-test-window.yml` wake/archive workflow is intentionally **NOT** in this
+  repo. It belongs only to the dev fork (`thana-devtest/istarserver_dev` /
+  `istarapp_dev`), which manages a separate dev app. Do not add it here — its
+  auto-archive step would shut production down every hour.
+  
 ## Further reference
 
 `SYSTEM_DOCUMENTATION.md` and `SYSTEM_REQUIREMENTS.md` (both Thai) contain the full endpoint catalogue, DB schema, table relationships, and feature flows. Consult them for table columns and the full API list rather than re-deriving from SQL strings — but treat `server.js` as the source of truth when they disagree.
